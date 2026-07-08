@@ -417,7 +417,7 @@
 
 <script>
     // ============================================================
-    // FULL APPLICATION CODE
+    // FULL APPLICATION CODE - FIXED DATA FETCHING
     // ============================================================
     (function() {
         'use strict';
@@ -425,7 +425,6 @@
         // CONFIG
         const SYMBOLS = ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','DOGEUSDT','ADAUSDT','LINKUSDT','AVAXUSDT','SUIUSDT'];
         const DISPLAY_MAP = { BTCUSDT:'BTC/USDT', ETHUSDT:'ETH/USDT', BNBUSDT:'BNB/USDT', SOLUSDT:'SOL/USDT', XRPUSDT:'XRP/USDT', DOGEUSDT:'DOGE/USDT', ADAUSDT:'ADA/USDT', LINKUSDT:'LINK/USDT', AVAXUSDT:'AVAX/USDT', SUIUSDT:'SUI/USDT' };
-        const TIMEFRAMES = ['1m','5m','15m','1h','4h','1d'];
         const DEFAULT_TF = '5m';
         const MAX_CANDLES = 300;
 
@@ -433,8 +432,8 @@
         let state = {
             currentSymbol: 'BTCUSDT',
             currentTF: DEFAULT_TF,
-            candles: {},      // symbol -> { tf: [candles] }
-            realtimePrice: {}, // symbol -> { price, change, volume }
+            candles: {},
+            realtimePrice: {},
             signals: [],
             archive: [],
             notifications: [],
@@ -443,7 +442,7 @@
             analysisInterval: null,
             pendingSignals: {},
             errorLogs: [],
-            allowConflictingSignals: false, // toggled by switch (true = block conflicts)
+            allowConflictingSignals: false,
         };
 
         // STORAGE
@@ -459,46 +458,79 @@
             static formatDate(ts) { return new Date(ts).toLocaleString('ar-EG',{hour12:false}); }
             static formatTime(ts) { return new Date(ts).toLocaleTimeString('ar-EG',{hour12:false}); }
             static randomId() { return Date.now().toString(36)+'_'+Math.random().toString(36).substr(2,6); }
+            static sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
         }
 
-        // API
+        // ============================================================
+        // API - FIXED WITH RETRY & ERROR HANDLING
+        // ============================================================
         class Api {
+            static async fetchWithRetry(url, options={}, retries=3) {
+                for(let i=0;i<retries;i++) {
+                    try {
+                        const resp = await fetch(url, options);
+                        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                        return await resp.json();
+                    } catch(e) {
+                        if(i===retries-1) throw e;
+                        await Utils.sleep(1000*(i+1));
+                    }
+                }
+            }
+
             static async fetchKlines(symbol, interval, limit=MAX_CANDLES) {
                 const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-                const resp = await fetch(url);
-                if(!resp.ok) throw new Error('Binance API error');
-                const data = await resp.json();
-                return data.map(k => ({ time: k[0], open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5]) }));
+                const data = await this.fetchWithRetry(url);
+                return data.map(k => ({
+                    time: k[0],
+                    open: parseFloat(k[1]),
+                    high: parseFloat(k[2]),
+                    low: parseFloat(k[3]),
+                    close: parseFloat(k[4]),
+                    volume: parseFloat(k[5])
+                }));
             }
+
             static async fetch24hr(symbol) {
                 const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`;
-                const resp = await fetch(url);
-                if(!resp.ok) throw new Error('Binance 24hr error');
-                const data = await resp.json();
-                return { price: parseFloat(data.lastPrice), change: parseFloat(data.priceChangePercent), volume: parseFloat(data.volume) };
+                const data = await this.fetchWithRetry(url);
+                return {
+                    price: parseFloat(data.lastPrice),
+                    change: parseFloat(data.priceChangePercent),
+                    volume: parseFloat(data.volume)
+                };
             }
+
             static async fetchFundingRate(symbol) {
-                // Binance futures funding rate
+                // Binance futures funding rate - using alternative endpoint
                 try {
-                    const url = `https://api.binance.com/api/v3/fundingInfo?symbol=${symbol}`;
-                    const resp = await fetch(url);
-                    if(!resp.ok) return 0.0001;
-                    const data = await resp.json();
-                    return parseFloat(data[0]?.lastFundingRate || 0.0001);
-                } catch(e) { return 0.0001; }
+                    const url = `https://api.binance.com/api/v3/premiumIndex?symbol=${symbol}`;
+                    const data = await this.fetchWithRetry(url, {}, 2);
+                    return parseFloat(data.lastFundingRate || 0.0001);
+                } catch(e) {
+                    console.warn('Funding rate fetch failed, using default', e);
+                    return 0.0001;
+                }
             }
+
             static async fetchAll24hr(symbols) {
                 const results = {};
-                await Promise.all(symbols.map(async (sym) => {
+                const promises = symbols.map(async sym => {
                     try {
                         results[sym] = await this.fetch24hr(sym);
-                    } catch(e) { results[sym] = { price:0, change:0, volume:0 }; }
-                }));
+                    } catch(e) {
+                        console.error(`Failed to fetch 24hr for ${sym}`, e);
+                        results[sym] = { price:0, change:0, volume:0 };
+                    }
+                });
+                await Promise.allSettled(promises);
                 return results;
             }
         }
 
+        // ============================================================
         // ORDER BLOCK DETECTOR
+        // ============================================================
         class OrderBlockDetector {
             static detect(candles) {
                 if(!candles || candles.length<10) return [];
@@ -519,7 +551,6 @@
                         if(down>=3) blocks.push({ type:'bearish', level:c.high, high:c.high, low:c.low, strength:Math.min(1,(c.volume/1000)*0.01) });
                     }
                 }
-                // merge nearby
                 const merged = [];
                 for(const b of blocks) {
                     let found=false;
@@ -537,7 +568,9 @@
             }
         }
 
+        // ============================================================
         // VOLUME PROFILE
+        // ============================================================
         class VolumeProfile {
             static analyze(candles, levels=30) {
                 if(!candles || candles.length<5) return { poc:0, highVolumeNodes:[], lowVolumeNodes:[], maxVolume:0 };
@@ -570,7 +603,9 @@
             }
         }
 
-        // SIGNAL GENERATOR (with SL/TP 1:2 and Funding Fee)
+        // ============================================================
+        // SIGNAL GENERATOR
+        // ============================================================
         class SignalGenerator {
             static async generate(symbol, candles, price, volume, timeframe) {
                 if(!candles || candles.length<20) return null;
@@ -581,7 +616,6 @@
                 const signals = [];
                 const latestBlock = blocks.length>0 ? blocks[blocks.length-1] : null;
 
-                // Bullish
                 if(latestBlock && latestBlock.type==='bullish') {
                     const inBlock = (currentPrice >= latestBlock.low && currentPrice <= latestBlock.high);
                     const nearPOC = Math.abs(currentPrice - vp.poc)/ (vp.poc||1) < 0.01;
@@ -593,7 +627,7 @@
                         const tp2 = currentPrice + dist*3;
                         const tp3 = currentPrice + dist*4;
                         const fundingRate = await Api.fetchFundingRate(symbol);
-                        const feeEst = currentPrice * fundingRate * 0.01; // simplified
+                        const feeEst = currentPrice * fundingRate * 0.01;
                         signals.push({
                             type: 'BUY',
                             symbol, entry: currentPrice, stopLoss: sl, target1: tp1, target2: tp2, target3: tp3,
@@ -607,7 +641,6 @@
                         });
                     }
                 }
-                // Bearish
                 if(latestBlock && latestBlock.type==='bearish') {
                     const inBlock = (currentPrice >= latestBlock.low && currentPrice <= latestBlock.high);
                     const nearPOC = Math.abs(currentPrice - vp.poc)/ (vp.poc||1) < 0.01;
@@ -633,7 +666,7 @@
                         });
                     }
                 }
-                // Breakout signals
+                // Breakout
                 if(vp.maxVolume>0 && last.volume > vp.maxVolume*0.5) {
                     const avgClose = candles.slice(-5).reduce((s,c)=>s+c.close,0)/5;
                     if(last.close > avgClose*1.01 && last.close > last.open) {
@@ -686,7 +719,9 @@
             }
         }
 
+        // ============================================================
         // NOTIFICATION MANAGER
+        // ============================================================
         class NotificationManager {
             static async send(title, body, data={}) {
                 const notif = { id: Utils.randomId(), title, body, data, time: Date.now(), read: false };
@@ -734,7 +769,9 @@
             }
         }
 
-        // ARCHIVE
+        // ============================================================
+        // ARCHIVE MANAGER
+        // ============================================================
         class ArchiveManager {
             static addTrade(signal, result, closeReason, profitLoss) {
                 const entry = {
@@ -771,7 +808,9 @@
             }
         }
 
-        // SHARE
+        // ============================================================
+        // SHARE MANAGER
+        // ============================================================
         class ShareManager {
             static share(signal) {
                 const text = `📊 إشارة تداول ${signal.type}\nالعملة: ${signal.symbol}\nالدخول: ${Utils.formatPrice(signal.entry,signal.symbol)}\nوقف الخسارة: ${Utils.formatPrice(signal.stopLoss,signal.symbol)}\nالأهداف: ${Utils.formatPrice(signal.target1,signal.symbol)} / ${Utils.formatPrice(signal.target2,signal.symbol)} / ${Utils.formatPrice(signal.target3,signal.symbol)}\nنسبة النجاح: ${signal.winRate}%\nالتوقيت: ${Utils.formatDate(signal.time)}\nالسبب: ${signal.reason.substring(0,120)}...\nرسوم التمويل: ${(signal.fundingFee||0).toFixed(4)} USDT\n#ProTrade #Crypto`;
@@ -784,7 +823,9 @@
             }
         }
 
+        // ============================================================
         // UI MANAGER
+        // ============================================================
         class UIManager {
             static showToast(msg, type='info') {
                 const container = document.getElementById('toastContainer');
@@ -892,7 +933,9 @@
             }
         }
 
+        // ============================================================
         // CHART (TradingView Lightweight)
+        // ============================================================
         class ChartManager {
             constructor(containerId) {
                 this.container = document.getElementById(containerId);
@@ -927,7 +970,9 @@
             }
         }
 
+        // ============================================================
         // BINANCE WEBSOCKET
+        // ============================================================
         class BinanceFeed {
             constructor(onMessage, onError, onOpen, onClose) {
                 this.onMessage = onMessage; this.onError = onError; this.onOpen = onOpen; this.onClose = onClose;
@@ -976,12 +1021,15 @@
             }
         }
 
+        // ============================================================
         // MAIN APP
+        // ============================================================
         class App {
             constructor() {
                 this.initialized = false;
                 this.chartManager = null;
                 this.analysisRunning = false;
+                this.dataLoaded = false;
             }
             async init() {
                 if(this.initialized) return;
@@ -991,18 +1039,13 @@
                 state.notifications = Storage.load('notifications', []);
                 state.allowConflictingSignals = Storage.load('allowConflicting', false);
 
-                // chart
                 this.chartManager = new ChartManager('chartContainer');
 
-                // UI
                 this._setupUI();
-
                 NotificationManager.requestPermission();
-
-                // install manager
                 this._setupInstall();
 
-                // load data
+                // Load data with retry
                 await this._loadAllData();
 
                 // start websocket
@@ -1011,7 +1054,6 @@
                 // start analysis
                 this._startAnalysis();
 
-                // initial chart
                 await this._updateChart();
 
                 this.initialized = true;
@@ -1019,7 +1061,6 @@
             }
 
             _setupUI() {
-                // TF selector
                 document.querySelectorAll('#tfSelector button').forEach(btn=>{
                     btn.addEventListener('click', ()=>{
                         document.querySelectorAll('#tfSelector button').forEach(b=>b.classList.remove('active'));
@@ -1028,21 +1069,17 @@
                         this._updateChart();
                     });
                 });
-                // Archive toggle
                 document.getElementById('toggleArchive').addEventListener('click', ()=>UIManager.toggleArchive());
-                // Notifications bell
                 const bell = document.getElementById('notifBell');
                 const dropdown = document.getElementById('notifDropdown');
                 if(bell && dropdown) {
                     bell.addEventListener('click', (e)=>{ e.stopPropagation(); dropdown.classList.toggle('open'); if(dropdown.classList.contains('open')) NotificationManager.markAllRead(); });
                     document.addEventListener('click', ()=>{ dropdown.classList.remove('open'); });
                 }
-                // Refresh
                 document.getElementById('refreshBtn').addEventListener('click', ()=>{
                     this._loadAllData().then(()=>this._updateChart());
                     UIManager.showToast('🔄 جاري تحديث البيانات...','info');
                 });
-                // Correlation switch
                 const sw = document.getElementById('correlationSwitch');
                 if(sw) {
                     sw.checked = !state.allowConflictingSignals;
@@ -1054,7 +1091,6 @@
                     });
                     UIManager.updateCorrelationStatus(sw.checked);
                 }
-                // notifications render
                 NotificationManager._renderNotifications();
                 NotificationManager._updateBadge();
                 ArchiveManager._renderArchive();
@@ -1086,22 +1122,41 @@
             async _loadAllData() {
                 try {
                     const tf = state.currentTF;
-                    await Promise.all(SYMBOLS.map(async sym=>{
+                    // Load candles for all symbols with better error handling
+                    const candlePromises = SYMBOLS.map(async sym => {
                         try {
                             const candles = await Api.fetchKlines(sym, tf, MAX_CANDLES);
                             if(!state.candles[sym]) state.candles[sym] = {};
                             state.candles[sym][tf] = candles;
-                        } catch(e){ console.error(`load ${sym} error`,e); }
-                    }));
+                            console.log(`Loaded ${sym} candles`);
+                        } catch(e) {
+                            console.error(`Failed to load ${sym} candles:`, e);
+                            // Initialize empty array to prevent null errors
+                            if(!state.candles[sym]) state.candles[sym] = {};
+                            state.candles[sym][tf] = [];
+                        }
+                    });
+                    await Promise.allSettled(candlePromises);
+
+                    // Load 24hr prices
                     const prices = await Api.fetchAll24hr(SYMBOLS);
                     for(const sym of SYMBOLS) {
-                        if(prices[sym]) state.realtimePrice[sym] = prices[sym];
+                        if(prices[sym]) {
+                            state.realtimePrice[sym] = prices[sym];
+                        }
                     }
                     UIManager.updateCoinStrip(state.realtimePrice);
                     const currentData = state.realtimePrice[state.currentSymbol];
                     if(currentData) UIManager.updateChartPrice(currentData.price, currentData.change);
+                    this.dataLoaded = true;
                     return true;
-                } catch(e){ console.error('loadAllData error',e); return false; }
+                } catch(e) {
+                    console.error('loadAllData error:', e);
+                    UIManager.showToast('⚠️ فشل تحميل البيانات، سيتم إعادة المحاولة...', 'error');
+                    // Retry after 5 seconds
+                    setTimeout(()=>this._loadAllData(), 5000);
+                    return false;
+                }
             }
 
             _startWebSocket() {
@@ -1157,7 +1212,7 @@
             async _updateChart() {
                 const sym = state.currentSymbol;
                 const tf = state.currentTF;
-                if(!state.candles[sym]?.[tf]) {
+                if(!state.candles[sym]?.[tf] || state.candles[sym][tf].length===0) {
                     try {
                         const candles = await Api.fetchKlines(sym, tf, MAX_CANDLES);
                         if(!state.candles[sym]) state.candles[sym] = {};
@@ -1184,7 +1239,7 @@
                 if(this.analysisRunning) return;
                 this.analysisRunning = true;
                 setInterval(async ()=>{
-                    if(!state.isConnected) return;
+                    if(!state.isConnected || !this.dataLoaded) return;
                     try {
                         for(const sym of SYMBOLS) {
                             await this._analyzeSymbol(sym, state.currentTF);
@@ -1198,22 +1253,17 @@
                         await this._analyzeSymbol(sym, state.currentTF);
                     }
                     UIManager.updateSignals(state.signals);
-                }, 2000);
+                }, 3000);
             }
 
             async _analyzeSymbol(symbol, timeframe) {
                 try {
-                    // ---- NEW: Prevent multiple signals for same symbol ----
+                    // Prevent multiple signals for same symbol
                     const existingActive = state.signals.filter(s => s.symbol === symbol);
                     if(existingActive.length > 0) {
-                        // There is already an active signal for this symbol; skip generating new one
-                        // Optionally notify but only once per cycle
-                        // We'll just skip silently to avoid spam, but we can send a toast once
-                        // But we need to update pending signals for UI badge
                         if(!state.pendingSignals[symbol]) state.pendingSignals[symbol] = [];
                         state.pendingSignals[symbol] = state.signals.filter(s=>s.symbol===symbol);
                         UIManager.updateCoinStrip(state.realtimePrice);
-                        // Also we should still update chart etc. but no signal generation.
                         return;
                     }
 
@@ -1226,27 +1276,22 @@
                         // Correlation filter
                         const filterEnabled = document.getElementById('correlationSwitch')?.checked ?? true;
                         if(filterEnabled) {
-                            // Check if there is an active signal for BTC (if symbol is not BTC)
                             if(symbol !== 'BTCUSDT') {
                                 const btcSignals = state.signals.filter(s=>s.symbol==='BTCUSDT');
                                 const recentBtc = btcSignals.filter(s=>(Date.now()-s.time)<7200000);
                                 if(recentBtc.length>0) {
                                     const btcSig = recentBtc.reduce((a,b)=>(a.strength||0)>(b.strength||0)?a:b);
                                     if(btcSig.type !== signal.type) {
-                                        // Conflict detected
                                         const msg = `⚠️ تعارض: إشارة ${signal.type} لـ ${symbol} تتعارض مع إشارة ${btcSig.type} للبيتكوين.`;
                                         NotificationManager.send('تنبيه تضارب', msg, { conflict: true });
                                         UIManager.showToast(msg, 'error');
-                                        // Check momentum: if current signal has >20% higher strength, allow override
                                         const btcStr = btcSig.strength || 0.5;
                                         const curStr = signal.strength || 0.5;
                                         if(curStr > btcStr * 1.2) {
                                             const overrideMsg = `⚠️ تجاوز الفلتر: زخم ${symbol} (${(curStr*100).toFixed(0)}%) أقوى من البيتكوين (${(btcStr*100).toFixed(0)}%)، تم السماح.`;
                                             NotificationManager.send('تجاوز الفلتر', overrideMsg, { override: true });
                                             UIManager.showToast(overrideMsg, 'info');
-                                            // Allow signal (continue)
                                         } else {
-                                            // Block signal
                                             if(!state.pendingSignals[symbol]) state.pendingSignals[symbol] = [];
                                             state.pendingSignals[symbol] = state.signals.filter(s=>s.symbol===symbol);
                                             UIManager.updateCoinStrip(state.realtimePrice);
@@ -1256,7 +1301,6 @@
                                 }
                             }
                         }
-                        // Check duplicate (within 1 hour) - we keep this as extra safety
                         const existing = state.signals.filter(s =>
                             s.symbol===symbol && s.type===signal.type &&
                             Math.abs(s.entry-signal.entry)/s.entry < 0.02 &&
@@ -1351,7 +1395,6 @@
             AppInstance.init().catch(e=>console.error(e));
         }
 
-        // Global error handling
         window.addEventListener('error', (e)=>console.error(e));
         window.addEventListener('unhandledrejection', (e)=>console.error(e));
         window.addEventListener('online', ()=>{
@@ -1364,7 +1407,7 @@
             document.getElementById('dataStatus').textContent='⚠️ غير متصل';
         });
 
-        console.log('🚀 ProTrade PWA with Correlation Filter & Funding Fees & Single Signal Per Symbol');
+        console.log('🚀 ProTrade PWA - Fixed data fetching');
     })();
 </script>
 </body>
