@@ -1371,7 +1371,7 @@
             }
 
             // ============================================================
-            // SIGNAL GENERATOR
+            // SIGNAL GENERATOR (FIXED: Targets = 2x, 3x, 4x of Stop Loss)
             // ============================================================
             class SignalGenerator {
                 static generate(symbol, candles, price, volume, timeframe) {
@@ -1397,12 +1397,12 @@
                         const isHVN = vp.highVolumeNodes.some(n => Math.abs(currentPrice - n) / (n || 1) < 0.005);
 
                         if (inBlock && (nearPOC || isHVN) && lastCandle.close > lastCandle.open) {
-                            const targets = this._calculateTargets(currentPrice, 'buy', vp);
+                            const { stopLoss, targets } = this._calculateTargets(currentPrice, 'buy');
                             signals.push({
                                 type: 'BUY',
                                 symbol: symbol,
                                 entry: currentPrice,
-                                stopLoss: currentPrice * 0.985,
+                                stopLoss: stopLoss,
                                 target1: targets[0],
                                 target2: targets[1],
                                 target3: targets[2],
@@ -1423,12 +1423,12 @@
                         const isHVN = vp.highVolumeNodes.some(n => Math.abs(currentPrice - n) / (n || 1) < 0.005);
 
                         if (inBlock && (nearPOC || isHVN) && lastCandle.close < lastCandle.open) {
-                            const targets = this._calculateTargets(currentPrice, 'sell', vp);
+                            const { stopLoss, targets } = this._calculateTargets(currentPrice, 'sell');
                             signals.push({
                                 type: 'SELL',
                                 symbol: symbol,
                                 entry: currentPrice,
-                                stopLoss: currentPrice * 1.015,
+                                stopLoss: stopLoss,
                                 target1: targets[0],
                                 target2: targets[1],
                                 target3: targets[2],
@@ -1446,12 +1446,12 @@
                     if (vp.maxVolume > 0 && lastCandle.volume > vp.maxVolume * 0.5) {
                         const avgClose = candles.slice(-5).reduce((s, c) => s + c.close, 0) / 5;
                         if (lastCandle.close > avgClose * 1.01 && lastCandle.close > lastCandle.open) {
-                            const targets = this._calculateTargets(currentPrice, 'buy', vp);
+                            const { stopLoss, targets } = this._calculateTargets(currentPrice, 'buy');
                             signals.push({
                                 type: 'BUY',
                                 symbol: symbol,
                                 entry: currentPrice,
-                                stopLoss: currentPrice * 0.988,
+                                stopLoss: stopLoss,
                                 target1: targets[0],
                                 target2: targets[1],
                                 target3: targets[2],
@@ -1464,12 +1464,12 @@
                             });
                         }
                         if (lastCandle.close < avgClose * 0.99 && lastCandle.close < lastCandle.open) {
-                            const targets = this._calculateTargets(currentPrice, 'sell', vp);
+                            const { stopLoss, targets } = this._calculateTargets(currentPrice, 'sell');
                             signals.push({
                                 type: 'SELL',
                                 symbol: symbol,
                                 entry: currentPrice,
-                                stopLoss: currentPrice * 1.012,
+                                stopLoss: stopLoss,
                                 target1: targets[0],
                                 target2: targets[1],
                                 target3: targets[2],
@@ -1488,22 +1488,21 @@
                     return signals.reduce((a, b) => a.winRate > b.winRate ? a : b);
                 }
 
-                static _calculateTargets(entry, type, vp) {
-                    const range = vp.maxVolume > 0 ? (vp.poc || entry) * 0.02 : entry * 0.02;
-                    const spread = entry * 0.01;
+                // NEW: Calculate stop loss and targets based on 1.5% stop loss, targets at 3%, 4.5%, 6% (2x, 3x, 4x of stop)
+                static _calculateTargets(entry, type) {
+                    const stopPercent = 0.015; // 1.5%
+                    let stopLoss;
                     if (type === 'buy') {
-                        return [
-                            entry + spread * 1.2,
-                            entry + spread * 2.0,
-                            entry + spread * 3.2
-                        ];
+                        stopLoss = entry * (1 - stopPercent);
                     } else {
-                        return [
-                            entry - spread * 1.2,
-                            entry - spread * 2.0,
-                            entry - spread * 3.2
-                        ];
+                        stopLoss = entry * (1 + stopPercent);
                     }
+                    // Targets: 2x, 3x, 4x of stop loss distance
+                    const distance = Math.abs(entry - stopLoss);
+                    const target1 = type === 'buy' ? entry + distance * 2 : entry - distance * 2;
+                    const target2 = type === 'buy' ? entry + distance * 3 : entry - distance * 3;
+                    const target3 = type === 'buy' ? entry + distance * 4 : entry - distance * 4;
+                    return { stopLoss, targets: [target1, target2, target3] };
                 }
 
                 static _buildReason(type, block, vp, price) {
@@ -2535,9 +2534,10 @@
                     }
                 }
 
+                // FIXED: Check completion based on new targets (2x, 3x, 4x of stop)
                 _checkSignalCompletion(signal) {
-                    // Simplified: after 2 hours, move to archive if not completed
-                    setTimeout(() => {
+                    // Check after 2 hours (or when price moves significantly)
+                    const check = () => {
                         const stillActive = state.signals.some(s => s.id === signal.id);
                         if (!stillActive) return;
 
@@ -2612,8 +2612,14 @@
                             const msg =
                                 `📊 صفقة ${signal.type} ${signal.symbol} ${result === 'win' ? '✅ ربح' : '❌ خسارة'} بنسبة ${profitLoss.toFixed(2)}%`;
                             NotificationManager.send('انتهاء الصفقة', msg, { signal });
+                        } else {
+                            // Check again later
+                            setTimeout(check, 60000); // check every minute
                         }
-                    }, 7200000); // 2 hours
+                    };
+
+                    // First check after 2 minutes to allow price to move
+                    setTimeout(check, 120000);
                 }
 
                 selectSymbol(symbol) {
@@ -2697,10 +2703,10 @@
                 document.getElementById('dataStatus').textContent = '⚠️ غير متصل';
             });
 
-            console.log('🚀 ProTrade PWA loaded');
+            console.log('🚀 ProTrade PWA loaded (fixed targets)');
 
         })();
     </script>
 
 </body>
-      </html>
+    </html>
