@@ -487,6 +487,15 @@
                     return parseFloat(data[0]?.lastFundingRate || 0.0001);
                 } catch(e) { return 0.0001; }
             }
+            static async fetchAll24hr(symbols) {
+                const results = {};
+                await Promise.all(symbols.map(async (sym) => {
+                    try {
+                        results[sym] = await this.fetch24hr(sym);
+                    } catch(e) { results[sym] = { price:0, change:0, volume:0 }; }
+                }));
+                return results;
+            }
         }
 
         // ORDER BLOCK DETECTOR
@@ -916,9 +925,6 @@
                 this.volumeSeries.setData(volumeData);
                 this.chart.timeScale().fitContent();
             }
-            addMarkers(markers) {
-                // not used
-            }
         }
 
         // BINANCE WEBSOCKET
@@ -1197,6 +1203,20 @@
 
             async _analyzeSymbol(symbol, timeframe) {
                 try {
+                    // ---- NEW: Prevent multiple signals for same symbol ----
+                    const existingActive = state.signals.filter(s => s.symbol === symbol);
+                    if(existingActive.length > 0) {
+                        // There is already an active signal for this symbol; skip generating new one
+                        // Optionally notify but only once per cycle
+                        // We'll just skip silently to avoid spam, but we can send a toast once
+                        // But we need to update pending signals for UI badge
+                        if(!state.pendingSignals[symbol]) state.pendingSignals[symbol] = [];
+                        state.pendingSignals[symbol] = state.signals.filter(s=>s.symbol===symbol);
+                        UIManager.updateCoinStrip(state.realtimePrice);
+                        // Also we should still update chart etc. but no signal generation.
+                        return;
+                    }
+
                     const candles = state.candles[symbol]?.[timeframe];
                     if(!candles || candles.length<20) return;
                     const priceData = state.realtimePrice[symbol];
@@ -1236,7 +1256,7 @@
                                 }
                             }
                         }
-                        // Check duplicate
+                        // Check duplicate (within 1 hour) - we keep this as extra safety
                         const existing = state.signals.filter(s =>
                             s.symbol===symbol && s.type===signal.type &&
                             Math.abs(s.entry-signal.entry)/s.entry < 0.02 &&
@@ -1344,7 +1364,7 @@
             document.getElementById('dataStatus').textContent='⚠️ غير متصل';
         });
 
-        console.log('🚀 ProTrade PWA with Correlation Filter & Funding Fees');
+        console.log('🚀 ProTrade PWA with Correlation Filter & Funding Fees & Single Signal Per Symbol');
     })();
 </script>
 </body>
