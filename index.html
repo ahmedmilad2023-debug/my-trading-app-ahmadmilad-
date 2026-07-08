@@ -822,6 +822,56 @@
             flex-wrap: wrap;
             gap: 4px;
         }
+
+        /* Switch style for correlation filter */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-hover);
+            transition: .3s;
+            border-radius: 22px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-muted);
+            transition: .3s;
+            border-radius: 50%;
+        }
+        .switch input:checked+.slider {
+            background-color: var(--gold);
+        }
+        .switch input:checked+.slider:before {
+            transform: translateX(18px);
+            background-color: #0d1117;
+        }
     </style>
 </head>
 <body>
@@ -896,6 +946,15 @@
                     <span id="lastUpdate">آخر تحديث: --</span>
                     <span id="dataStatus">✅ متصل</span>
                 </div>
+                <!-- Correlation Filter Switch -->
+                <div class="switch-container">
+                    <span>🔗 فلتر الارتباط:</span>
+                    <label class="switch">
+                        <input type="checkbox" id="correlationSwitch" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span id="correlationStatus" style="font-weight:500;color:var(--gold);">مفعل</span>
+                </div>
             </section>
 
             <!-- Sidebar -->
@@ -923,7 +982,7 @@
 
     <script>
         // ============================================================
-        // app.js - Complete Application
+        // app.js - Complete Application with Correlation Filter
         // ============================================================
 
         (function() {
@@ -973,7 +1032,9 @@
                 chartInstance: null,
                 pendingSignals: {}, // symbol -> signals
                 processing: false,
-                errorLogs: []
+                errorLogs: [],
+                // Correlation filter switch (default true = enabled)
+                allowConflictingSignals: false // will be toggled by UI
             };
 
             // ============================================================
@@ -1014,6 +1075,12 @@
                 }
                 static loadErrorLogs() {
                     return this.load('errorLogs', []);
+                }
+                static saveAllowConflicting(val) {
+                    this.save('allowConflicting', val);
+                }
+                static loadAllowConflicting() {
+                    return this.load('allowConflicting', false);
                 }
             }
 
@@ -1411,7 +1478,8 @@
                                 timeframe: timeframe,
                                 reason: this._buildReason('buy', latestBlock, vp, currentPrice),
                                 orderBlock: latestBlock,
-                                volumeProfile: vp
+                                volumeProfile: vp,
+                                strength: latestBlock.strength || 0.5 // for momentum comparison
                             });
                         }
                     }
@@ -1437,7 +1505,8 @@
                                 timeframe: timeframe,
                                 reason: this._buildReason('sell', latestBlock, vp, currentPrice),
                                 orderBlock: latestBlock,
-                                volumeProfile: vp
+                                volumeProfile: vp,
+                                strength: latestBlock.strength || 0.5
                             });
                         }
                     }
@@ -1460,7 +1529,8 @@
                                 timeframe: timeframe,
                                 reason: `اختراق صاعد مع حجم تداول مرتفع (${(lastCandle.volume / vp.maxVolume * 100).toFixed(0)}% من الذروة). السعر فوق المتوسط المتحرك البسيط لـ5 شموع.`,
                                 orderBlock: null,
-                                volumeProfile: vp
+                                volumeProfile: vp,
+                                strength: 0.4
                             });
                         }
                         if (lastCandle.close < avgClose * 0.99 && lastCandle.close < lastCandle.open) {
@@ -1478,7 +1548,8 @@
                                 timeframe: timeframe,
                                 reason: `انهيار هابط مع حجم تداول مرتفع (${(lastCandle.volume / vp.maxVolume * 100).toFixed(0)}% من الذروة). السعر تحت المتوسط المتحرك البسيط لـ5 شموع.`,
                                 orderBlock: null,
-                                volumeProfile: vp
+                                volumeProfile: vp,
+                                strength: 0.4
                             });
                         }
                     }
@@ -1955,6 +2026,14 @@
                         overlay.textContent = loading ? '⏳ جاري تحميل البيانات...' : '';
                     }
                 }
+
+                static updateCorrelationStatus(enabled) {
+                    const status = document.getElementById('correlationStatus');
+                    if (status) {
+                        status.textContent = enabled ? 'مفعل' : 'معطل';
+                        status.style.color = enabled ? 'var(--gold)' : 'var(--text-muted)';
+                    }
+                }
             }
 
             // ============================================================
@@ -2183,6 +2262,7 @@
                     state.archive = StorageManager.loadArchive();
                     state.notifications = StorageManager.loadNotifications();
                     state.errorLogs = StorageManager.loadErrorLogs();
+                    state.allowConflictingSignals = StorageManager.loadAllowConflicting();
 
                     // Initialize chart renderer
                     this.chartRenderer = new ChartRenderer('chartCanvas');
@@ -2250,6 +2330,22 @@
                         this._loadAllData().then(() => this._updateChart());
                         UIManager.showToast('🔄 جاري تحديث البيانات...', 'info');
                     });
+
+                    // Correlation filter switch
+                    const switchEl = document.getElementById('correlationSwitch');
+                    if (switchEl) {
+                        switchEl.checked = !state.allowConflictingSignals; // true = enabled (block conflicts)
+                        switchEl.addEventListener('change', (e) => {
+                            state.allowConflictingSignals = !e.target.checked; // if checked => enabled => block conflicts
+                            StorageManager.saveAllowConflicting(state.allowConflictingSignals);
+                            UIManager.updateCorrelationStatus(e.target.checked);
+                            UIManager.showToast(
+                                `فلتر الارتباط ${e.target.checked ? 'مفعل' : 'معطل'}`,
+                                'info'
+                            );
+                        });
+                        UIManager.updateCorrelationStatus(switchEl.checked);
+                    }
 
                     // Render initial notifications
                     NotificationManager._renderNotifications();
@@ -2495,6 +2591,59 @@
                             timeframe);
 
                         if (signal) {
+                            // ---- CORRELATION FILTER ----
+                            // Check if correlation filter is enabled (switch is ON = block conflicts)
+                            const filterEnabled = document.getElementById('correlationSwitch')?.checked ?? true;
+                            // If filter is enabled, we block conflicting signals
+                            if (filterEnabled) {
+                                // Check if there is an active signal for BTC (if symbol is not BTC)
+                                if (symbol !== 'BTCUSDT') {
+                                    const btcSignals = state.signals.filter(s => s.symbol === 'BTCUSDT');
+                                    // Consider only recent signals (last 2 hours)
+                                    const recentBtc = btcSignals.filter(s => (Date.now() - s.time) < 7200000);
+                                    if (recentBtc.length > 0) {
+                                        // Take the strongest BTC signal (by strength)
+                                        const btcSig = recentBtc.reduce((a, b) => (a.strength || 0) > (b.strength || 0) ? a :
+                                            b);
+                                        // If BTC signal is opposite to current signal
+                                        if (btcSig.type !== signal.type) {
+                                            // Conflict detected
+                                            const conflictMsg =
+                                                `⚠️ تعارض: إشارة ${signal.type} لـ ${symbol} تتعارض مع إشارة ${btcSig.type} للبيتكوين.`;
+                                            // Send conflict alert
+                                            NotificationManager.send('تنبيه تضارب', conflictMsg, { conflict: true });
+                                            // Also show toast
+                                            UIManager.showToast(conflictMsg, 'error');
+
+                                            // Evaluate momentum: compare strength of BTC vs current signal
+                                            const btcStrength = btcSig.strength || 0.5;
+                                            const currentStrength = signal.strength || 0.5;
+
+                                            if (currentStrength > btcStrength * 1.2) {
+                                                // Current signal has significantly higher momentum, override
+                                                const overrideMsg =
+                                                    `⚠️ تجاوز الفلتر: زخم ${symbol} (${(currentStrength*100).toFixed(0)}%) أقوى من البيتكوين (${(btcStrength*100).toFixed(0)}%)، تم السماح بالإشارة.`;
+                                                NotificationManager.send('تجاوز الفلتر', overrideMsg, { override: true });
+                                                UIManager.showToast(overrideMsg, 'info');
+                                                // Allow signal (continue)
+                                            } else {
+                                                // Block signal
+                                                // Also update pending signals
+                                                if (!state.pendingSignals[symbol]) state.pendingSignals[symbol] = [];
+                                                state.pendingSignals[symbol] = state.signals.filter(s => s.symbol ===
+                                                symbol);
+                                                UIManager.updateCoinStrip(state.realtimePrice);
+                                                // Do not add signal
+                                                return;
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // If symbol is BTC, we check if there is any ETH signal that conflicts and remove it?
+                                    // We could also remove conflicting ETH signals, but we'll handle it when ETH is analyzed.
+                                }
+                            }
+
                             // Check if we already have a similar signal for this symbol
                             const existing = state.signals.filter(s =>
                                 s.symbol === symbol &&
@@ -2519,7 +2668,7 @@
                                 UIManager.updateSignals(state.signals);
                                 UIManager.updateCoinStrip(state.realtimePrice);
 
-                                // Auto-archive old signals that might have hit targets (simplified)
+                                // Auto-archive old signals that might have hit targets
                                 this._checkSignalCompletion(signal);
                             }
                         }
@@ -2703,10 +2852,10 @@
                 document.getElementById('dataStatus').textContent = '⚠️ غير متصل';
             });
 
-            console.log('🚀 ProTrade PWA loaded (fixed targets)');
+            console.log('🚀 ProTrade PWA loaded with Correlation Filter');
 
         })();
     </script>
 
 </body>
-    </html>
+                    </html>
