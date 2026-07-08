@@ -2,219 +2,73 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMC/ICT Signals Pro - Advanced Scoring</title>
-    <!-- TradingView Advanced Chart -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SMC/ICT Signals Pro - Mobile</title>
     <script src="https://s3.tradingview.com/tv.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: #0d1117; color: #c9d1d9; padding: 10px; overflow-x: hidden; }
+        .app-container { max-width: 800px; margin: 0 auto; }
+        
+        /* Header */
+        header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+        header h1 { font-size: 18px; color: #58a6ff; white-space: nowrap; }
+        .status { font-size: 11px; padding: 4px 10px; background: #161b22; border-radius: 20px; border: 1px solid #30363d; }
+        .status.online { color: #2ea043; }
+        .status.offline { color: #f85149; }
+
+        /* Chart Container - تم تصغيره ليناسب الجوال */
+        #tv-chart { height: 320px; background: #161b22; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 12px; }
+
+        /* Controls */
+        .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+        .controls select, .controls button {
+            background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
+            padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; flex: 1; min-width: 60px;
         }
-        body {
-            background: #0d1117;
-            color: #c9d1d9;
-            padding: 15px;
-        }
-        .app-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        header h1 {
-            font-size: 24px;
-            color: #58a6ff;
-        }
-        .status {
-            font-size: 14px;
-            padding: 5px 12px;
-            background: #161b22;
-            border-radius: 20px;
-            border: 1px solid #30363d;
-        }
-        .status.online {
-            color: #2ea043;
-        }
-        .status.offline {
-            color: #f85149;
-        }
-        #tv-chart {
-            height: 500px;
-            background: #161b22;
-            border-radius: 12px;
-            border: 1px solid #30363d;
-            margin-bottom: 15px;
-        }
-        .controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
-        .controls select,
-        .controls button {
-            background: #21262d;
-            color: #c9d1d9;
-            border: 1px solid #30363d;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .controls select:hover,
-        .controls button:hover {
-            background: #30363d;
-        }
+        .controls select:hover, .controls button:hover { background: #30363d; }
+
+        /* 📍 بطاقة الإشارة - ستظهر هنا بوضوح أسفل الشارت */
         .signal-card {
-            background: #161b22;
-            border: 2px solid #58a6ff;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            display: none;
+            background: #161b22; border: 2px solid #58a6ff; border-radius: 12px;
+            padding: 15px; margin-bottom: 12px; display: none;
             animation: fadeIn 0.5s ease;
         }
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .signal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        .badge {
-            padding: 4px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        .badge.BUY {
-            background: #238636;
-            color: white;
-        }
-        .badge.SELL {
-            background: #da3633;
-            color: white;
-        }
-        .time {
-            color: #8b949e;
-            font-size: 14px;
-        }
-        .signal-body .row {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            border-bottom: 1px solid #21262d;
-        }
-        .signal-body .row:last-child {
-            border-bottom: none;
-        }
-        .reason-box {
-            background: #0d1117;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 14px;
-            border-left: 4px solid #58a6ff;
-            line-height: 1.6;
-        }
-        .signal-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .signal-actions button {
-            flex: 1;
-            background: #21262d;
-            color: #c9d1d9;
-            border: 1px solid #30363d;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .signal-actions button:hover {
-            background: #30363d;
-        }
-        .history-section {
-            background: #161b22;
-            border-radius: 12px;
-            border: 1px solid #30363d;
-            overflow: hidden;
-            margin-bottom: 15px;
-        }
-        .history-section h3 {
-            padding: 12px 16px;
-            background: #21262d;
-            border-bottom: 1px solid #30363d;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th,
-        td {
-            padding: 10px 12px;
-            text-align: center;
-            border-bottom: 1px solid #21262d;
-            font-size: 13px;
-        }
-        th {
-            background: #21262d;
-            color: #8b949e;
-        }
-        .green {
-            color: #2ea043;
-        }
-        .red {
-            color: #f85149;
-        }
-        .clear-history {
-            background: #da3633;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin: 10px 16px;
-        }
-        .clear-history:hover {
-            background: #b62324;
-        }
-        @media (max-width: 600px) {
-            #tv-chart {
-                height: 300px;
-            }
-            header h1 {
-                font-size: 18px;
-            }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .signal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .badge { padding: 4px 14px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+        .badge.BUY { background: #238636; color: white; }
+        .badge.SELL { background: #da3633; color: white; }
+        .time { color: #8b949e; font-size: 12px; }
+        
+        .signal-body .row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #21262d; font-size: 13px; }
+        .signal-body .row:last-child { border-bottom: none; }
+        
+        .reason-box { background: #0d1117; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 12px; border-left: 4px solid #58a6ff; line-height: 1.5; }
+        
+        .signal-actions { display: flex; gap: 10px; margin-top: 12px; }
+        .signal-actions button { flex: 1; background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+
+        /* 📜 التاريخ */
+        .history-section { background: #161b22; border-radius: 12px; border: 1px solid #30363d; overflow: hidden; margin-bottom: 12px; }
+        .history-section h3 { padding: 10px 14px; background: #21262d; border-bottom: 1px solid #30363d; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px 6px; text-align: center; border-bottom: 1px solid #21262d; font-size: 11px; }
+        th { background: #21262d; color: #8b949e; }
+        .green { color: #2ea043; }
+        .red { color: #f85149; }
+        .clear-history { background: #da3633; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin: 8px 14px; font-size: 12px; }
+        .clear-history:hover { background: #b62324; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-
         <!-- Header -->
         <header>
-            <h1>📊 SMC/ICT - Advanced Scoring</h1>
-            <div class="status online" id="status-indicator">🟢 متصل بـ Binance</div>
+            <h1>📊 SMC/ICT - Mobile</h1>
+            <div class="status online" id="status-indicator">🟢 متصل</div>
         </header>
 
         <!-- TradingView Chart -->
@@ -223,22 +77,16 @@
         <!-- Controls -->
         <div class="controls">
             <select id="symbol-select">
-                <option value="BTC">BTC/USDT</option>
-                <option value="ETH">ETH/USDT</option>
-                <option value="SOL">SOL/USDT</option>
-                <option value="XRP">XRP/USDT</option>
-                <option value="ADA">ADA/USDT</option>
-                <option value="AVAX">AVAX/USDT</option>
-                <option value="DOT">DOT/USDT</option>
-                <option value="LINK">LINK/USDT</option>
-                <option value="MATIC">MATIC/USDT</option>
-                <option value="BNB">BNB/USDT</option>
+                <option value="BTC">BTC</option><option value="ETH">ETH</option><option value="SOL">SOL</option>
+                <option value="XRP">XRP</option><option value="ADA">ADA</option><option value="AVAX">AVAX</option>
+                <option value="DOT">DOT</option><option value="LINK">LINK</option><option value="MATIC">MATIC</option>
+                <option value="BNB">BNB</option>
             </select>
             <button id="refresh-btn">🔄 تحديث</button>
-            <button id="history-btn">📜 عرض التاريخ</button>
+            <button id="history-btn">📜 السجل</button>
         </div>
 
-        <!-- Signal Card -->
+        <!-- 📍 بطاقة الإشارة (ستظهر هنا بوضوح) -->
         <div id="signal-card" class="signal-card">
             <div class="signal-header">
                 <span id="signal-type" class="badge">BUY</span>
@@ -246,59 +94,45 @@
             </div>
             <div class="signal-body">
                 <div class="row"><span>💰 الدخول:</span><span id="entry-price"></span></div>
-                <div class="row"><span>🎯 الهدف (TP):</span><span id="target-price"></span></div>
-                <div class="row"><span>🛑 وقف الخسارة (SL):</span><span id="stop-price"></span></div>
+                <div class="row"><span>🎯 الهدف:</span><span id="target-price"></span></div>
+                <div class="row"><span>🛑 وقف الخسارة:</span><span id="stop-price"></span></div>
                 <div class="row"><span>⚡ الرافعة:</span><span id="leverage">50x</span></div>
-                <div class="row"><span>📊 نسبة المخاطرة/العائد:</span><span id="risk-reward" style="color:#58a6ff;"></span></div>
+                <div class="row"><span>📊 نسبة المخاطرة:</span><span id="risk-reward" style="color:#58a6ff;"></span></div>
                 <div class="row"><span>📌 نقاط القوة:</span><span id="score-display" style="color:#f0883e;"></span></div>
                 <div class="reason-box" id="reason-text"></div>
             </div>
             <div class="signal-actions">
                 <button id="share-btn">📤 مشاركة</button>
-                <button id="save-btn">💾 حفظ الإشارة</button>
+                <button id="save-btn">💾 حفظ</button>
             </div>
         </div>
 
-        <!-- History Section -->
+        <!-- 📜 التاريخ -->
         <div class="history-section" id="history-section" style="display:none;">
-            <h3>📜 تاريخ الإشارات المحفوظة</h3>
+            <h3>📜 تاريخ الإشارات</h3>
             <button class="clear-history" id="clear-history-btn">🗑️ مسح الكل</button>
             <table>
-                <thead>
-                    <tr>
-                        <th>العملة</th>
-                        <th>النوع</th>
-                        <th>الدخول</th>
-                        <th>الهدف</th>
-                        <th>وقف</th>
-                        <th>نقاط القوة</th>
-                        <th>التاريخ</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>العملة</th><th>النوع</th><th>الدخول</th><th>الهدف</th><th>وقف</th><th>النقاط</th><th>التاريخ</th></tr></thead>
                 <tbody id="history-body"></tbody>
             </table>
         </div>
-
     </div>
 
     <script>
-        // ========== إعدادات ==========
         const SYMBOLS = ['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'AVAX', 'DOT', 'LINK', 'MATIC', 'BNB'];
         let currentSymbol = 'BTC';
         let currentSignal = null;
         let tvWidget = null;
         let ws = null;
         let lastSignalTime = 0;
-        const MIN_SIGNAL_INTERVAL = 60000; // دقيقة واحدة بين الإشارات
+        const MIN_SIGNAL_INTERVAL = 60000;
 
-        // ========== TradingView Chart ==========
         function initTradingView(symbol) {
-            if (tvWidget) { tvWidget.remove();
-                tvWidget = null; }
+            if (tvWidget) { tvWidget.remove(); tvWidget = null; }
             tvWidget = new TradingView.widget({
                 container_id: 'tv-chart',
                 width: '100%',
-                height: 500,
+                height: 320, // تم التصغير للجوال
                 symbol: `BINANCE:${symbol}USDT`,
                 interval: '5',
                 timezone: 'Asia/Riyadh',
@@ -313,178 +147,79 @@
                 studies: [],
                 overrides: {
                     'mainSeriesProperties.candleStyle.upColor': '#2ea043',
-                    'mainSeriesProperties.candleStyle.downColor': '#f85149',
-                    'mainSeriesProperties.candleStyle.borderUpColor': '#2ea043',
-                    'mainSeriesProperties.candleStyle.borderDownColor': '#f85149',
-                    'mainSeriesProperties.candleStyle.wickUpColor': '#2ea043',
-                    'mainSeriesProperties.candleStyle.wickDownColor': '#f85149'
+                    'mainSeriesProperties.candleStyle.downColor': '#f85149'
                 }
             });
         }
 
-        // ========== WebSocket ==========
         function connectWebSocket(symbol) {
-            if (ws) { ws.close();
-                ws = null; }
+            if (ws) { ws.close(); ws = null; }
             const stream = `${symbol.toLowerCase()}usdt@trade`;
             ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}`);
-            ws.onopen = () => {
-                document.getElementById('status-indicator').className = 'status online';
-                document.getElementById('status-indicator').textContent = '🟢 متصل بـ Binance';
-            };
-            ws.onerror = () => {
-                document.getElementById('status-indicator').className = 'status offline';
-                document.getElementById('status-indicator').textContent = '🔴 خطأ في الاتصال';
-            };
-            ws.onclose = () => {
-                document.getElementById('status-indicator').className = 'status offline';
-                document.getElementById('status-indicator').textContent = '🔴 تم قطع الاتصال';
-                setTimeout(() => connectWebSocket(symbol), 5000);
-            };
+            ws.onopen = () => { document.getElementById('status-indicator').className = 'status online'; document.getElementById('status-indicator').textContent = '🟢 متصل'; };
+            ws.onerror = () => { document.getElementById('status-indicator').className = 'status offline'; document.getElementById('status-indicator').textContent = '🔴 خطأ'; };
+            ws.onclose = () => { document.getElementById('status-indicator').className = 'status offline'; document.getElementById('status-indicator').textContent = '🔴 قطع الاتصال'; setTimeout(() => connectWebSocket(symbol), 5000); };
         }
 
-        // ========== جلب بيانات الشموع ==========
         async function fetchKlines(symbol, limit = 100) {
             const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}USDT&interval=5m&limit=${limit}`);
             const data = await res.json();
-            return data.map(k => ({
-                time: k[0],
-                open: parseFloat(k[1]),
-                high: parseFloat(k[2]),
-                low: parseFloat(k[3]),
-                close: parseFloat(k[4]),
-                volume: parseFloat(k[5])
-            }));
+            return data.map(k => ({ time: k[0], open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]) }));
         }
 
-        // ========== استراتيجية SMC/ICT مع نظام نقاط محسن ==========
         function generateAdvancedSMCSignal(klines) {
             if (klines.length < 30) return null;
-
             const last = klines[klines.length - 1];
             const prev = klines[klines.length - 2];
             const prev2 = klines[klines.length - 3];
             const prev3 = klines[klines.length - 4];
-            const prev4 = klines[klines.length - 5];
 
-            // 1. FVG (Fair Value Gap)
             const fvgUp = prev.low > prev2.high && last.close > prev.high;
             const fvgDown = prev.high < prev2.low && last.close < prev.low;
-
-            // 2. Order Block (OB)
             const obUp = prev.low < prev2.low && prev2.low < prev3.low && last.close > prev.high;
             const obDown = prev.high > prev2.high && prev2.high > prev3.high && last.close < prev.low;
-
-            // 3. Breaker Block
-            const breakerUp = prev.high > prev2.high && prev2.high > prev3.high && last.close > prev.high;
-            const breakerDown = prev.low < prev2.low && prev2.low < prev3.low && last.close < prev.low;
-
-            // 4. Liquidity Sweep
             const sweepUp = last.high > prev.high * 1.005 && last.close < prev.close;
             const sweepDown = last.low < prev.low * 0.995 && last.close > prev.close;
-
-            // 5. Mitigation
-            const mitigationUp = last.low < prev.low && last.low > prev2.low && last.close > prev.close;
-            const mitigationDown = last.high > prev.high && last.high < prev2.high && last.close < prev.close;
-
-            // 6. Change of Character (ChoCh)
             const chochUp = prev.low < prev2.low && last.high > prev.high && last.close > prev.close;
             const chochDown = prev.high > prev2.high && last.low < prev.low && last.close < prev.close;
 
-            // ===== نظام النقاط المحسن (مع الوزن العالي لـ OB + FVG معاً) =====
-            let buyScore = 0,
-                sellScore = 0;
-            let buyFactors = [],
-                sellFactors = [];
+            let buyScore = 0, sellScore = 0;
+            let buyFactors = [], sellFactors = [];
 
-            // إضافة نقاط للشراء
-            if (fvgUp) { buyScore += 2;
-                buyFactors.push('FVG'); }
-            if (obUp) { buyScore += 3;
-                buyFactors.push('Order Block'); }
-            // Bonus: OB + FVG معاً = +6 نقاط (إشارة قوية جداً)
-            if (fvgUp && obUp) { buyScore += 6;
-                buyFactors.push('🔥 OB + FVG Confluence'); }
-            if (breakerUp) { buyScore += 2;
-                buyFactors.push('Breaker'); }
-            if (sweepDown) { buyScore += 4;
-                buyFactors.push('Liquidity Sweep (مهم)'); }
-            if (mitigationUp) { buyScore += 2;
-                buyFactors.push('Mitigation'); }
-            if (chochUp) { buyScore += 3;
-                buyFactors.push('ChoCh'); }
+            if (fvgUp) { buyScore += 2; buyFactors.push('FVG'); }
+            if (obUp) { buyScore += 3; buyFactors.push('OB'); }
+            if (fvgUp && obUp) { buyScore += 6; buyFactors.push('🔥 OB+FVG'); }
+            if (sweepDown) { buyScore += 4; buyFactors.push('Sweep'); }
+            if (chochUp) { buyScore += 3; buyFactors.push('ChoCh'); }
 
-            // إضافة نقاط للبيع
-            if (fvgDown) { sellScore += 2;
-                sellFactors.push('FVG'); }
-            if (obDown) { sellScore += 3;
-                sellFactors.push('Order Block'); }
-            if (fvgDown && obDown) { sellScore += 6;
-                sellFactors.push('🔥 OB + FVG Confluence'); }
-            if (breakerDown) { sellScore += 2;
-                sellFactors.push('Breaker'); }
-            if (sweepUp) { sellScore += 4;
-                sellFactors.push('Liquidity Sweep (مهم)'); }
-            if (mitigationDown) { sellScore += 2;
-                sellFactors.push('Mitigation'); }
-            if (chochDown) { sellScore += 3;
-                sellFactors.push('ChoCh'); }
+            if (fvgDown) { sellScore += 2; sellFactors.push('FVG'); }
+            if (obDown) { sellScore += 3; sellFactors.push('OB'); }
+            if (fvgDown && obDown) { sellScore += 6; sellFactors.push('🔥 OB+FVG'); }
+            if (sweepUp) { sellScore += 4; sellFactors.push('Sweep'); }
+            if (chochDown) { sellScore += 3; sellFactors.push('ChoCh'); }
 
-            // تحديد الإشارة (نحتاج 7 نقاط على الأقل لضمان الجودة)
             let signal = null;
             const price = last.close;
 
             if (buyScore >= 7) {
-                const target = price * 1.035;
-                const stop = price * 0.982;
-                signal = {
-                    type: 'BUY',
-                    entry: price.toFixed(2),
-                    target: target.toFixed(2),
-                    stopLoss: stop.toFixed(2),
-                    score: buyScore,
-                    factors: buyFactors.join(' + '),
-                    reason: `🔺 **إشارة شراء قوية جداً (SMC/ICT)**\n- مجموع النقاط: ${buyScore}/22\n- العوامل: ${buyFactors.join(' - ')}\n- الهدف: +3.5% | وقف: -1.8%\n- نسبة المخاطرة/العائد: 1.94:1`,
-                    riskReward: '1.94:1'
-                };
+                signal = { type: 'BUY', entry: price.toFixed(2), target: (price * 1.035).toFixed(2), stopLoss: (price * 0.982).toFixed(2), score: buyScore, factors: buyFactors.join(' + '), riskReward: '1.94:1' };
             } else if (sellScore >= 7) {
-                const target = price * 0.965;
-                const stop = price * 1.018;
-                signal = {
-                    type: 'SELL',
-                    entry: price.toFixed(2),
-                    target: target.toFixed(2),
-                    stopLoss: stop.toFixed(2),
-                    score: sellScore,
-                    factors: sellFactors.join(' + '),
-                    reason: `🔻 **إشارة بيع قوية جداً (SMC/ICT)**\n- مجموع النقاط: ${sellScore}/22\n- العوامل: ${sellFactors.join(' - ')}\n- الهدف: -3.5% | وقف: +1.8%\n- نسبة المخاطرة/العائد: 1.94:1`,
-                    riskReward: '1.94:1'
-                };
+                signal = { type: 'SELL', entry: price.toFixed(2), target: (price * 0.965).toFixed(2), stopLoss: (price * 1.018).toFixed(2), score: sellScore, factors: sellFactors.join(' + '), riskReward: '1.94:1' };
             }
-
             return signal;
         }
 
-        // ========== تشغيل الصوت ==========
         function playNotificationSound() {
             try {
-                const audioCtx = new(window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                oscillator.frequency.value = 880;
-                oscillator.type = 'sine';
-                gainNode.gain.value = 0.3;
-                oscillator.start();
-                setTimeout(() => { oscillator.frequency.value = 1100; }, 150);
-                setTimeout(() => { oscillator.frequency.value = 1320; }, 300);
-                setTimeout(() => { oscillator.stop();
-                    audioCtx.close(); }, 500);
-            } catch (e) { console.log('صوت غير مدعوم'); }
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.frequency.value = 880; osc.type = 'sine'; gain.gain.value = 0.3;
+                osc.start(); setTimeout(() => { osc.frequency.value = 1100; }, 150); 
+                setTimeout(() => { osc.stop(); audioCtx.close(); }, 400);
+            } catch (e) {}
         }
 
-        // ========== تحديث الإشارة ==========
         async function updateSignal() {
             const klines = await fetchKlines(currentSymbol);
             const signal = generateAdvancedSMCSignal(klines);
@@ -492,11 +227,8 @@
             const now = Date.now();
 
             if (signal) {
-                if (now - lastSignalTime < MIN_SIGNAL_INTERVAL && currentSignal && currentSignal.type === signal.type) {
-                    return;
-                }
-                currentSignal = signal;
-                lastSignalTime = now;
+                if (now - lastSignalTime < MIN_SIGNAL_INTERVAL && currentSignal && currentSignal.type === signal.type) return;
+                currentSignal = signal; lastSignalTime = now;
                 card.style.display = 'block';
                 document.getElementById('signal-type').textContent = signal.type;
                 document.getElementById('signal-type').className = `badge ${signal.type}`;
@@ -506,7 +238,7 @@
                 document.getElementById('stop-price').textContent = `$${signal.stopLoss}`;
                 document.getElementById('risk-reward').textContent = signal.riskReward;
                 document.getElementById('score-display').textContent = `${signal.score}/22 (${signal.factors})`;
-                document.getElementById('reason-text').innerHTML = signal.reason.replace(/\n/g, '<br>');
+                document.getElementById('reason-text').innerHTML = `إشارة ${signal.type === 'BUY' ? 'شراء' : 'بيع'} بناءً على SMC/ICT.<br>العوامل: ${signal.factors}`;
                 playNotificationSound();
             } else {
                 card.style.display = 'none';
@@ -514,19 +246,10 @@
             }
         }
 
-        // ========== LocalStorage ==========
         function saveSignalToHistory(signal) {
             if (!signal) return;
             const history = JSON.parse(localStorage.getItem('signalHistory') || '[]');
-            history.push({
-                symbol: currentSymbol,
-                type: signal.type,
-                entry: signal.entry,
-                target: signal.target,
-                stopLoss: signal.stopLoss,
-                score: signal.score,
-                timestamp: new Date().toLocaleString('ar-EG')
-            });
+            history.push({ symbol: currentSymbol, type: signal.type, entry: signal.entry, target: signal.target, stopLoss: signal.stopLoss, score: signal.score, timestamp: new Date().toLocaleString('ar-EG') });
             localStorage.setItem('signalHistory', JSON.stringify(history));
             renderHistory();
         }
@@ -534,52 +257,26 @@
         function renderHistory() {
             const history = JSON.parse(localStorage.getItem('signalHistory') || '[]');
             const tbody = document.getElementById('history-body');
-            if (history.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="color:#8b949e;">لا توجد إشارات محفوظة</td></tr>';
-                return;
-            }
-            tbody.innerHTML = history.reverse().map(h => `
-                        <tr>
-                            <td>${h.symbol}</td>
-                            <td class="${h.type === 'BUY' ? 'green' : 'red'}">${h.type}</td>
-                            <td>$${h.entry}</td>
-                            <td>$${h.target}</td>
-                            <td>$${h.stopLoss}</td>
-                            <td>${h.score}/22</td>
-                            <td>${h.timestamp}</td>
-                        </tr>
-                    `).join('');
+            tbody.innerHTML = history.length === 0 ? '<tr><td colspan="7" style="color:#8b949e;">لا توجد إشارات</td></tr>' :
+                history.reverse().map(h => `<tr><td>${h.symbol}</td><td class="${h.type === 'BUY' ? 'green' : 'red'}">${h.type}</td><td>$${h.entry}</td><td>$${h.target}</td><td>$${h.stopLoss}</td><td>${h.score}/22</td><td>${h.timestamp}</td></tr>`).join('');
         }
 
         function clearHistory() {
-            if (confirm('هل أنت متأكد من مسح جميع الإشارات المحفوظة؟')) {
-                localStorage.removeItem('signalHistory');
-                renderHistory();
-                document.getElementById('history-section').style.display = 'none';
-            }
+            if (confirm('مسح جميع الإشارات المحفوظة؟')) { localStorage.removeItem('signalHistory'); renderHistory(); document.getElementById('history-section').style.display = 'none'; }
         }
 
-        // ========== الأزرار ==========
         document.getElementById('share-btn').addEventListener('click', () => {
             if (!currentSignal) return;
-            const text =
-                `📊 إشارة SMC/ICT\nالعملة: ${currentSymbol}\nالنوع: ${currentSignal.type}\nالدخول: $${currentSignal.entry}\nالهدف: $${currentSignal.target}\nوقف: $${currentSignal.stopLoss}\nنقاط القوة: ${currentSignal.score}/22\nالرافعة: 50x\nالسبب: ${currentSignal.reason}`;
-            if (navigator.share) { navigator.share({ title: 'إشارة تداول', text }); } else { alert(text); }
+            const text = `📊 إشارة ${currentSignal.type} على ${currentSymbol}\nدخول: $${currentSignal.entry}\nهدف: $${currentSignal.target}\nوقف: $${currentSignal.stopLoss}\nنقاط: ${currentSignal.score}/22`;
+            navigator.share ? navigator.share({ title: 'إشارة تداول', text }) : alert(text);
         });
 
-        document.getElementById('save-btn').addEventListener('click', () => {
-            saveSignalToHistory(currentSignal);
-            alert('✅ تم حفظ الإشارة في التاريخ');
-        });
-
+        document.getElementById('save-btn').addEventListener('click', () => { saveSignalToHistory(currentSignal); alert('✅ تم الحفظ'); });
         document.getElementById('history-btn').addEventListener('click', () => {
             const section = document.getElementById('history-section');
-            if (section.style.display === 'none') {
-                section.style.display = 'block';
-                renderHistory();
-            } else { section.style.display = 'none'; }
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+            renderHistory();
         });
-
         document.getElementById('clear-history-btn').addEventListener('click', clearHistory);
         document.getElementById('refresh-btn').addEventListener('click', updateSignal);
         document.getElementById('symbol-select').addEventListener('change', (e) => {
@@ -589,7 +286,6 @@
             updateSignal();
         });
 
-        // ========== التهيئة ==========
         window.onload = function() {
             initTradingView(currentSymbol);
             connectWebSocket(currentSymbol);
@@ -598,6 +294,5 @@
             setInterval(updateSignal, 45000);
         };
     </script>
-
 </body>
 </html>
