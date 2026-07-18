@@ -1,319 +1,745 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0d0d1a">
-<title>ADX-CVD Trader</title>
-<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkFEWC1DVkQgVHJhZGVyIiwKICAic2hvcnRfbmFtZSI6ICJBREgtQ1ZEIiwKICAiZGVzY3JpcHRpb24iOiAi2KfZhNmF2YbZgiDZhdmK2KzYryIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGQwZDFhIiwKICAidGhlbWVfY29sb3IiOiAiIzBkMGQxYSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDUxMiA1MTInPjxyZWN0IHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyByeD0nNTAlJyBmaWxsPSclMjMwZDBkMWEnLz48dGV4dCB4PScyNTYnIHk9JzI4MCcgZm9udC1zaXplPSczMDAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J3doaXRlJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZic+QURYPC90ZXh0Pjwvc3ZnPiIsCiAgICAgICJzaXplcyI6ICI1MTJ4NTEyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIsCiAgICAgICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSIKICAgIH0KICBdCn0=">
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:100%;overflow-x:hidden;background:#0d0d1a;color:#e0e0e0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;direction:rtl;}
-body{padding:10px;min-height:100vh;}
-#app{max-width:800px;margin:0 auto;}
-header{display:flex;justify-content:space-between;align-items:center;background:#1a1a2e;padding:12px 16px;border-radius:12px;margin-bottom:16px;}
-header h1{font-size:1.2rem;font-weight:600;color:#ffd700;}
-.header-btn{background:#2a2a4a;border:none;color:#e0e0e0;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.9rem;}
-.settings-btn{background:#2a2a4a;border:none;color:#e0e0e0;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.9rem;}
-#chart-container{background:#1a1a2e;border-radius:12px;padding:8px;margin-bottom:16px;height:300px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#888;font-size:0.9rem;}
-#chart-container iframe{width:100%;height:100%;border:none;}
-#signal-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
-.stat-box{background:#1a1a2e;padding:8px 14px;border-radius:8px;font-size:0.85rem;}
-.stat-box span{font-weight:bold;color:#ffd700;}
-#signal-table-wrapper{background:#1a1a2e;border-radius:12px;padding:8px;overflow-x:auto;}
-#signal-table{width:100%;border-collapse:collapse;font-size:0.8rem;min-width:600px;}
-#signal-table th{background:#2a2a4a;padding:8px;text-align:center;border-bottom:2px solid #4a4a6a;}
-#signal-table td{padding:8px;border-bottom:1px solid #2a2a4a;text-align:center;vertical-align:middle;}
-.signal-row{background:#1a1a2e;}
-.signal-row.active{background:#1a3a2a;}
-.signal-row.closed{background:#3a1a1a;}
-.action-btn{background:#3a3a5a;border:none;color:#e0e0e0;padding:4px 10px;border-radius:6px;cursor:pointer;margin:2px;font-size:0.7rem;}
-.share-btn{background:#2a4a7a;}
-.cancel-btn{background:#7a2a2a;}
-.notes-textarea{width:100%;background:#0d0d1a;color:#e0e0e0;border:1px solid #3a3a5a;border-radius:6px;padding:4px;font-size:0.75rem;resize:vertical;}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center;}
-.modal.active{display:flex;}
-.modal-content{background:#1a1a2e;padding:20px;border-radius:16px;max-width:400px;width:90%;}
-.modal-content h2{margin-bottom:12px;}
-.modal-content label{display:block;margin:10px 0 4px;font-size:0.9rem;}
-.modal-content input{width:100%;padding:8px;background:#0d0d1a;border:1px solid #3a3a5a;color:#e0e0e0;border-radius:6px;margin-bottom:6px;}
-.modal-actions{display:flex;gap:10px;margin-top:16px;}
-.modal-actions button{flex:1;padding:8px;border:none;border-radius:8px;cursor:pointer;font-weight:600;}
-.btn-save{background:#2a5a2a;}
-.btn-close{background:#5a2a2a;}
-#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a2e;padding:12px 20px;border-radius:12px;border-left:4px solid #ffd700;color:#e0e0e0;font-size:0.9rem;opacity:0;transition:opacity 0.3s;z-index:2000;pointer-events:none;max-width:90%;text-align:center;}
-#toast.show{opacity:1;}
-@media(max-width:600px){
-#signal-table{font-size:0.7rem;}
-#signal-table td,#signal-table th{padding:4px;}
-.action-btn{font-size:0.65rem;padding:2px 6px;}
-.notes-textarea{font-size:0.65rem;}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e1e2f">
+    <meta name="description" content="تطبيق تحليل صفقات التداول - Supply & Demand مع CVD">
+    <title>تداول - Supply & Demand</title>
+    <link rel="manifest" href="data:application/json,{%22name%22:%22تداول%20Supply%20%26%20Demand%22,%22short_name%22:%22تداول%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%231e1e2f%22,%22theme_color%22:%22%231e1e2f%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'><text%20y='.9em'%20font-size='90'>📈</text></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e2f;
+            color: #e0e0e0;
+            overflow-x: hidden;
+            padding: 12px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #f0b90b;
+            letter-spacing: 1px;
+        }
+        .card {
+            background: #2a2a3f;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            border: 1px solid #3a3a55;
+        }
+        .settings-toggle {
+            background: #3a3a55;
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+        .settings-toggle:hover {
+            background: #4a4a6f;
+        }
+        .settings-panel {
+            display: none;
+            background: #25253a;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px solid #444466;
+        }
+        .settings-panel.open {
+            display: block;
+        }
+        .settings-panel label {
+            display: block;
+            margin: 8px 0 4px;
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+        .settings-panel input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #1a1a2e;
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .settings-panel input:focus {
+            border-color: #f0b90b;
+        }
+        .settings-panel .btn-save {
+            background: #f0b90b;
+            border: none;
+            color: #1e1e2f;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 12px;
+            width: 100%;
+            font-size: 1rem;
+        }
+        .signal-card {
+            background: #2f2f48;
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 14px;
+            border-left: 6px solid #f0b90b;
+            position: relative;
+            transition: 0.2s;
+        }
+        .signal-card .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .signal-card .symbol {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #f0b90b;
+        }
+        .signal-card .time {
+            font-size: 0.75rem;
+            color: #999;
+        }
+        .signal-card .price-info {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 8px 0;
+        }
+        .signal-card .price-info span {
+            background: #1a1a2e;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        .signal-card .analysis {
+            background: #1a1a2e;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin: 8px 0;
+            border-right: 3px solid #f0b90b;
+            color: #ccc;
+        }
+        .signal-card .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            align-items: center;
+        }
+        .signal-card .actions button {
+            border: none;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #3a3a55;
+            color: #fff;
+        }
+        .signal-card .actions button.share {
+            background: #0088cc;
+        }
+        .signal-card .actions button.alert-toggle {
+            background: #f0b90b;
+            color: #1e1e2f;
+        }
+        .signal-card .actions button.alert-toggle.active {
+            background: #e74c3c;
+            color: #fff;
+        }
+        .signal-card .actions button.delete {
+            background: #e74c3c;
+        }
+        .signal-card .notes {
+            margin-top: 10px;
+        }
+        .signal-card .notes textarea {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #1a1a2e;
+            color: #fff;
+            resize: vertical;
+            font-size: 0.8rem;
+            min-height: 50px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+        }
+        .empty-state p {
+            margin-top: 8px;
+        }
+        #tradingview {
+            margin-top: 20px;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #2a2a3f;
+            padding: 4px;
+        }
+        #tradingview iframe {
+            width: 100%;
+            height: 400px;
+            border: none;
+            border-radius: 12px;
+        }
+        .status-badge {
+            display: inline-block;
+            background: #2a2a3f;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            color: #aaa;
+            margin-top: 4px;
+        }
+        .error-msg {
+            background: #3f1a1a;
+            padding: 12px;
+            border-radius: 10px;
+            color: #ff6b6b;
+            font-size: 0.85rem;
+            margin: 8px 0;
+            display: none;
+        }
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            .signal-card .price-info span { font-size: 0.75rem; padding: 2px 10px; }
+            .signal-card .actions button { font-size: 0.7rem; padding: 4px 10px; }
+        }
+    </style>
 </head>
 <body>
-<div id="app">
-<header>
-<h1>📊 ADX-CVD Trader</h1>
-<div>
-<button class="settings-btn" id="settingsBtn">⚙️ إعدادات</button>
-<button class="header-btn" id="refreshBtn">🔄 تحديث</button>
+<div class="container">
+    <h1>📈 Supply & Demand</h1>
+    <button class="settings-toggle" id="settingsToggle">⚙️ الإعدادات</button>
+    <div class="settings-panel" id="settingsPanel">
+        <label>🔑 توكن بوت تليجرام</label>
+        <input type="text" id="telegramToken" placeholder="مثال: 123456:ABC-DEF" />
+        <label>🆔 معرف الدردشة (Chat ID)</label>
+        <input type="text" id="telegramChatId" placeholder="مثال: -100123456789" />
+        <button class="btn-save" id="saveSettings">💾 حفظ الإعدادات</button>
+        <div style="margin-top:8px;font-size:0.75rem;color:#888;">* يتم حفظها محلياً</div>
+    </div>
+
+    <div id="signalsContainer">
+        <div class="empty-state" id="emptyState">
+            <div style="font-size:3rem;">📊</div>
+            <p>بانتظار الإشارات...</p>
+            <span class="status-badge" id="statusBadge">🔄 جاري الاتصال بـ Binance</span>
+        </div>
+    </div>
+
+    <div id="tradingview">
+        <iframe src="https://www.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=BINANCE%3ABTCUSDT&interval=60&theme=dark&autosize=1&studies=%5B%5D" allowfullscreen></iframe>
+    </div>
+    <div id="errorMsg" class="error-msg"></div>
 </div>
-</header>
-<div id="signal-stats">
-<div class="stat-box">الإشارات النشطة: <span id="activeCount">0</span></div>
-<div class="stat-box">الإشارات المغلقة: <span id="closedCount">0</span></div>
-<div class="stat-box">إجمالي الصفقات: <span id="totalCount">0</span></div>
-</div>
-<div id="chart-container">⏳ جاري تحميل الرسم البياني...</div>
-<div id="signal-table-wrapper">
-<table id="signal-table">
-<thead>
-<tr>
-<th>#</th>
-<th>الزمن</th>
-<th>السعر</th>
-<th>الهدف</th>
-<th>وقف الخسارة</th>
-<th>التحليل</th>
-<th>ملاحظات</th>
-<th>إجراءات</th>
-</tr>
-</thead>
-<tbody id="signal-body"></tbody>
-</table>
-</div>
-</div>
-<div id="settingsModal" class="modal">
-<div class="modal-content">
-<h2>⚙️ الإعدادات</h2>
-<label>توكن بوت تليجرام</label>
-<input type="text" id="telegramToken" placeholder="أدخل توكن البوت">
-<label>معرف الدردشة (Chat ID)</label>
-<input type="text" id="telegramChatId" placeholder="أدخل معرف الدردشة">
-<label>تفعيل التنبيهات</label>
-<div style="display:flex;gap:10px;margin:6px 0;">
-<label><input type="radio" name="notifEnable" value="on" checked> مفعل</label>
-<label><input type="radio" name="notifEnable" value="off"> معطل</label>
-</div>
-<div class="modal-actions">
-<button class="btn-save" id="saveSettings">حفظ</button>
-<button class="btn-close" id="closeSettings">إغلاق</button>
-</div>
-</div>
-</div>
-<div id="toast"></div>
+
 <script>
-// ================== Service Worker ==================
-(function(){
-try{
-const swCode = `self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(clients.claim());});self.addEventListener('push',e=>{let d=e.data?e.data.json():{title:'ADX-CVD',body:'إشارة جديدة'};e.waitUntil(self.registration.showNotification(d.title,{body:d.body,icon:'data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 512 512\\'><rect width=\\'512\\' height=\\'512\\' rx=\\'50%\\' fill=\\'%231e1e2f\\'/><text x=\\'256\\' y=\\'280\\' font-size=\\'300\\' text-anchor=\\'middle\\' fill=\\'white\\' font-family=\\'sans-serif\\'>ADX</text></svg>'}]));});`;
-const blob = new Blob([swCode],{type:'application/javascript'});
-const swUrl = URL.createObjectURL(blob);
-navigator.serviceWorker.register(swUrl,{scope:'/'}).catch(()=>{});
-}catch(e){}
-})();
-// ================== DOM & State ==================
-let signals = [];
-let nextId = 1;
-let telegramToken = localStorage.getItem('tgToken')||'';
-let telegramChatId = localStorage.getItem('tgChatId')||'';
-let notifEnabled = localStorage.getItem('notifEnabled')!=='off';
-const bodyEl = document.getElementById('signal-body');
-const activeSpan = document.getElementById('activeCount');
-const closedSpan = document.getElementById('closedCount');
-const totalSpan = document.getElementById('totalCount');
-const settingsModal = document.getElementById('settingsModal');
-const settingsBtn = document.getElementById('settingsBtn');
-const closeSettings = document.getElementById('closeSettings');
-const saveSettings = document.getElementById('saveSettings');
-const tokenInput = document.getElementById('telegramToken');
-const chatInput = document.getElementById('telegramChatId');
-const toast = document.getElementById('toast');
-// ================== Toast ==================
-function showToast(msg,duration=3000){
-toast.textContent=msg;
-toast.classList.add('show');
-clearTimeout(toast._timer);
-toast._timer=setTimeout(()=>{toast.classList.remove('show');},duration);
-}
-// ================== TradingView ==================
-(function(){
-try{
-const script = document.createElement('script');
-script.src='https://s3.tradingview.com/tv.js';
-script.async=true;
-script.onload=function(){
-document.getElementById('chart-container').textContent='';
-new TradingView.widget({
-"container_id":"chart-container","symbol":"BINANCE:BTCUSDT","interval":"5","timezone":"Etc/UTC","theme":"dark","style":"1","locale":"ar","toolbar_bg":"#1a1a2e","enable_publishing":false,"hide_side_toolbar":false,"allow_symbol_change":true,"save_image":false,"studies":[],"show_popup_button":true,"popup_width":"1000","popup_height":"650"
-});
-};
-document.getElementById('chart-container').appendChild(script);
-}catch(e){document.getElementById('chart-container').textContent='⚠️ تعذر تحميل الرسم البياني';}
-})();
-// ================== Force Demo (To prevent blank screen) ==================
-const demoSignal = {id:nextId++,timestamp:new Date().toISOString(),symbol:'BTCUSDT',price:31200,target:32800,stop:29800,analysis:'✅ إشارة تجريبية فورية! (يعمل التطبيق بنجاح، البيانات الحقيقية قيد التحميل...)',status:'active',notes:'جرب زر المشاركة والإلغاء',active:true};
-signals.push(demoSignal);
-// ================== Save/Load ==================
-function saveSignals(){try{localStorage.setItem('signals',JSON.stringify(signals));}catch(e){}}
-function loadSignals(){
-try{
-const d=localStorage.getItem('signals');
-if(d){
-const parsed=JSON.parse(d);
-if(parsed.length>0){
-signals=parsed;
-nextId=signals.reduce((m,s)=>Math.max(m,s.id),0)+1;
-}
-}
-}catch(e){}
-}
-loadSignals();
-// ================== Render Table ==================
-function renderSignals(){
-if(!bodyEl)return;
-bodyEl.innerHTML='';
-signals.forEach(s=>{
-const tr=document.createElement('tr');
-tr.className=`signal-row ${s.status==='active'?'active':'closed'}`;
-const td1=document.createElement('td');td1.textContent=s.id;
-const td2=document.createElement('td');td2.textContent=new Date(s.timestamp).toLocaleString('ar-EG');
-const td3=document.createElement('td');td3.textContent=s.price.toFixed(2);
-const td4=document.createElement('td');td4.textContent=s.target.toFixed(2);
-const td5=document.createElement('td');td5.textContent=s.stop.toFixed(2);
-const td6=document.createElement('td');td6.textContent=s.analysis;
-const td7=document.createElement('td');
-const notes=document.createElement('textarea');
-notes.className='notes-textarea';
-notes.value=s.notes||'';
-notes.placeholder='ملاحظاتك...';
-notes.addEventListener('input',function(){s.notes=this.value;saveSignals();});
-td7.appendChild(notes);
-const td8=document.createElement('td');
-const shareBtn=document.createElement('button');
-shareBtn.className='action-btn share-btn';
-shareBtn.textContent='📤 مشاركة';
-shareBtn.addEventListener('click',function(){
-const txt=`إشارة #${s.id}\nالسعر: ${s.price}\nالهدف: ${s.target}\nوقف: ${s.stop}\nالتحليل: ${s.analysis}`;
-if(navigator.share){navigator.share({title:'إشارة',text:txt}).catch(()=>{});}else{navigator.clipboard.writeText(txt).then(()=>showToast('تم النسخ')).catch(()=>showToast('اضغط لنسخ: '+txt));}
-});
-const cancelBtn=document.createElement('button');
-cancelBtn.className='action-btn cancel-btn';
-cancelBtn.textContent=s.active?'❌ إلغاء':'✅ تفعيل';
-cancelBtn.addEventListener('click',function(){s.active=!s.active;s.status=s.active?'active':'closed';saveSignals();renderSignals();updateStats();showToast(`تم ${s.active?'تفعيل':'إلغاء'} #${s.id}`);});
-td8.appendChild(shareBtn);
-td8.appendChild(cancelBtn);
-tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);tr.appendChild(td8);
-bodyEl.appendChild(tr);
-});
-}
-function updateStats(){
-const active=signals.filter(s=>s.active&&s.status==='active').length;
-const closed=signals.filter(s=>s.status==='closed').length;
-activeSpan.textContent=active;
-closedSpan.textContent=closed;
-totalSpan.textContent=signals.length;
-}
-// ================== Settings ==================
-settingsBtn.addEventListener('click',function(){
-tokenInput.value=telegramToken;chatInput.value=telegramChatId;
-document.querySelector('input[name="notifEnable"][value="'+(notifEnabled?'on':'off')+'"]').checked=true;
-settingsModal.classList.add('active');
-});
-closeSettings.addEventListener('click',function(){settingsModal.classList.remove('active');});
-saveSettings.addEventListener('click',function(){
-telegramToken=tokenInput.value.trim();telegramChatId=chatInput.value.trim();
-notifEnabled=document.querySelector('input[name="notifEnable"]:checked').value==='on';
-localStorage.setItem('tgToken',telegramToken);localStorage.setItem('tgChatId',telegramChatId);
-localStorage.setItem('notifEnabled',notifEnabled?'on':'off');
-settingsModal.classList.remove('active');
-showToast('تم حفظ الإعدادات');
-});
-// ================== Refresh ==================
-document.getElementById('refreshBtn').addEventListener('click',function(){renderSignals();updateStats();showToast('تم التحديث');});
-// ================== ADX & CVD Data (Background) ==================
-let currentAdx=0,lastPrice=0,cvd=0,cvdHist=[],lastSigTime={},adxReady=false;
-function calculateAdxDummy(close,high,low){
-return 35 + (Math.random()*10 -5);
-}
-function fetchKlinesForAdx(){
-fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=5m&limit=50')
-.then(r=>r.json()).then(data=>{
-let adxSum=0;let count=0;
-data.forEach(k=>{
-let c=parseFloat(k[4]),h=parseFloat(k[2]),l=parseFloat(k[3]);
-adxSum+=calculateAdxDummy(c,h,l);count++;
-});
-if(count>0){currentAdx=adxSum/count;adxReady=true;showToast(`📈 ADX الحالي: ${currentAdx.toFixed(2)}`);}
-}).catch(()=>{currentAdx=35;adxReady=true;});
-}
-fetchKlinesForAdx();
-// CVD WebSocket
-let ws=null;
-function connectBinance(){
-if(ws)ws.close();
-ws=new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
-ws.onmessage=function(e){
-try{
-const d=JSON.parse(e.data);
-const p=parseFloat(d.p),q=parseFloat(d.q),vol=q*p;
-cvd += (d.m? -vol : vol);
-cvdHist.push(cvd);if(cvdHist.length>100)cvdHist.shift();
-lastPrice=p;
-const avg=cvdHist.reduce((a,b)=>a+b,0)/cvdHist.length;
-if(adxReady && cvdHist.length>=20 && currentAdx>25 && Math.abs(cvd-avg)>1500 && Math.abs(p-(lastSigTime['BTCUSDT']||0))>0.002*p){
-const sig=createSignal('BTCUSDT',p,cvd);
-if(sig){addSignal(sig);lastSigTime['BTCUSDT']=p;}
-}
-}catch(e){}
-};
-ws.onclose=function(){setTimeout(connectBinance,5000);};
-}
-connectBinance();
-// ================== Signal Factory ==================
-function createSignal(symbol,price,cvdVal){
-const target=price*(1+(Math.random()*0.02+0.01));
-const stop=price*(1-(Math.random()*0.02+0.01));
-const dir=cvdVal>0?'شراء':'بيع';
-const analysis=`${dir} عند ${price.toFixed(2)} | CVD داعم | ADX = ${currentAdx.toFixed(2)} > 25`;
-return {id:nextId++,timestamp:new Date().toISOString(),symbol,price,target,stop,analysis,status:'active',notes:'',active:true};
-}
-// ================== Add Signal ==================
-function addSignal(sig){
-if(signals.some(s=>s.symbol===sig.symbol && s.active && s.status==='active')) return false;
-signals.push(sig);saveSignals();renderSignals();updateStats();
-sendTelegram(sig);sendPush(sig);
-return true;
-}
-// ================== Telegram & Push ==================
-function sendTelegram(sig){
-if(!telegramToken||!telegramChatId)return;
-const url=`https://api.telegram.org/bot${telegramToken}/sendMessage`;
-const msg=`🔔 إشارة جديدة\nالزمن: ${new Date(sig.timestamp).toLocaleString('ar-EG')}\nالسعر: ${sig.price}\nالهدف: ${sig.target}\nوقف: ${sig.stop}\nالتحليل: ${sig.analysis}`;
-fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:telegramChatId,text:msg})}).catch(()=>{});
-}
-function sendPush(sig){
-if(!notifEnabled)return;
-if(!('Notification' in window)||Notification.permission!=='granted'){if(Notification.permission==='default')Notification.requestPermission();return;}
-try{navigator.serviceWorker.ready.then(reg=>{reg.showNotification('📈 إشارة جديدة',{body:`السعر: ${sig.price} | الهدف: ${sig.target}`,icon:'data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 512 512\\'><rect width=\\'512\\' height=\\'512\\' rx=\\'50%\\' fill=\\'%231e1e2f\\'/><text x=\\'256\\' y=\\'280\\' font-size=\\'300\\' text-anchor=\\'middle\\' fill=\\'white\\' font-family=\\'sans-serif\\'>ADX</text></svg>',tag:sig.id,vibrate:[200,100,200]});});}catch(e){}
-}
-// ================== Init Render ==================
-renderSignals();updateStats();
-if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();
-// ================== Auto Close Expired ==================
-setInterval(()=>{
-signals.forEach(s=>{
-if(s.active&&s.status==='active'&&lastPrice>0){
-if(s.target<lastPrice&&s.price<lastPrice){s.status='closed';s.active=false;showToast(`💰 #${s.id} حقق الهدف!`);}
-else if(s.stop>lastPrice&&s.price>lastPrice){s.status='closed';s.active=false;showToast(`⛔ #${s.id} ضرب وقف الخسارة`);}
-}
-});
-saveSignals();renderSignals();updateStats();
-},15000);
-// ================== Error Handling ==================
-window.onerror=function(m,u,l,c,e){console.error(e);return false;};
-window.addEventListener('unhandledrejection',function(e){console.warn(e.reason);});
+    (function() {
+        'use strict';
+
+        // ---------- إعدادات التخزين ----------
+        const STORAGE_KEY = 'tradeAppSettings';
+        const SIGNALS_KEY = 'tradeAppSignals';
+        let settings = {
+            telegramToken: '',
+            telegramChatId: ''
+        };
+        let signals = []; // مصفوفة الإشارات
+        let tradeIdCounter = 0;
+
+        // عناصر DOM
+        const signalsContainer = document.getElementById('signalsContainer');
+        const emptyState = document.getElementById('emptyState');
+        const statusBadge = document.getElementById('statusBadge');
+        const errorMsg = document.getElementById('errorMsg');
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const telegramTokenInput = document.getElementById('telegramToken');
+        const telegramChatIdInput = document.getElementById('telegramChatId');
+        const saveSettingsBtn = document.getElementById('saveSettings');
+
+        // ---------- تحميل الإعدادات والإشارات ----------
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    settings = { ...settings, ...parsed };
+                    telegramTokenInput.value = settings.telegramToken || '';
+                    telegramChatIdInput.value = settings.telegramChatId || '';
+                }
+            } catch (e) {}
+        }
+        function saveSettingsToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        }
+
+        function loadSignals() {
+            try {
+                const saved = localStorage.getItem(SIGNALS_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    signals = parsed;
+                    if (signals.length > 0) {
+                        tradeIdCounter = Math.max(...signals.map(s => s.tradeId || 0)) + 1;
+                    }
+                }
+            } catch (e) {}
+        }
+        function saveSignalsToStorage() {
+            localStorage.setItem(SIGNALS_KEY, JSON.stringify(signals));
+        }
+
+        // ---------- دوال مساعدة ----------
+        function generateTradeId() {
+            return ++tradeIdCounter;
+        }
+
+        function formatTime(ts) {
+            const d = new Date(ts);
+            return d.toLocaleString('ar-EG', { hour12: false });
+        }
+
+        // ---------- إشعارات المتصفح (Service Worker) ----------
+        async function registerServiceWorker() {
+            if (!('serviceWorker' in navigator)) {
+                console.warn('Service Worker غير مدعوم');
+                return;
+            }
+            try {
+                // نكتب الـ sw كـ Blob ونسجله
+                const swCode = `
+                    self.addEventListener('install', e => {
+                        e.waitUntil(self.skipWaiting());
+                    });
+                    self.addEventListener('activate', e => {
+                        e.waitUntil(self.clients.claim());
+                    });
+                    self.addEventListener('push', e => {
+                        const data = e.data ? e.data.json() : {};
+                        const options = {
+                            body: data.body || 'إشارة تداول جديدة',
+                            icon: data.icon || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📈</text></svg>',
+                            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📈</text></svg>',
+                            vibrate: [200, 100, 200],
+                            tag: data.tag || 'trade-signal',
+                            requireInteraction: true,
+                        };
+                        e.waitUntil(self.registration.showNotification(data.title || 'إشارة تداول', options));
+                    });
+                `;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                const registration = await navigator.serviceWorker.register(swUrl);
+                console.log('Service Worker مسجل');
+                return registration;
+            } catch (err) {
+                console.error('فشل تسجيل Service Worker:', err);
+            }
+        }
+
+        async function sendBrowserNotification(title, body, tag) {
+            if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+                console.warn('الإشعارات غير مدعومة');
+                return;
+            }
+            if (Notification.permission === 'granted') {
+                try {
+                    const registration = await navigator.serviceWorker.ready;
+                    registration.showNotification(title, {
+                        body: body,
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📈</text></svg>',
+                        tag: tag || 'trade-signal',
+                        requireInteraction: true,
+                        vibrate: [200, 100, 200],
+                    });
+                } catch (e) {
+                    console.error(e);
+                }
+            } else if (Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        // ---------- إرسال إلى تليجرام ----------
+        async function sendTelegramMessage(text) {
+            if (!settings.telegramToken || !settings.telegramChatId) {
+                console.warn('تليجرام غير مهيأ');
+                return false;
+            }
+            const url = `https://api.telegram.org/bot${settings.telegramToken}/sendMessage`;
+            try {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: settings.telegramChatId,
+                        text: text,
+                        parse_mode: 'HTML'
+                    })
+                });
+                const data = await resp.json();
+                if (!data.ok) {
+                    console.error('خطأ تليجرام:', data);
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                console.error('فشل إرسال تليجرام:', e);
+                return false;
+            }
+        }
+
+        // ---------- استراتيجية Supply & Demand + CVD ----------
+        // سنقوم بجلب بيانات Kline (1 دقيقة) من Binance لعدد من العملات
+        const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT'];
+        let lastSignalPerSymbol = {}; // لتجنب التكرار
+
+        async function fetchKlines(symbol, interval = '1m', limit = 100) {
+            const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+            try {
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const data = await resp.json();
+                return data;
+            } catch (e) {
+                throw new Error(`فشل جلب بيانات ${symbol}: ${e.message}`);
+            }
+        }
+
+        // حساب CVD تقريبي: مجموع حجم الشموع الصاعدة - حجم الشموع الهابطة
+        function computeCVD(klines) {
+            let cvd = 0;
+            for (let i = 0; i < klines.length; i++) {
+                const open = parseFloat(klines[i][1]);
+                const close = parseFloat(klines[i][4]);
+                const volume = parseFloat(klines[i][5]);
+                if (close > open) {
+                    cvd += volume;
+                } else if (close < open) {
+                    cvd -= volume;
+                }
+            }
+            return cvd;
+        }
+
+        // تحديد مستويات Supply & Demand: نقاط القمة والقاع الأخيرة
+        function findSupportResistance(klines) {
+            const highs = klines.map(k => parseFloat(k[2]));
+            const lows = klines.map(k => parseFloat(k[3]));
+            const closes = klines.map(k => parseFloat(k[4]));
+            // نأخذ أعلى قمة وأدنى قاع في آخر 30 شمعة
+            const window = 30;
+            const recentHighs = highs.slice(-window);
+            const recentLows = lows.slice(-window);
+            const maxHigh = Math.max(...recentHighs);
+            const minLow = Math.min(...recentLows);
+            const currentPrice = closes[closes.length - 1];
+            // نحدد مناطق العرض (مقاومة) والطلب (دعم) بنسبة 0.5% حول القمة/القاع
+            const supplyZone = maxHigh * 1.002; // فوق القمة بقليل
+            const demandZone = minLow * 0.998; // تحت القاع بقليل
+            return { supplyZone, demandZone, currentPrice, maxHigh, minLow };
+        }
+
+        // توليد إشارة بناءً على الاستراتيجية
+        async function scanSymbol(symbol) {
+            try {
+                const klines = await fetchKlines(symbol);
+                if (!klines || klines.length < 30) return null;
+
+                const cvd = computeCVD(klines);
+                const { supplyZone, demandZone, currentPrice, maxHigh, minLow } = findSupportResistance(klines);
+
+                // شروط الدخول:
+                // إذا كان السعر فوق منطقة العرض (Supply) مع CVD موجب قوي -> إشارة بيع (Short)
+                // إذا كان السعر تحت منطقة الطلب (Demand) مع CVD سالب قوي -> إشارة شراء (Long)
+                // نبسط: نستخدم عتبة CVD 0.5 * متوسط الحجم
+                const avgVolume = klines.slice(-20).reduce((sum, k) => sum + parseFloat(k[5]), 0) / 20;
+                const threshold = avgVolume * 0.3;
+
+                let signalType = null;
+                let reason = '';
+                let tp = 0, sl = 0;
+
+                if (currentPrice > supplyZone && cvd > threshold) {
+                    signalType = 'SELL';
+                    reason = `السعر فوق منطقة العرض (${supplyZone.toFixed(2)}) مع CVD إيجابي قوي (${cvd.toFixed(0)})، اتجاه هبوط متوقع.`;
+                    tp = minLow * 0.99; // هدف قريب
+                    sl = supplyZone * 1.02; // وقف فوق المقاومة
+                } else if (currentPrice < demandZone && cvd < -threshold) {
+                    signalType = 'BUY';
+                    reason = `السعر تحت منطقة الطلب (${demandZone.toFixed(2)}) مع CVD سلبي قوي (${cvd.toFixed(0)})، اتجاه صعود متوقع.`;
+                    tp = maxHigh * 1.01;
+                    sl = demandZone * 0.98;
+                }
+
+                if (!signalType) return null;
+
+                // التحقق من عدم وجود إشارة مفتوحة لنفس العملة
+                const existing = signals.find(s => s.symbol === symbol && s.status === 'active');
+                if (existing) {
+                    // إذا كانت موجودة ولم تنتهِ، لا نرسل إشارة جديدة
+                    return null;
+                }
+
+                const tradeId = generateTradeId();
+                const now = Date.now();
+                const signal = {
+                    tradeId: tradeId,
+                    symbol: symbol,
+                    type: signalType,
+                    entryPrice: currentPrice,
+                    tp: tp,
+                    sl: sl,
+                    timestamp: now,
+                    reason: reason,
+                    status: 'active', // active, closed
+                    notes: '',
+                    alertEnabled: true,
+                };
+                return signal;
+            } catch (e) {
+                console.error(`خطأ في فحص ${symbol}:`, e);
+                return null;
+            }
+        }
+
+        // ---------- إضافة إشارة ومعالجة التنبيهات ----------
+        async function addSignal(signal) {
+            if (!signal) return;
+            signals.push(signal);
+            saveSignalsToStorage();
+            renderSignals();
+
+            // إرسال إشعار متصفح
+            const title = `🔔 إشارة ${signal.symbol}`;
+            const body = `${signal.type === 'BUY' ? 'شراء' : 'بيع'} عند ${signal.entryPrice.toFixed(2)} | الهدف: ${signal.tp.toFixed(2)} | الوقف: ${signal.sl.toFixed(2)}`;
+            sendBrowserNotification(title, body, `trade-${signal.tradeId}`);
+
+            // إرسال إلى تليجرام
+            const msg = `<b>🔔 إشارة تداول جديدة</b>\n\n` +
+                `🪙 العملة: ${signal.symbol}\n` +
+                `📈 الاتجاه: ${signal.type === 'BUY' ? 'شراء (Long)' : 'بيع (Short)'}\n` +
+                `💰 سعر الدخول: ${signal.entryPrice.toFixed(2)}\n` +
+                `🎯 الهدف: ${signal.tp.toFixed(2)}\n` +
+                `🛑 وقف الخسارة: ${signal.sl.toFixed(2)}\n` +
+                `📊 التحليل: ${signal.reason}\n` +
+                `⏰ الوقت: ${formatTime(signal.timestamp)}`;
+            await sendTelegramMessage(msg);
+        }
+
+        // ---------- عرض الإشارات ----------
+        function renderSignals() {
+            const activeSignals = signals.filter(s => s.status === 'active');
+            const container = signalsContainer;
+
+            // إخفاء الرسالة الفارغة
+            if (activeSignals.length === 0) {
+                emptyState.style.display = 'block';
+                // نزيل أي بطاقات سابقة
+                const cards = container.querySelectorAll('.signal-card');
+                cards.forEach(c => c.remove());
+                statusBadge.textContent = '🔄 في انتظار الإشارات...';
+                return;
+            }
+            emptyState.style.display = 'none';
+            statusBadge.textContent = `📊 ${activeSignals.length} إشارة نشطة`;
+
+            // إزالة البطاقات القديمة (نحتفظ بالبطاقات الموجودة إذا أمكن لتجنب الوميض لكننا سنعيد بناء)
+            const cards = container.querySelectorAll('.signal-card');
+            cards.forEach(c => c.remove());
+
+            // ترتيب تنازلي حسب الوقت
+            activeSignals.sort((a, b) => b.timestamp - a.timestamp);
+
+            for (const sig of activeSignals) {
+                const card = document.createElement('div');
+                card.className = 'signal-card';
+                card.dataset.tradeId = sig.tradeId;
+                card.style.borderLeftColor = sig.type === 'BUY' ? '#2ecc71' : '#e74c3c';
+
+                const header = document.createElement('div');
+                header.className = 'header';
+                header.innerHTML = `
+                    <span class="symbol">${sig.symbol} ${sig.type === 'BUY' ? '📈' : '📉'}</span>
+                    <span class="time">${formatTime(sig.timestamp)}</span>
+                `;
+                card.appendChild(header);
+
+                const priceInfo = document.createElement('div');
+                priceInfo.className = 'price-info';
+                priceInfo.innerHTML = `
+                    <span>💰 الدخول: ${sig.entryPrice.toFixed(2)}</span>
+                    <span>🎯 الهدف: ${sig.tp.toFixed(2)}</span>
+                    <span>🛑 الوقف: ${sig.sl.toFixed(2)}</span>
+                `;
+                card.appendChild(priceInfo);
+
+                const analysis = document.createElement('div');
+                analysis.className = 'analysis';
+                analysis.textContent = sig.reason || 'تحليل غير متوفر';
+                card.appendChild(analysis);
+
+                const actions = document.createElement('div');
+                actions.className = 'actions';
+
+                // زر مشاركة
+                const shareBtn = document.createElement('button');
+                shareBtn.className = 'share';
+                shareBtn.textContent = '📤 مشاركة';
+                shareBtn.addEventListener('click', () => {
+                    const text = `إشارة ${sig.symbol} ${sig.type === 'BUY' ? 'شراء' : 'بيع'}\nالدخول: ${sig.entryPrice.toFixed(2)}\nالهدف: ${sig.tp.toFixed(2)}\nالوقف: ${sig.sl.toFixed(2)}\nالتحليل: ${sig.reason}`;
+                    if (navigator.share) {
+                        navigator.share({ title: 'إشارة تداول', text: text });
+                    } else {
+                        navigator.clipboard.writeText(text).then(() => {
+                            alert('تم نسخ النص للحافظة');
+                        }).catch(() => {
+                            prompt('انسخ النص:', text);
+                        });
+                    }
+                });
+                actions.appendChild(shareBtn);
+
+                // زر إلغاء/تفعيل التنبيه
+                const alertToggle = document.createElement('button');
+                alertToggle.className = 'alert-toggle' + (sig.alertEnabled ? ' active' : '');
+                alertToggle.textContent = sig.alertEnabled ? '🔔 تفعيل' : '🔕 إلغاء';
+                alertToggle.addEventListener('click', () => {
+                    sig.alertEnabled = !sig.alertEnabled;
+                    alertToggle.textContent = sig.alertEnabled ? '🔔 تفعيل' : '🔕 إلغاء';
+                    alertToggle.classList.toggle('active');
+                    saveSignalsToStorage();
+                });
+                actions.appendChild(alertToggle);
+
+                // زر إغلاق الصفقة (إنهاء)
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'delete';
+                closeBtn.textContent = '❌ إنهاء';
+                closeBtn.addEventListener('click', () => {
+                    if (confirm('هل أنت متأكد من إنهاء هذه الصفقة؟')) {
+                        sig.status = 'closed';
+                        saveSignalsToStorage();
+                        renderSignals();
+                    }
+                });
+                actions.appendChild(closeBtn);
+
+                card.appendChild(actions);
+
+                // مربع الملاحظات
+                const notesDiv = document.createElement('div');
+                notesDiv.className = 'notes';
+                const textarea = document.createElement('textarea');
+                textarea.placeholder = 'ملاحظاتك الشخصية...';
+                textarea.value = sig.notes || '';
+                textarea.addEventListener('input', () => {
+                    sig.notes = textarea.value;
+                    saveSignalsToStorage();
+                });
+                notesDiv.appendChild(textarea);
+                card.appendChild(notesDiv);
+
+                container.appendChild(card);
+            }
+        }
+
+        // ---------- المسح الدوري للعملات ----------
+        let scanInterval = null;
+        async function scanAllSymbols() {
+            for (const symbol of SYMBOLS) {
+                try {
+                    const signal = await scanSymbol(symbol);
+                    if (signal) {
+                        await addSignal(signal);
+                    }
+                } catch (e) {
+                    console.error('خطأ في فحص ' + symbol, e);
+                    showError(`فشل فحص ${symbol}: ${e.message}`);
+                }
+            }
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.style.display = 'block';
+            setTimeout(() => {
+                errorMsg.style.display = 'none';
+            }, 5000);
+        }
+
+        // ---------- بدء التشغيل ----------
+        async function init() {
+            loadSettings();
+            loadSignals();
+            renderSignals();
+
+            // طلب إذن الإشعارات
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+
+            // تسجيل Service Worker
+            await registerServiceWorker();
+
+            // إعدادات UI
+            settingsToggle.addEventListener('click', () => {
+                settingsPanel.classList.toggle('open');
+            });
+
+            saveSettingsBtn.addEventListener('click', () => {
+                settings.telegramToken = telegramTokenInput.value.trim();
+                settings.telegramChatId = telegramChatIdInput.value.trim();
+                saveSettingsToStorage();
+                alert('تم حفظ الإعدادات');
+            });
+
+            // بدء المسح الدوري (كل 30 ثانية)
+            scanAllSymbols(); // أول مرة فوراً
+            scanInterval = setInterval(scanAllSymbols, 30000);
+
+            // إعادة عرض الإشارات عند تغيير الإشارات (بالفعل يتم الحفظ)
+            // نضيف مراقب للتخزين؟ لا، سنعتمد على التحديث عند كل إضافة.
+        }
+
+        // تنظيف عند الخروج
+        window.addEventListener('beforeunload', () => {
+            if (scanInterval) clearInterval(scanInterval);
+        });
+
+        // استدعاء التهيئة
+        init();
+
+    })();
 </script>
 </body>
 </html>
