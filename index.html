@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1e1e2f">
-    <meta name="description" content="تطبيق تحليل صفقات التداول - Supply & Demand مع CVD">
-    <title>تداول - Supply & Demand</title>
+    <meta name="description" content="تطبيق تحليل صفقات التداول - Supply & Demand مع CVD و ADX">
+    <title>تداول - Supply & Demand + ADX</title>
     <link rel="manifest" href="data:application/json,{%22name%22:%22تداول%20Supply%20%26%20Demand%22,%22short_name%22:%22تداول%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%231e1e2f%22,%22theme_color%22:%22%231e1e2f%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'><text%20y='.9em'%20font-size='90'>📈</text></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
     <style>
         * {
@@ -227,16 +227,46 @@
             margin: 8px 0;
             display: none;
         }
+        .action-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .action-row button {
+            background: #3a3a55;
+            border: none;
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            flex: 1;
+            min-width: 100px;
+            transition: 0.2s;
+        }
+        .action-row button:hover {
+            background: #4a4a6f;
+        }
+        .action-row button.scan {
+            background: #f0b90b;
+            color: #1e1e2f;
+        }
+        .action-row button.analyze {
+            background: #2ecc71;
+            color: #1e1e2f;
+        }
         @media (max-width: 480px) {
             body { padding: 8px; }
             .signal-card .price-info span { font-size: 0.75rem; padding: 2px 10px; }
             .signal-card .actions button { font-size: 0.7rem; padding: 4px 10px; }
+            .action-row button { font-size: 0.8rem; padding: 8px 12px; min-width: 70px; }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>📈 Supply & Demand</h1>
+    <h1>📈 Supply & Demand + ADX</h1>
     <button class="settings-toggle" id="settingsToggle">⚙️ الإعدادات</button>
     <div class="settings-panel" id="settingsPanel">
         <label>🔑 توكن بوت تليجرام</label>
@@ -245,6 +275,11 @@
         <input type="text" id="telegramChatId" placeholder="مثال: -100123456789" />
         <button class="btn-save" id="saveSettings">💾 حفظ الإعدادات</button>
         <div style="margin-top:8px;font-size:0.75rem;color:#888;">* يتم حفظها محلياً</div>
+    </div>
+
+    <div class="action-row">
+        <button class="scan" id="scanBtn">🔍 فحص يدوي</button>
+        <button class="analyze" id="analyzeBtn">📊 تحليل يدوي</button>
     </div>
 
     <div id="signalsContainer">
@@ -285,6 +320,8 @@
         const telegramTokenInput = document.getElementById('telegramToken');
         const telegramChatIdInput = document.getElementById('telegramChatId');
         const saveSettingsBtn = document.getElementById('saveSettings');
+        const scanBtn = document.getElementById('scanBtn');
+        const analyzeBtn = document.getElementById('analyzeBtn');
 
         // ---------- تحميل الإعدادات والإشارات ----------
         function loadSettings() {
@@ -335,7 +372,6 @@
                 return;
             }
             try {
-                // نكتب الـ sw كـ Blob ونسجله
                 const swCode = `
                     self.addEventListener('install', e => {
                         e.waitUntil(self.skipWaiting());
@@ -418,10 +454,87 @@
             }
         }
 
-        // ---------- استراتيجية Supply & Demand + CVD ----------
-        // سنقوم بجلب بيانات Kline (1 دقيقة) من Binance لعدد من العملات
+        // ---------- حساب ADX ----------
+        // نحتاج إلى 14 شمعة لحساب ADX (أكثر من 14 لضمان الدقة)
+        function calculateADX(klines) {
+            // klines: array of [open, high, low, close] (نأخذها من بيانات Binance)
+            // نستخدم 14 فترة
+            const period = 14;
+            if (klines.length < period + 1) return null;
+
+            // استخراج high, low, close
+            const high = klines.map(k => parseFloat(k[2]));
+            const low = klines.map(k => parseFloat(k[3]));
+            const close = klines.map(k => parseFloat(k[4]));
+
+            // حساب +DM و -DM و TR
+            const plusDM = [];
+            const minusDM = [];
+            const tr = [];
+            for (let i = 1; i < high.length; i++) {
+                const upMove = high[i] - high[i-1];
+                const downMove = low[i-1] - low[i];
+                let pm = 0, mm = 0;
+                if (upMove > downMove && upMove > 0) pm = upMove;
+                if (downMove > upMove && downMove > 0) mm = downMove;
+                plusDM.push(pm);
+                minusDM.push(mm);
+                // True Range
+                const h = high[i];
+                const l = low[i];
+                const c = close[i-1];
+                const tr1 = h - l;
+                const tr2 = Math.abs(h - c);
+                const tr3 = Math.abs(l - c);
+                tr.push(Math.max(tr1, tr2, tr3));
+            }
+
+            // حساب المتوسطات (استخدم المتوسط المتحرك البسيط للتبسيط)
+            function sma(data, period) {
+                const result = [];
+                for (let i = 0; i < data.length - period + 1; i++) {
+                    let sum = 0;
+                    for (let j = 0; j < period; j++) {
+                        sum += data[i+j];
+                    }
+                    result.push(sum / period);
+                }
+                return result;
+            }
+
+            // نحتاج إلى بيانات كافية
+            if (plusDM.length < period) return null;
+
+            const smaPlusDM = sma(plusDM, period);
+            const smaMinusDM = sma(minusDM, period);
+            const smaTR = sma(tr, period);
+
+            if (smaPlusDM.length === 0 || smaMinusDM.length === 0 || smaTR.length === 0) return null;
+
+            // حساب +DI و -DI
+            const plusDI = smaPlusDM.map((v, i) => (v / smaTR[i]) * 100);
+            const minusDI = smaMinusDM.map((v, i) => (v / smaTR[i]) * 100);
+
+            // حساب DX ثم ADX
+            const dx = [];
+            for (let i = 0; i < plusDI.length; i++) {
+                const diSum = plusDI[i] + minusDI[i];
+                if (diSum === 0) {
+                    dx.push(0);
+                } else {
+                    dx.push(Math.abs(plusDI[i] - minusDI[i]) / diSum * 100);
+                }
+            }
+
+            // ADX هو SMA لـ DX على نفس الفترة
+            if (dx.length < period) return null;
+            const adx = sma(dx, period);
+            return adx[adx.length - 1]; // آخر قيمة
+        }
+
+        // ---------- استراتيجية Supply & Demand + CVD + ADX ----------
         const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT'];
-        let lastSignalPerSymbol = {}; // لتجنب التكرار
+        let lastSignalPerSymbol = {};
 
         async function fetchKlines(symbol, interval = '1m', limit = 100) {
             const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
@@ -435,7 +548,6 @@
             }
         }
 
-        // حساب CVD تقريبي: مجموع حجم الشموع الصاعدة - حجم الشموع الهابطة
         function computeCVD(klines) {
             let cvd = 0;
             for (let i = 0; i < klines.length; i++) {
@@ -451,37 +563,38 @@
             return cvd;
         }
 
-        // تحديد مستويات Supply & Demand: نقاط القمة والقاع الأخيرة
         function findSupportResistance(klines) {
             const highs = klines.map(k => parseFloat(k[2]));
             const lows = klines.map(k => parseFloat(k[3]));
             const closes = klines.map(k => parseFloat(k[4]));
-            // نأخذ أعلى قمة وأدنى قاع في آخر 30 شمعة
             const window = 30;
             const recentHighs = highs.slice(-window);
             const recentLows = lows.slice(-window);
             const maxHigh = Math.max(...recentHighs);
             const minLow = Math.min(...recentLows);
             const currentPrice = closes[closes.length - 1];
-            // نحدد مناطق العرض (مقاومة) والطلب (دعم) بنسبة 0.5% حول القمة/القاع
-            const supplyZone = maxHigh * 1.002; // فوق القمة بقليل
-            const demandZone = minLow * 0.998; // تحت القاع بقليل
+            const supplyZone = maxHigh * 1.002;
+            const demandZone = minLow * 0.998;
             return { supplyZone, demandZone, currentPrice, maxHigh, minLow };
         }
 
-        // توليد إشارة بناءً على الاستراتيجية
         async function scanSymbol(symbol) {
             try {
                 const klines = await fetchKlines(symbol);
                 if (!klines || klines.length < 30) return null;
 
+                // حساب ADX (نحتاج 14 شمعة على الأقل)
+                const adx = calculateADX(klines);
+                if (adx === null) return null;
+                // شرط ADX > 25
+                if (adx <= 25) {
+                    // لا نأخذ صفقة إذا كان ADX <= 25
+                    return null;
+                }
+
                 const cvd = computeCVD(klines);
                 const { supplyZone, demandZone, currentPrice, maxHigh, minLow } = findSupportResistance(klines);
 
-                // شروط الدخول:
-                // إذا كان السعر فوق منطقة العرض (Supply) مع CVD موجب قوي -> إشارة بيع (Short)
-                // إذا كان السعر تحت منطقة الطلب (Demand) مع CVD سالب قوي -> إشارة شراء (Long)
-                // نبسط: نستخدم عتبة CVD 0.5 * متوسط الحجم
                 const avgVolume = klines.slice(-20).reduce((sum, k) => sum + parseFloat(k[5]), 0) / 20;
                 const threshold = avgVolume * 0.3;
 
@@ -491,12 +604,12 @@
 
                 if (currentPrice > supplyZone && cvd > threshold) {
                     signalType = 'SELL';
-                    reason = `السعر فوق منطقة العرض (${supplyZone.toFixed(2)}) مع CVD إيجابي قوي (${cvd.toFixed(0)})، اتجاه هبوط متوقع.`;
-                    tp = minLow * 0.99; // هدف قريب
-                    sl = supplyZone * 1.02; // وقف فوق المقاومة
+                    reason = `السعر فوق منطقة العرض (${supplyZone.toFixed(2)}) مع CVD إيجابي (${cvd.toFixed(0)}) و ADX (${adx.toFixed(1)}) > 25، اتجاه هبوط متوقع.`;
+                    tp = minLow * 0.99;
+                    sl = supplyZone * 1.02;
                 } else if (currentPrice < demandZone && cvd < -threshold) {
                     signalType = 'BUY';
-                    reason = `السعر تحت منطقة الطلب (${demandZone.toFixed(2)}) مع CVD سلبي قوي (${cvd.toFixed(0)})، اتجاه صعود متوقع.`;
+                    reason = `السعر تحت منطقة الطلب (${demandZone.toFixed(2)}) مع CVD سلبي (${cvd.toFixed(0)}) و ADX (${adx.toFixed(1)}) > 25، اتجاه صعود متوقع.`;
                     tp = maxHigh * 1.01;
                     sl = demandZone * 0.98;
                 }
@@ -506,7 +619,6 @@
                 // التحقق من عدم وجود إشارة مفتوحة لنفس العملة
                 const existing = signals.find(s => s.symbol === symbol && s.status === 'active');
                 if (existing) {
-                    // إذا كانت موجودة ولم تنتهِ، لا نرسل إشارة جديدة
                     return null;
                 }
 
@@ -521,9 +633,10 @@
                     sl: sl,
                     timestamp: now,
                     reason: reason,
-                    status: 'active', // active, closed
+                    status: 'active',
                     notes: '',
                     alertEnabled: true,
+                    adx: adx,
                 };
                 return signal;
             } catch (e) {
@@ -539,18 +652,17 @@
             saveSignalsToStorage();
             renderSignals();
 
-            // إرسال إشعار متصفح
             const title = `🔔 إشارة ${signal.symbol}`;
-            const body = `${signal.type === 'BUY' ? 'شراء' : 'بيع'} عند ${signal.entryPrice.toFixed(2)} | الهدف: ${signal.tp.toFixed(2)} | الوقف: ${signal.sl.toFixed(2)}`;
+            const body = `${signal.type === 'BUY' ? 'شراء' : 'بيع'} عند ${signal.entryPrice.toFixed(2)} | الهدف: ${signal.tp.toFixed(2)} | الوقف: ${signal.sl.toFixed(2)} | ADX: ${signal.adx.toFixed(1)}`;
             sendBrowserNotification(title, body, `trade-${signal.tradeId}`);
 
-            // إرسال إلى تليجرام
             const msg = `<b>🔔 إشارة تداول جديدة</b>\n\n` +
                 `🪙 العملة: ${signal.symbol}\n` +
                 `📈 الاتجاه: ${signal.type === 'BUY' ? 'شراء (Long)' : 'بيع (Short)'}\n` +
                 `💰 سعر الدخول: ${signal.entryPrice.toFixed(2)}\n` +
                 `🎯 الهدف: ${signal.tp.toFixed(2)}\n` +
                 `🛑 وقف الخسارة: ${signal.sl.toFixed(2)}\n` +
+                `📊 ADX: ${signal.adx.toFixed(1)} (فوق 25)\n` +
                 `📊 التحليل: ${signal.reason}\n` +
                 `⏰ الوقت: ${formatTime(signal.timestamp)}`;
             await sendTelegramMessage(msg);
@@ -561,10 +673,8 @@
             const activeSignals = signals.filter(s => s.status === 'active');
             const container = signalsContainer;
 
-            // إخفاء الرسالة الفارغة
             if (activeSignals.length === 0) {
                 emptyState.style.display = 'block';
-                // نزيل أي بطاقات سابقة
                 const cards = container.querySelectorAll('.signal-card');
                 cards.forEach(c => c.remove());
                 statusBadge.textContent = '🔄 في انتظار الإشارات...';
@@ -573,11 +683,9 @@
             emptyState.style.display = 'none';
             statusBadge.textContent = `📊 ${activeSignals.length} إشارة نشطة`;
 
-            // إزالة البطاقات القديمة (نحتفظ بالبطاقات الموجودة إذا أمكن لتجنب الوميض لكننا سنعيد بناء)
             const cards = container.querySelectorAll('.signal-card');
             cards.forEach(c => c.remove());
 
-            // ترتيب تنازلي حسب الوقت
             activeSignals.sort((a, b) => b.timestamp - a.timestamp);
 
             for (const sig of activeSignals) {
@@ -600,6 +708,7 @@
                     <span>💰 الدخول: ${sig.entryPrice.toFixed(2)}</span>
                     <span>🎯 الهدف: ${sig.tp.toFixed(2)}</span>
                     <span>🛑 الوقف: ${sig.sl.toFixed(2)}</span>
+                    <span>📈 ADX: ${sig.adx ? sig.adx.toFixed(1) : 'N/A'}</span>
                 `;
                 card.appendChild(priceInfo);
 
@@ -616,7 +725,7 @@
                 shareBtn.className = 'share';
                 shareBtn.textContent = '📤 مشاركة';
                 shareBtn.addEventListener('click', () => {
-                    const text = `إشارة ${sig.symbol} ${sig.type === 'BUY' ? 'شراء' : 'بيع'}\nالدخول: ${sig.entryPrice.toFixed(2)}\nالهدف: ${sig.tp.toFixed(2)}\nالوقف: ${sig.sl.toFixed(2)}\nالتحليل: ${sig.reason}`;
+                    const text = `إشارة ${sig.symbol} ${sig.type === 'BUY' ? 'شراء' : 'بيع'}\nالدخول: ${sig.entryPrice.toFixed(2)}\nالهدف: ${sig.tp.toFixed(2)}\nالوقف: ${sig.sl.toFixed(2)}\nADX: ${sig.adx ? sig.adx.toFixed(1) : 'N/A'}\nالتحليل: ${sig.reason}`;
                     if (navigator.share) {
                         navigator.share({ title: 'إشارة تداول', text: text });
                     } else {
@@ -673,7 +782,7 @@
             }
         }
 
-        // ---------- المسح الدوري للعملات ----------
+        // ---------- المسح الدوري و اليدوي ----------
         let scanInterval = null;
         async function scanAllSymbols() {
             for (const symbol of SYMBOLS) {
@@ -686,6 +795,24 @@
                     console.error('خطأ في فحص ' + symbol, e);
                     showError(`فشل فحص ${symbol}: ${e.message}`);
                 }
+            }
+        }
+
+        // تحليل يدوي: فحص عملة محددة (نستخدم أول عملة أو نطلب من المستخدم)
+        async function manualAnalysis() {
+            // نطلب من المستخدم إدخال العملة
+            const symbol = prompt('أدخل رمز العملة (مثل BTCUSDT):', 'BTCUSDT');
+            if (!symbol) return;
+            try {
+                const signal = await scanSymbol(symbol.toUpperCase());
+                if (signal) {
+                    await addSignal(signal);
+                    alert(`تم العثور على إشارة لـ ${symbol}`);
+                } else {
+                    alert(`لا توجد إشارة لـ ${symbol} حالياً (قد يكون ADX <= 25 أو عدم توفر شروط أخرى)`);
+                }
+            } catch (e) {
+                showError(`خطأ في التحليل: ${e.message}`);
             }
         }
 
@@ -703,15 +830,12 @@
             loadSignals();
             renderSignals();
 
-            // طلب إذن الإشعارات
             if ('Notification' in window && Notification.permission === 'default') {
                 Notification.requestPermission();
             }
 
-            // تسجيل Service Worker
             await registerServiceWorker();
 
-            // إعدادات UI
             settingsToggle.addEventListener('click', () => {
                 settingsPanel.classList.toggle('open');
             });
@@ -723,22 +847,27 @@
                 alert('تم حفظ الإعدادات');
             });
 
+            // أزرار التحكم اليدوي
+            scanBtn.addEventListener('click', async () => {
+                scanBtn.textContent = '⏳ جاري...';
+                scanBtn.disabled = true;
+                await scanAllSymbols();
+                scanBtn.textContent = '🔍 فحص يدوي';
+                scanBtn.disabled = false;
+            });
+
+            analyzeBtn.addEventListener('click', manualAnalysis);
+
             // بدء المسح الدوري (كل 30 ثانية)
             scanAllSymbols(); // أول مرة فوراً
             scanInterval = setInterval(scanAllSymbols, 30000);
-
-            // إعادة عرض الإشارات عند تغيير الإشارات (بالفعل يتم الحفظ)
-            // نضيف مراقب للتخزين؟ لا، سنعتمد على التحديث عند كل إضافة.
         }
 
-        // تنظيف عند الخروج
         window.addEventListener('beforeunload', () => {
             if (scanInterval) clearInterval(scanInterval);
         });
 
-        // استدعاء التهيئة
         init();
-
     })();
 </script>
 </body>
