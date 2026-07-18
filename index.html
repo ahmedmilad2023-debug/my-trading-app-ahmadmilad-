@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1e1e2f">
-    <meta name="description" content="تطبيق تحليل صفقات التداول - Supply & Demand مع CVD و ADX">
-    <title>تداول - Supply & Demand + ADX</title>
+    <meta name="description" content="تطبيق تحليل صفقات التداول - Supply & Demand مع CVD و ADX واتجاه البيتكوين">
+    <title>تداول - Supply & Demand + ADX + BTC</title>
     <link rel="manifest" href="data:application/json,{%22name%22:%22تداول%20Supply%20%26%20Demand%22,%22short_name%22:%22تداول%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%231e1e2f%22,%22theme_color%22:%22%231e1e2f%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'><text%20y='.9em'%20font-size='90'>📈</text></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
     <style>
         * {
@@ -266,7 +266,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>📈 Supply & Demand + ADX</h1>
+    <h1>📈 Supply & Demand + ADX + BTC</h1>
     <button class="settings-toggle" id="settingsToggle">⚙️ الإعدادات</button>
     <div class="settings-panel" id="settingsPanel">
         <label>🔑 توكن بوت تليجرام</label>
@@ -307,7 +307,7 @@
             telegramToken: '',
             telegramChatId: ''
         };
-        let signals = []; // مصفوفة الإشارات
+        let signals = []; 
         let tradeIdCounter = 0;
 
         // عناصر DOM
@@ -455,19 +455,14 @@
         }
 
         // ---------- حساب ADX ----------
-        // نحتاج إلى 14 شمعة لحساب ADX (أكثر من 14 لضمان الدقة)
         function calculateADX(klines) {
-            // klines: array of [open, high, low, close] (نأخذها من بيانات Binance)
-            // نستخدم 14 فترة
             const period = 14;
             if (klines.length < period + 1) return null;
 
-            // استخراج high, low, close
             const high = klines.map(k => parseFloat(k[2]));
             const low = klines.map(k => parseFloat(k[3]));
             const close = klines.map(k => parseFloat(k[4]));
 
-            // حساب +DM و -DM و TR
             const plusDM = [];
             const minusDM = [];
             const tr = [];
@@ -479,7 +474,6 @@
                 if (downMove > upMove && downMove > 0) mm = downMove;
                 plusDM.push(pm);
                 minusDM.push(mm);
-                // True Range
                 const h = high[i];
                 const l = low[i];
                 const c = close[i-1];
@@ -489,7 +483,6 @@
                 tr.push(Math.max(tr1, tr2, tr3));
             }
 
-            // حساب المتوسطات (استخدم المتوسط المتحرك البسيط للتبسيط)
             function sma(data, period) {
                 const result = [];
                 for (let i = 0; i < data.length - period + 1; i++) {
@@ -502,7 +495,6 @@
                 return result;
             }
 
-            // نحتاج إلى بيانات كافية
             if (plusDM.length < period) return null;
 
             const smaPlusDM = sma(plusDM, period);
@@ -511,11 +503,9 @@
 
             if (smaPlusDM.length === 0 || smaMinusDM.length === 0 || smaTR.length === 0) return null;
 
-            // حساب +DI و -DI
             const plusDI = smaPlusDM.map((v, i) => (v / smaTR[i]) * 100);
             const minusDI = smaMinusDM.map((v, i) => (v / smaTR[i]) * 100);
 
-            // حساب DX ثم ADX
             const dx = [];
             for (let i = 0; i < plusDI.length; i++) {
                 const diSum = plusDI[i] + minusDI[i];
@@ -526,15 +516,35 @@
                 }
             }
 
-            // ADX هو SMA لـ DX على نفس الفترة
             if (dx.length < period) return null;
             const adx = sma(dx, period);
-            return adx[adx.length - 1]; // آخر قيمة
+            return adx[adx.length - 1];
         }
 
-        // ---------- استراتيجية Supply & Demand + CVD + ADX ----------
-        const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT'];
-        let lastSignalPerSymbol = {};
+        // ---------- تحديد اتجاه البيتكوين (1 ساعة) ----------
+        async function getBitcoinDirection() {
+            try {
+                const klines = await fetchKlines('BTCUSDT', '1h', 50);
+                if (!klines || klines.length < 20) return null;
+                // نأخذ متوسط سعر آخر 12 شمعة (نصف يوم) ونقارنه بـ 12 شمعة سابقة
+                const closes = klines.map(k => parseFloat(k[4]));
+                const recent = closes.slice(-12);
+                const prev = closes.slice(-24, -12);
+                if (recent.length < 12 || prev.length < 12) return null;
+                const avgRecent = recent.reduce((a,b) => a+b, 0) / recent.length;
+                const avgPrev = prev.reduce((a,b) => a+b, 0) / prev.length;
+                if (avgRecent > avgPrev) return 'UP';
+                else if (avgRecent < avgPrev) return 'DOWN';
+                else return null;
+            } catch (e) {
+                console.error('خطأ في تحديد اتجاه البيتكوين:', e);
+                return null;
+            }
+        }
+
+        // ---------- استراتيجية Supply & Demand + CVD + ADX + اتجاه BTC ----------
+        // 10 عملات عالية الارتباط بالبيتكوين
+        const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT', 'MATICUSDT', 'LTCUSDT', 'BCHUSDT'];
 
         async function fetchKlines(symbol, interval = '1m', limit = 100) {
             const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
@@ -578,19 +588,16 @@
             return { supplyZone, demandZone, currentPrice, maxHigh, minLow };
         }
 
-        async function scanSymbol(symbol) {
+        async function scanSymbol(symbol, btcDirection) {
             try {
+                // إذا كان الرمز هو BTC نفسه نتعامل معه بشكل منفصل أو نسمح به
+                // نطبق الشروط نفسها ولكن نعتمد على اتجاه البيتكوين العام
                 const klines = await fetchKlines(symbol);
                 if (!klines || klines.length < 30) return null;
 
-                // حساب ADX (نحتاج 14 شمعة على الأقل)
                 const adx = calculateADX(klines);
                 if (adx === null) return null;
-                // شرط ADX > 25
-                if (adx <= 25) {
-                    // لا نأخذ صفقة إذا كان ADX <= 25
-                    return null;
-                }
+                if (adx <= 25) return null;
 
                 const cvd = computeCVD(klines);
                 const { supplyZone, demandZone, currentPrice, maxHigh, minLow } = findSupportResistance(klines);
@@ -602,19 +609,46 @@
                 let reason = '';
                 let tp = 0, sl = 0;
 
+                // تحديد إشارة محتملة
+                let potentialType = null;
+                let potentialReason = '';
                 if (currentPrice > supplyZone && cvd > threshold) {
-                    signalType = 'SELL';
-                    reason = `السعر فوق منطقة العرض (${supplyZone.toFixed(2)}) مع CVD إيجابي (${cvd.toFixed(0)}) و ADX (${adx.toFixed(1)}) > 25، اتجاه هبوط متوقع.`;
-                    tp = minLow * 0.99;
-                    sl = supplyZone * 1.02;
+                    potentialType = 'SELL';
+                    potentialReason = `السعر فوق منطقة العرض (${supplyZone.toFixed(2)}) مع CVD إيجابي (${cvd.toFixed(0)}) و ADX (${adx.toFixed(1)}) > 25`;
                 } else if (currentPrice < demandZone && cvd < -threshold) {
-                    signalType = 'BUY';
-                    reason = `السعر تحت منطقة الطلب (${demandZone.toFixed(2)}) مع CVD سلبي (${cvd.toFixed(0)}) و ADX (${adx.toFixed(1)}) > 25، اتجاه صعود متوقع.`;
-                    tp = maxHigh * 1.01;
-                    sl = demandZone * 0.98;
+                    potentialType = 'BUY';
+                    potentialReason = `السعر تحت منطقة الطلب (${demandZone.toFixed(2)}) مع CVD سلبي (${cvd.toFixed(0)}) و ADX (${adx.toFixed(1)}) > 25`;
                 }
 
-                if (!signalType) return null;
+                if (!potentialType) return null;
+
+                // التحقق من التوافق مع اتجاه البيتكوين
+                if (btcDirection === 'UP' && potentialType === 'SELL') {
+                    // غير متوافق: البيتكوين صاعد فلا نبيع
+                    return null;
+                }
+                if (btcDirection === 'DOWN' && potentialType === 'BUY') {
+                    // غير متوافق: البيتكوين هابط فلا نشتري
+                    return null;
+                }
+
+                // إذا كان البيتكوين مستقراً (لا اتجاه) نسمح بأي إشارة لكن نفضل عدم الدخول
+                // لكن سنسمح بها لأننا قد نغتنم الفرصة
+                // لكن الشرط هو أن تكون متوافقة، إذا كان الاتجاه غير واضح نسمح بها
+
+                // إذا وصلنا هنا فالإشارة متوافقة
+                signalType = potentialType;
+                reason = potentialReason + ` واتجاه البيتكوين ${btcDirection === 'UP' ? 'صاعد' : btcDirection === 'DOWN' ? 'هابط' : 'محايد'}، متوافق.`;
+
+                // تحديد الهدف 2% ووقف 0.5%
+                const entryPrice = currentPrice;
+                if (signalType === 'BUY') {
+                    tp = entryPrice * 1.02;  // +2%
+                    sl = entryPrice * 0.995; // -0.5%
+                } else { // SELL
+                    tp = entryPrice * 0.98;  // -2%
+                    sl = entryPrice * 1.005; // +0.5%
+                }
 
                 // التحقق من عدم وجود إشارة مفتوحة لنفس العملة
                 const existing = signals.find(s => s.symbol === symbol && s.status === 'active');
@@ -628,7 +662,7 @@
                     tradeId: tradeId,
                     symbol: symbol,
                     type: signalType,
-                    entryPrice: currentPrice,
+                    entryPrice: entryPrice,
                     tp: tp,
                     sl: sl,
                     timestamp: now,
@@ -637,6 +671,7 @@
                     notes: '',
                     alertEnabled: true,
                     adx: adx,
+                    btcDirection: btcDirection,
                 };
                 return signal;
             } catch (e) {
@@ -660,9 +695,10 @@
                 `🪙 العملة: ${signal.symbol}\n` +
                 `📈 الاتجاه: ${signal.type === 'BUY' ? 'شراء (Long)' : 'بيع (Short)'}\n` +
                 `💰 سعر الدخول: ${signal.entryPrice.toFixed(2)}\n` +
-                `🎯 الهدف: ${signal.tp.toFixed(2)}\n` +
-                `🛑 وقف الخسارة: ${signal.sl.toFixed(2)}\n` +
+                `🎯 الهدف (2%): ${signal.tp.toFixed(2)}\n` +
+                `🛑 وقف الخسارة (0.5%): ${signal.sl.toFixed(2)}\n` +
                 `📊 ADX: ${signal.adx.toFixed(1)} (فوق 25)\n` +
+                `📊 اتجاه البيتكوين: ${signal.btcDirection === 'UP' ? 'صاعد' : signal.btcDirection === 'DOWN' ? 'هابط' : 'محايد'}\n` +
                 `📊 التحليل: ${signal.reason}\n` +
                 `⏰ الوقت: ${formatTime(signal.timestamp)}`;
             await sendTelegramMessage(msg);
@@ -706,8 +742,8 @@
                 priceInfo.className = 'price-info';
                 priceInfo.innerHTML = `
                     <span>💰 الدخول: ${sig.entryPrice.toFixed(2)}</span>
-                    <span>🎯 الهدف: ${sig.tp.toFixed(2)}</span>
-                    <span>🛑 الوقف: ${sig.sl.toFixed(2)}</span>
+                    <span>🎯 الهدف (2%): ${sig.tp.toFixed(2)}</span>
+                    <span>🛑 الوقف (0.5%): ${sig.sl.toFixed(2)}</span>
                     <span>📈 ADX: ${sig.adx ? sig.adx.toFixed(1) : 'N/A'}</span>
                 `;
                 card.appendChild(priceInfo);
@@ -785,9 +821,15 @@
         // ---------- المسح الدوري و اليدوي ----------
         let scanInterval = null;
         async function scanAllSymbols() {
+            // جلب اتجاه البيتكوين أولاً
+            const btcDir = await getBitcoinDirection();
+            if (!btcDir) {
+                console.warn('لم نتمكن من تحديد اتجاه البيتكوين، سنعمل بدون شرط الاتجاه');
+                // نستمر ولكن بدون تصفية الاتجاه
+            }
             for (const symbol of SYMBOLS) {
                 try {
-                    const signal = await scanSymbol(symbol);
+                    const signal = await scanSymbol(symbol, btcDir);
                     if (signal) {
                         await addSignal(signal);
                     }
@@ -798,18 +840,17 @@
             }
         }
 
-        // تحليل يدوي: فحص عملة محددة (نستخدم أول عملة أو نطلب من المستخدم)
         async function manualAnalysis() {
-            // نطلب من المستخدم إدخال العملة
             const symbol = prompt('أدخل رمز العملة (مثل BTCUSDT):', 'BTCUSDT');
             if (!symbol) return;
             try {
-                const signal = await scanSymbol(symbol.toUpperCase());
+                const btcDir = await getBitcoinDirection();
+                const signal = await scanSymbol(symbol.toUpperCase(), btcDir);
                 if (signal) {
                     await addSignal(signal);
                     alert(`تم العثور على إشارة لـ ${symbol}`);
                 } else {
-                    alert(`لا توجد إشارة لـ ${symbol} حالياً (قد يكون ADX <= 25 أو عدم توفر شروط أخرى)`);
+                    alert(`لا توجد إشارة لـ ${symbol} حالياً (قد يكون ADX <= 25، أو عدم توافق مع اتجاه البيتكوين، أو عدم توفر شروط أخرى)`);
                 }
             } catch (e) {
                 showError(`خطأ في التحليل: ${e.message}`);
@@ -847,7 +888,6 @@
                 alert('تم حفظ الإعدادات');
             });
 
-            // أزرار التحكم اليدوي
             scanBtn.addEventListener('click', async () => {
                 scanBtn.textContent = '⏳ جاري...';
                 scanBtn.disabled = true;
@@ -858,8 +898,7 @@
 
             analyzeBtn.addEventListener('click', manualAnalysis);
 
-            // بدء المسح الدوري (كل 30 ثانية)
-            scanAllSymbols(); // أول مرة فوراً
+            scanAllSymbols(); 
             scanInterval = setInterval(scanAllSymbols, 30000);
         }
 
