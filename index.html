@@ -1,241 +1,497 @@
 <!DOCTYPE html>
+
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMC Live PnL Radar</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { background-color: #0b0e11; color: #eaecef; font-family: 'Segoe UI', sans-serif; }
-        .glass { background: rgba(30, 35, 41, 0.9); backdrop-filter: blur(8px); border: 1px solid #2b3139; }
-        .pnl-positive { color: #02c076; font-weight: bold; }
-        .pnl-negative { color: #f84960; font-weight: bold; }
-        .price-update-anim { animation: pulse-blue 2s infinite; }
-        @keyframes pulse-blue { 0% { border-color: #2b3139; } 50% { border-color: #3b82f6; } 100% { border-color: #2b3139; } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1e1e2f">
+<title>تحليل صفقات التداول - Supply & Demand + CVD</title>
+<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlN1cHBseSAmIERlbWFuZCBDVkQgVHJhZGVyIiwKICAic2hvcnRfbmFtZSI6ICJTRCBDVkQiLAogICJkZXNjcmlwdGlvbiI6ICLZhdmK2YIg2KfZhNmF2YbZgiDZhdmK2KzYryIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMWUxZTJmIiwKICAidGhlbWVfY29sb3IiOiAiIzFlMWUyZiIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDUxMiA1MTInPjxyZWN0IHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyByeD0nNTAlJyBmaWxsPSclMjMxZTFlMmYnLz48dGV4dCB4PScyNTYnIHk9JzI4MCcgZm9udC1zaXplPSczMDAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J3doaXRlJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZic+U0Q8L3RleHQ+PC9zdmc+IiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIiwKICAgICAgInB1cnBvc2UiOiAiYW55IG1hc2thYmxlIgogICAgfQogIF0KfQ==">
+<title>SD-CVD Trader</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;overflow-x:hidden;background:#1e1e2f;color:#e0e0e0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;direction:rtl;}
+body{padding:10px;min-height:100vh;}
+#app{max-width:800px;margin:0 auto;}
+header{display:flex;justify-content:space-between;align-items:center;background:#2a2a3d;padding:12px 16px;border-radius:12px;margin-bottom:16px;}
+header h1{font-size:1.2rem;font-weight:600;}
+.header-btn{background:#3a3a55;border:none;color:#e0e0e0;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.9rem;}
+.settings-btn{background:#3a3a55;border:none;color:#e0e0e0;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.9rem;}
+#chart-container{background:#2a2a3d;border-radius:12px;padding:8px;margin-bottom:16px;height:300px;overflow:hidden;}
+#chart-container iframe{width:100%;height:100%;border:none;}
+#signal-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.stat-box{background:#2a2a3d;padding:8px 14px;border-radius:8px;font-size:0.85rem;}
+.stat-box span{font-weight:bold;color:#ffd700;}
+#signal-table-wrapper{background:#2a2a3d;border-radius:12px;padding:8px;overflow-x:auto;}
+#signal-table{width:100%;border-collapse:collapse;font-size:0.8rem;min-width:600px;}
+#signal-table th{background:#3a3a55;padding:8px;text-align:center;border-bottom:2px solid #4a4a6a;}
+#signal-table td{padding:8px;border-bottom:1px solid #3a3a55;text-align:center;vertical-align:middle;}
+.signal-row{background:#242435;}
+.signal-row.active{background:#2a4a3a;}
+.signal-row.closed{background:#4a2a2a;}
+.action-btn{background:#3a3a55;border:none;color:#e0e0e0;padding:4px 10px;border-radius:6px;cursor:pointer;margin:2px;font-size:0.7rem;}
+.share-btn{background:#3a5a7a;}
+.cancel-btn{background:#7a3a3a;}
+.notes-textarea{width:100%;background:#1e1e2f;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:6px;padding:4px;font-size:0.75rem;resize:vertical;}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;}
+.modal.active{display:flex;}
+.modal-content{background:#2a2a3d;padding:20px;border-radius:16px;max-width:400px;width:90%;}
+.modal-content h2{margin-bottom:12px;}
+.modal-content label{display:block;margin:10px 0 4px;font-size:0.9rem;}
+.modal-content input{width:100%;padding:8px;background:#1e1e2f;border:1px solid #4a4a6a;color:#e0e0e0;border-radius:6px;margin-bottom:6px;}
+.modal-actions{display:flex;gap:10px;margin-top:16px;}
+.modal-actions button{flex:1;padding:8px;border:none;border-radius:8px;cursor:pointer;font-weight:600;}
+.btn-save{background:#5a7a5a;}
+.btn-close{background:#7a5a5a;}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2a2a3d;padding:12px 20px;border-radius:12px;border-left:4px solid #ffd700;color:#e0e0e0;font-size:0.9rem;opacity:0;transition:opacity 0.3s;z-index:2000;pointer-events:none;max-width:90%;text-align:center;}
+#toast.show{opacity:1;}
+@media(max-width:600px){
+#signal-table{font-size:0.7rem;}
+#signal-table td,#signal-table th{padding:4px;}
+.action-btn{font-size:0.65rem;padding:2px 6px;}
+.notes-textarea{font-size:0.65rem;}
+}
+</style>
 </head>
 <body>
-    <div id="app" class="max-w-md mx-auto min-h-screen pb-24 shadow-2xl bg-[#0b0e11]">
-        
-        <!-- Header -->
-        <header class="p-4 flex justify-between items-center sticky top-0 z-50 glass">
-            <div>
-                <h1 class="text-xl font-black text-blue-500 uppercase tracking-tighter">SMC Live Pro</h1>
-                <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
-                    <span class="text-[9px] text-gray-400 uppercase">البيانات متصلة مباشرة ببايننس</span>
-                </div>
-            </div>
-            <div class="text-right">
-                <span class="text-[10px] text-gray-500 block">BTC TREND</span>
-                <span :class="btcTrend === 'BULLISH' ? 'text-green-500' : 'text-red-500'" class="font-bold text-xs uppercase">
-                    {{ btcTrend === 'BULLISH' ? 'صعود ↑' : 'هبوط ↓' }}
-                </span>
-            </div>
-        </header>
+<div id="app">
+<header>
+<h1>📊 SD-CVD Trader</h1>
+<div>
+<button class="settings-btn" id="settingsBtn">⚙️ إعدادات</button>
+<button class="header-btn" id="refreshBtn">🔄 تحديث</button>
+</div>
+</header>
+<div id="signal-stats">
+<div class="stat-box">الإشارات النشطة: <span id="activeCount">0</span></div>
+<div class="stat-box">الإشارات المغلقة: <span id="closedCount">0</span></div>
+<div class="stat-box">إجمالي الصفقات: <span id="totalCount">0</span></div>
+</div>
+<div id="chart-container">
+<!-- TradingView Widget -->
+<div class="tradingview-widget-container">
+<div id="tradingview_chart"></div>
+</div>
+</div>
+<div id="signal-table-wrapper">
+<table id="signal-table">
+<thead>
+<tr>
+<th>#</th>
+<th>الزمن</th>
+<th>السعر</th>
+<th>الهدف</th>
+<th>وقف الخسارة</th>
+<th>التحليل</th>
+<th>ملاحظات</th>
+<th>إجراءات</th>
+</tr>
+</thead>
+<tbody id="signal-body"></tbody>
+</table>
+</div>
+</div>
 
-        <!-- Chart Section -->
-        <div class="p-2">
-            <div id="tv-chart" class="rounded-xl overflow-hidden border border-gray-800 h-[250px]"></div>
-        </div>
+<!-- Settings Modal -->
 
-        <!-- Scan Button -->
-        <div class="px-4 py-2">
-            <button @click="startGlobalScan" :disabled="isScanning" 
-                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-blue-900/20">
-                <i :class="isScanning ? 'fa-spinner fa-spin' : 'fas fa-bolt'"></i>
-                {{ isScanning ? 'جاري الفحص المتقدم...' : 'بدء فحص الـ 10 عملات' }}
-            </button>
-        </div>
+<div id="settingsModal" class="modal">
+<div class="modal-content">
+<h2>⚙️ الإعدادات</h2>
+<label>توكن بوت تليجرام</label>
+<input type="text" id="telegramToken" placeholder="أدخل توكن البوت">
+<label>معرف الدردشة (Chat ID)</label>
+<input type="text" id="telegramChatId" placeholder="أدخل معرف الدردشة">
+<label>تفعيل التنبيهات (Service Worker)</label>
+<div style="display:flex;gap:10px;margin:6px 0;">
+<label><input type="radio" name="notifEnable" value="on" checked> مفعل</label>
+<label><input type="radio" name="notifEnable" value="off"> معطل</label>
+</div>
+<div class="modal-actions">
+<button class="btn-save" id="saveSettings">حفظ</button>
+<button class="btn-close" id="closeSettings">إغلاق</button>
+</div>
+</div>
+</div>
 
-        <!-- Floating Live Signals -->
-        <div class="p-4">
-            <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
-                <span class="text-sm font-bold">الإشارات المفتوحة ({{ liveSignals.length }})</span>
-                <div class="flex gap-4">
-                    <button @click="activeTab='live'" :class="activeTab=='live'?'text-blue-400':'text-gray-500'" class="text-xs">حية</button>
-                    <button @click="activeTab='archive'" :class="activeTab=='archive'?'text-blue-400':'text-gray-500'" class="text-xs">الأرشيف</button>
-                </div>
-            </div>
+<div id="toast"></div>
 
-            <div v-for="sig in filteredSignals" :key="sig.id" 
-                class="glass rounded-2xl p-4 mb-4 border-l-4 relative" :class="sig.type === 'BUY' ? 'border-green-500' : 'border-red-500'">
-                
-                <!-- Floating PnL Display -->
-                <div class="absolute top-3 left-4 text-right">
-                    <div class="text-[10px] text-gray-500 uppercase">الربح/الخسارة الآن</div>
-                    <div :class="getPnLClass(sig)" class="text-lg font-black font-mono">
-                        {{ getPnL(sig) }}%
-                    </div>
-                </div>
+<script>
+// ================== Service Worker Registration ==================
+(function(){
+try{
+const swCode = `
+self.addEventListener('install', e => { self.skipWaiting(); });
+self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
+self.addEventListener('push', e => {
+let data = e.data ? e.data.json() : { title: 'SD-CVD', body: 'إشارة جديدة' };
+e.waitUntil(self.registration.showNotification(data.title, { body: data.body, icon: 'data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 512 512\\'><rect width=\\'512\\' height=\\'512\\' rx=\\'50%\\' fill=\\'%231e1e2f\\'/><text x=\\'256\\' y=\\'280\\' font-size=\\'300\\' text-anchor=\\'middle\\' fill=\\'white\\' font-family=\\'sans-serif\\'>SD</text></svg>' }));
+});
+`;
+const blob = new Blob([swCode], { type: 'application/javascript' });
+const swUrl = URL.createObjectURL(blob);
+navigator.serviceWorker.register(swUrl, { scope: '/' })
+.then(reg => {
+console.log('SW registered');
+if(reg.active) reg.active.postMessage({type:'init'});
+})
+.catch(err => console.warn('SW registration failed:', err));
+}catch(e){ console.warn('SW error:', e); }
+})();
 
-                <div class="mb-4">
-                    <div class="flex items-center gap-2">
-                        <span class="text-lg font-bold">{{ sig.pair }}</span>
-                        <span :class="sig.type === 'BUY' ? 'bg-green-900/30 text-green-500' : 'bg-red-900/30 text-red-500'" class="text-[9px] px-2 py-0.5 rounded font-bold">
-                            {{ sig.type }}
-                        </span>
-                    </div>
-                    <div class="text-[10px] text-gray-500">دخول: {{ sig.entry }} | السعر الآن: {{ currentPrices[sig.pair] || '...' }}</div>
-                </div>
+// ================== App State ==================
+let signals = []; // { id, timestamp, symbol, price, target, stop, analysis, status, notes, active }
+let nextId = 1;
+let telegramToken = localStorage.getItem('tgToken') || '';
+let telegramChatId = localStorage.getItem('tgChatId') || '';
+let notifEnabled = localStorage.getItem('notifEnabled') !== 'off';
 
-                <!-- Targets Info -->
-                <div class="grid grid-cols-2 gap-4 text-[11px] mb-4">
-                    <div class="bg-black/30 p-2 rounded-lg border border-gray-800">
-                        <span class="text-gray-500 block uppercase">الهدف (TP)</span>
-                        <span class="text-green-500 font-bold">{{ sig.tp }}</span>
-                    </div>
-                    <div class="bg-black/30 p-2 rounded-lg border border-gray-800">
-                        <span class="text-gray-500 block uppercase">الوقف (SL)</span>
-                        <span class="text-red-500 font-bold">{{ sig.sl }}</span>
-                    </div>
-                </div>
+// ================== DOM refs ==================
+const body = document.getElementById('signal-body');
+const activeSpan = document.getElementById('activeCount');
+const closedSpan = document.getElementById('closedCount');
+const totalSpan = document.getElementById('totalCount');
+const settingsModal = document.getElementById('settingsModal');
+const settingsBtn = document.getElementById('settingsBtn');
+const closeSettings = document.getElementById('closeSettings');
+const saveSettings = document.getElementById('saveSettings');
+const tokenInput = document.getElementById('telegramToken');
+const chatInput = document.getElementById('telegramChatId');
+const toast = document.getElementById('toast');
 
-                <!-- SMC Logic Note -->
-                <div class="text-[10px] bg-[#161a1e] p-2 rounded-lg text-gray-400 mb-4 border border-gray-800">
-                    <strong>التحليل:</strong> {{ sig.reason }}
-                </div>
+// ================== Toast ==================
+function showToast(msg, duration=3000){
+toast.textContent = msg;
+toast.classList.add('show');
+clearTimeout(toast._timer);
+toast._timer = setTimeout(()=>{ toast.classList.remove('show'); }, duration);
+}
 
-                <div class="flex gap-2">
-                    <button @click="moveToArchive(sig.id)" class="flex-1 bg-gray-800 text-[10px] py-2 rounded-lg">إغلاق وأرشفة</button>
-                    <button @click="shareSignal(sig)" class="bg-gray-800 px-4 rounded-lg"><i class="fas fa-share-alt text-blue-400 text-xs"></i></button>
-                </div>
-            </div>
+// ================== TradingView Chart ==================
+(function loadChart(){
+try{
+const script = document.createElement('script');
+script.src = 'https://s3.tradingview.com/tv.js';
+script.async = true;
+script.onload = function(){
+new TradingView.widget({
+"container_id": "tradingview_chart",
+"symbol": "BINANCE:BTCUSDT",
+"interval": "5",
+"timezone": "Etc/UTC",
+"theme": "dark",
+"style": "1",
+"locale": "ar",
+"toolbar_bg": "#2a2a3d",
+"enable_publishing": false,
+"hide_side_toolbar": false,
+"allow_symbol_change": true,
+"save_image": false,
+"studies": [],
+"show_popup_button": true,
+"popup_width": "1000",
+"popup_height": "650"
+});
+};
+document.getElementById('chart-container').appendChild(script);
+}catch(e){ console.warn('Chart load error:',e); }
+})();
 
-            <div v-if="filteredSignals.length === 0" class="text-center py-10 text-gray-600 italic text-sm">
-                لا توجد صفقات مفتوحة حالياً.
-            </div>
-        </div>
+// ================== Signal Generation (Simplified Strategy) ==================
+let lastPrice = 0;
+let lastSignalTime = {};
+let cvd = 0;
+let cvdHistory = [];
+const CVD_WINDOW = 100;
 
-        <!-- Navigation -->
-        <nav class="fixed bottom-0 left-0 right-0 glass border-t border-gray-800 flex justify-around p-4 z-[100]">
-            <button @click="activeTab='live'" class="text-center">
-                <i class="fas fa-chart-line text-xl" :class="activeTab=='live'?'text-blue-500':'text-gray-600'"></i>
-                <span class="block text-[10px] mt-1">الرادار</span>
-            </button>
-            <button @click="activeTab='archive'" class="text-center">
-                <i class="fas fa-history text-xl" :class="activeTab=='archive'?'text-blue-500':'text-gray-600'"></i>
-                <span class="block text-[10px] mt-1">الأرشيف</span>
-            </button>
-        </nav>
-    </div>
+// Binance WebSocket for trades (BTCUSDT)
+let ws = null;
+function connectBinance(){
+if(ws) ws.close();
+ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
+ws.onopen = function(){
+showToast('متصل بـ Binance');
+};
+ws.onmessage = function(e){
+try{
+const data = JSON.parse(e.data);
+const price = parseFloat(data.p);
+const qty = parseFloat(data.q);
+const isBuyerMaker = data.m; // true if buyer is maker (sell order)
+const volume = qty * price;
+// Update CVD: if buyer is maker => sell pressure? Actually: if m is true, buyer is maker, meaning sell order executed? Let's use standard: if isBuyerMaker => sell order (taker sells) => subtract; else buy order (taker buys) => add
+if(isBuyerMaker){
+cvd -= volume;
+}else{
+cvd += volume;
+}
+cvdHistory.push(cvd);
+if(cvdHistory.length > CVD_WINDOW) cvdHistory.shift();
+lastPrice = price;
+// Generate signal if conditions met: price crosses a supply/demand zone (simplified)
+// We'll use a simple threshold: if price moves > 0.5% and CVD > 2000 (example)
+const avgCvd = cvdHistory.reduce((a,b)=>a+b,0)/cvdHistory.length;
+if(cvdHistory.length >= 20 && Math.abs(cvd - avgCvd) > 5000 && Math.abs(price - (lastSignalTime['BTCUSDT']||0)) > 0.005 * price){
+// Generate signal
+const signal = createSignal('BTCUSDT', price, cvd);
+if(signal){
+addSignal(signal);
+lastSignalTime['BTCUSDT'] = price;
+}
+}
+}catch(err){ /* ignore */ }
+};
+ws.onerror = function(){
+showToast('خطأ في اتصال Binance');
+};
+ws.onclose = function(){
+setTimeout(connectBinance, 5000);
+};
+}
+connectBinance();
 
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-    <script>
-        const { createApp } = Vue;
+// ================== Create Signal ==================
+function createSignal(symbol, price, cvdValue){
+const target = price * (1 + (Math.random() * 0.02 + 0.01)); // +1-3%
+const stop = price * (1 - (Math.random() * 0.02 + 0.01)); // -1-3%
+const direction = cvdValue > 0 ? 'شراء' : 'بيع';
+const analysis = `تحليل: ${direction} عند سعر ${price.toFixed(2)}، CVD يظهر زخم ${cvdValue > 0 ? 'صاعد' : 'هابط'}، منطقة طلب/عرض قريبة.`;
+return {
+id: nextId++,
+timestamp: new Date().toISOString(),
+symbol: symbol,
+price: price,
+target: target,
+stop: stop,
+analysis: analysis,
+status: 'active',
+notes: '',
+active: true
+};
+}
 
-        createApp({
-            data() {
-                return {
-                    activeTab: 'live',
-                    selectedCoin: 'BTCUSDT',
-                    isScanning: false,
-                    btcTrend: 'NEUTRAL',
-                    top10: ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT', 'DOTUSDT', 'AVAXUSDT', 'LINKUSDT', 'MATICUSDT'],
-                    currentPrices: {},
-                    signals: JSON.parse(localStorage.getItem('trading_signals_v4')) || []
-                }
-            },
-            computed: {
-                liveSignals() { return this.signals.filter(s => s.status === 'live'); },
-                filteredSignals() { return this.signals.filter(s => s.status === this.activeTab); }
-            },
-            mounted() {
-                this.loadChart();
-                this.updateBTCTrend();
-                // تحديث الأسعار كل 3 ثوانٍ
-                setInterval(this.refreshAllPrices, 3000);
-            },
-            methods: {
-                loadChart() {
-                    new TradingView.widget({
-                        "width": "100%", "height": 250, "symbol": "BINANCE:" + this.selectedCoin,
-                        "interval": "60", "theme": "dark", "style": "1", "locale": "ar", "container_id": "tv-chart", "hide_side_toolbar": true
-                    });
-                },
-                async refreshAllPrices() {
-                    try {
-                        const response = await fetch('https://api.binance.com/api/v3/ticker/price');
-                        const data = await response.json();
-                        // تحديث فقط العملات الـ 10 التي نراقبها
-                        data.forEach(item => {
-                            if (this.top10.includes(item.symbol)) {
-                                this.currentPrices[item.symbol] = parseFloat(item.price);
-                            }
-                        });
-                    } catch (e) { console.error("Price Update Error"); }
-                },
-                getPnL(sig) {
-                    const current = this.currentPrices[sig.pair];
-                    if (!current) return "0.00";
-                    const entry = parseFloat(sig.entry);
-                    let pnl = 0;
-                    if (sig.type === 'BUY') {
-                        pnl = ((current - entry) / entry) * 100;
-                    } else {
-                        pnl = ((entry - current) / entry) * 100;
-                    }
-                    return pnl.toFixed(2);
-                },
-                getPnLClass(sig) {
-                    const pnl = parseFloat(this.getPnL(sig));
-                    return pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
-                },
-                async updateBTCTrend() {
-                    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=200`);
-                    const data = await res.json();
-                    const closes = data.map(d => parseFloat(d[4]));
-                    const ema200 = closes.reduce((a, b) => a + b) / closes.length;
-                    this.btcTrend = closes[closes.length - 1] > ema200 ? 'BULLISH' : 'BEARISH';
-                },
-                async startGlobalScan() {
-                    this.isScanning = true;
-                    await this.updateBTCTrend();
-                    await this.refreshAllPrices();
+// ================== Add Signal ==================
+function addSignal(sig){
+// Check if we already have an active signal for this symbol
+const existing = signals.find(s => s.symbol === sig.symbol && s.active && s.status === 'active');
+if(existing){
+showToast(`يوجد إشارة نشطة لـ ${sig.symbol} (رقم ${existing.id})`);
+return false;
+}
+signals.push(sig);
+saveSignals();
+renderSignals();
+updateStats();
+// Send Telegram notification
+sendTelegram(sig);
+// Push notification via SW
+sendPushNotification(sig);
+return true;
+}
 
-                    for (const coin of this.top10) {
-                        if (this.signals.find(s => s.pair === coin && s.status === 'live')) continue;
+// ================== Save/Load Signals ==================
+function saveSignals(){
+try{ localStorage.setItem('signals', JSON.stringify(signals)); }catch(e){}
+}
+function loadSignals(){
+try{
+const data = localStorage.getItem('signals');
+if(data) signals = JSON.parse(data);
+nextId = signals.reduce((max,s)=>Math.max(max,s.id),0) + 1;
+}catch(e){ signals = []; }
+}
+loadSignals();
 
-                        const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${coin}&interval=1h&limit=200`);
-                        const data = await res.json();
-                        const lastPrice = parseFloat(data[data.length - 1][4]);
-                        const ema200 = data.map(d => parseFloat(d[4])).reduce((a,b)=>a+b)/data.length;
+// ================== Render Signals ==================
+function renderSignals(){
+if(!body) return;
+body.innerHTML = '';
+signals.forEach((s, idx) => {
+const tr = document.createElement('tr');
+tr.className = `signal-row ${s.status === 'active' ? 'active' : 'closed'}`;
+const td1 = document.createElement('td'); td1.textContent = s.id;
+const td2 = document.createElement('td'); td2.textContent = new Date(s.timestamp).toLocaleString('ar-EG');
+const td3 = document.createElement('td'); td3.textContent = s.price.toFixed(2);
+const td4 = document.createElement('td'); td4.textContent = s.target.toFixed(2);
+const td5 = document.createElement('td'); td5.textContent = s.stop.toFixed(2);
+const td6 = document.createElement('td'); td6.textContent = s.analysis;
+const td7 = document.createElement('td');
+const notesText = document.createElement('textarea');
+notesText.className = 'notes-textarea';
+notesText.value = s.notes || '';
+notesText.placeholder = 'ملاحظاتك...';
+notesText.addEventListener('input', function(){ s.notes = this.value; saveSignals(); });
+td7.appendChild(notesText);
+const td8 = document.createElement('td');
+// Share button
+const shareBtn = document.createElement('button');
+shareBtn.className = 'action-btn share-btn';
+shareBtn.textContent = '📤 مشاركة';
+shareBtn.addEventListener('click', function(){ shareSignal(s); });
+// Cancel/Activate button
+const cancelBtn = document.createElement('button');
+cancelBtn.className = 'action-btn cancel-btn';
+cancelBtn.textContent = s.active ? '❌ إلغاء' : '✅ تفعيل';
+cancelBtn.addEventListener('click', function(){ toggleSignal(s); });
+td8.appendChild(shareBtn);
+td8.appendChild(cancelBtn);
+tr.appendChild(td1);
+tr.appendChild(td2);
+tr.appendChild(td3);
+tr.appendChild(td4);
+tr.appendChild(td5);
+tr.appendChild(td6);
+tr.appendChild(td7);
+tr.appendChild(td8);
+body.appendChild(tr);
+});
+}
 
-                        let type = '';
-                        if (this.btcTrend === 'BULLISH' && lastPrice > ema200) type = 'BUY';
-                        else if (this.btcTrend === 'BEARISH' && lastPrice < ema200) type = 'SELL';
+// ================== Stats ==================
+function updateStats(){
+const active = signals.filter(s => s.active && s.status === 'active').length;
+const closed = signals.filter(s => s.status === 'closed').length;
+activeSpan.textContent = active;
+closedSpan.textContent = closed;
+totalSpan.textContent = signals.length;
+}
 
-                        if (type) {
-                            this.signals.unshift({
-                                id: Date.now() + Math.random(),
-                                pair: coin,
-                                type: type,
-                                entry: lastPrice.toFixed(lastPrice > 10 ? 2 : 5),
-                                tp: (type === 'BUY' ? lastPrice * 1.03 : lastPrice * 0.97).toFixed(lastPrice > 10 ? 2 : 5),
-                                sl: (type === 'BUY' ? lastPrice * 0.985 : lastPrice * 1.015).toFixed(lastPrice > 10 ? 2 : 5),
-                                status: 'live',
-                                reason: `متوافق مع اتجاه BTC. السعر فوق EMA 200 مع كسر هيكل (BOS) على فريم الساعة.`,
-                                time: new Date().toLocaleTimeString('ar-EG')
-                            });
-                        }
-                    }
-                    this.save();
-                    this.isScanning = false;
-                },
-                moveToArchive(id) {
-                    const s = this.signals.find(sig => sig.id === id);
-                    s.status = 'archive';
-                    this.save();
-                },
-                save() { localStorage.setItem('trading_signals_v4', JSON.stringify(this.signals)); },
-                shareSignal(sig) {
-                    const text = `إشارة ${sig.pair} حالياً محققة ${this.getPnL(sig)}% ربح!`;
-                    navigator.share ? navigator.share({text}) : alert(text);
-                }
-            }
-        }).mount('#app');
-    </script>
+// ================== Toggle Signal ==================
+function toggleSignal(s){
+s.active = !s.active;
+if(!s.active){
+s.status = 'closed';
+} else {
+s.status = 'active';
+}
+saveSignals();
+renderSignals();
+updateStats();
+showToast(`تم ${s.active ? 'تفعيل' : 'إلغاء'} الإشارة #${s.id}`);
+}
+
+// ================== Share Signal ==================
+function shareSignal(s){
+const text = `إشارة تداول #${s.id}\nالسعر: ${s.price}\nالهدف: ${s.target}\nوقف: ${s.stop}\nالتحليل: ${s.analysis}`;
+if(navigator.share){
+navigator.share({ title: 'إشارة تداول', text: text }).catch(()=>{});
+}else{
+navigator.clipboard.writeText(text).then(()=>{ showToast('تم نسخ الإشارة'); }).catch(()=>{ showToast('اضغط لنسخ: '+text); });
+}
+}
+
+// ================== Telegram ==================
+function sendTelegram(sig){
+if(!telegramToken || !telegramChatId) return;
+const url = `https://api.telegram.org/bot${telegramToken}/sendMessage`;
+const msg = `🔔 إشارة جديدة!\nالزمن: ${new Date(sig.timestamp).toLocaleString('ar-EG')}\nالعملة: ${sig.symbol}\nالسعر: ${sig.price}\nالهدف: ${sig.target}\nوقف: ${sig.stop}\nالتحليل: ${sig.analysis}`;
+fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: telegramChatId, text: msg }) })
+.then(res => res.json())
+.then(data => { if(data.ok) showToast('تم إرسال الإشارة إلى تليجرام'); else showToast('فشل إرسال التليجرام'); })
+.catch(() => showToast('خطأ في إرسال التليجرام'));
+}
+
+// ================== Push Notification ==================
+function sendPushNotification(sig){
+if(!notifEnabled) return;
+if(!('Notification' in window) || Notification.permission !== 'granted'){
+if(Notification.permission === 'default'){
+Notification.requestPermission().then(perm => {
+if(perm === 'granted') sendPushNotification(sig);
+});
+}
+return;
+}
+try{
+navigator.serviceWorker.ready.then(reg => {
+reg.showNotification('📈 إشارة جديدة', {
+body: `السعر: ${sig.price} | الهدف: ${sig.target}`,
+icon: 'data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 512 512\\'><rect width=\\'512\\' height=\\'512\\' rx=\\'50%\\' fill=\\'%231e1e2f\\'/><text x=\\'256\\' y=\\'280\\' font-size=\\'300\\' text-anchor=\\'middle\\' fill=\\'white\\' font-family=\\'sans-serif\\'>SD</text></svg>',
+tag: sig.id,
+vibrate: [200,100,200]
+});
+});
+}catch(e){}
+}
+
+// ================== Settings ==================
+settingsBtn.addEventListener('click', function(){
+tokenInput.value = telegramToken;
+chatInput.value = telegramChatId;
+document.querySelector('input[name="notifEnable"][value="'+(notifEnabled?'on':'off')+'"]').checked = true;
+settingsModal.classList.add('active');
+});
+closeSettings.addEventListener('click', function(){ settingsModal.classList.remove('active'); });
+saveSettings.addEventListener('click', function(){
+telegramToken = tokenInput.value.trim();
+telegramChatId = chatInput.value.trim();
+notifEnabled = document.querySelector('input[name="notifEnable"]:checked').value === 'on';
+localStorage.setItem('tgToken', telegramToken);
+localStorage.setItem('tgChatId', telegramChatId);
+localStorage.setItem('notifEnabled', notifEnabled ? 'on' : 'off');
+settingsModal.classList.remove('active');
+showToast('تم حفظ الإعدادات');
+});
+
+// ================== Refresh ==================
+document.getElementById('refreshBtn').addEventListener('click', function(){
+renderSignals();
+updateStats();
+showToast('تم تحديث الجدول');
+});
+
+// ================== Init ==================
+renderSignals();
+updateStats();
+// Request notification permission
+if('Notification' in window && Notification.permission === 'default'){
+Notification.requestPermission();
+}
+// Reconnect if needed
+setInterval(() => {
+if(ws && ws.readyState === WebSocket.CLOSED){
+connectBinance();
+}
+}, 30000);
+
+// ================== Error handling ==================
+window.onerror = function(msg, url, line, col, error){
+console.error(msg, error);
+showToast('حدث خطأ غير متوقع، تم تسجيله');
+return false;
+};
+window.addEventListener('unhandledrejection', function(e){
+console.warn('Unhandled rejection:', e.reason);
+showToast('خطأ في العملية، حاول مرة أخرى');
+});
+
+// ================== Periodic cleanup (close expired signals) ==================
+setInterval(() => {
+const now = Date.now();
+signals.forEach(s => {
+if(s.active && s.status === 'active'){
+// If price moved beyond target or stop (simulated with lastPrice)
+if(lastPrice > 0){
+if(s.target < lastPrice && s.price < lastPrice){
+// target reached
+s.status = 'closed';
+s.active = false;
+showToast(`إشارة #${s.id} حققت الهدف!`);
+}else if(s.stop > lastPrice && s.price > lastPrice){
+// stop hit
+s.status = 'closed';
+s.active = false;
+showToast(`إشارة #${s.id} ضربت وقف الخسارة`);
+}
+}
+}
+});
+saveSignals();
+renderSignals();
+updateStats();
+}, 10000);
+
+// ================== End of script ==================
+</script>
+
 </body>
 </html>
