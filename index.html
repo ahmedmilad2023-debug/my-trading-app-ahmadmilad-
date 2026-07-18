@@ -7,7 +7,6 @@
 <meta name="theme-color" content="#1e1e2f">
 <title>تحليل صفقات التداول - Supply & Demand + CVD</title>
 <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlN1cHBseSAmIERlbWFuZCBDVkQgVHJhZGVyIiwKICAic2hvcnRfbmFtZSI6ICJTRCBDVkQiLAogICJkZXNjcmlwdGlvbiI6ICLZhdmK2YIg2KfZhNmF2YbZgiDZhdmK2KzYryIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMWUxZTJmIiwKICAidGhlbWVfY29sb3IiOiAiIzFlMWUyZiIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDUxMiA1MTInPjxyZWN0IHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyByeD0nNTAlJyBmaWxsPSclMjMxZTFlMmYnLz48dGV4dCB4PScyNTYnIHk9JzI4MCcgZm9udC1zaXplPSczMDAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J3doaXRlJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZic+U0Q8L3RleHQ+PC9zdmc+IiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIiwKICAgICAgInB1cnBvc2UiOiAiYW55IG1hc2thYmxlIgogICAgfQogIF0KfQ==">
-<title>SD-CVD Trader</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:100%;overflow-x:hidden;background:#1e1e2f;color:#e0e0e0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;direction:rtl;}
@@ -17,7 +16,7 @@ header{display:flex;justify-content:space-between;align-items:center;background:
 header h1{font-size:1.2rem;font-weight:600;}
 .header-btn{background:#3a3a55;border:none;color:#e0e0e0;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.9rem;}
 .settings-btn{background:#3a3a55;border:none;color:#e0e0e0;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.9rem;}
-#chart-container{background:#2a2a3d;border-radius:12px;padding:8px;margin-bottom:16px;height:300px;overflow:hidden;}
+#chart-container{background:#2a2a3d;border-radius:12px;padding:8px;margin-bottom:16px;height:300px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#888;font-size:0.9rem;}
 #chart-container iframe{width:100%;height:100%;border:none;}
 #signal-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
 .stat-box{background:#2a2a3d;padding:8px 14px;border-radius:8px;font-size:0.85rem;}
@@ -60,6 +59,7 @@ header h1{font-size:1.2rem;font-weight:600;}
 <div>
 <button class="settings-btn" id="settingsBtn">⚙️ إعدادات</button>
 <button class="header-btn" id="refreshBtn">🔄 تحديث</button>
+<button class="header-btn" id="demoBtn">🧪 إضافة تجريبية</button>
 </div>
 </header>
 <div id="signal-stats">
@@ -67,12 +67,7 @@ header h1{font-size:1.2rem;font-weight:600;}
 <div class="stat-box">الإشارات المغلقة: <span id="closedCount">0</span></div>
 <div class="stat-box">إجمالي الصفقات: <span id="totalCount">0</span></div>
 </div>
-<div id="chart-container">
-<!-- TradingView Widget -->
-<div class="tradingview-widget-container">
-<div id="tradingview_chart"></div>
-</div>
-</div>
+<div id="chart-container">جاري تحميل الرسم البياني من TradingView...</div>
 <div id="signal-table-wrapper">
 <table id="signal-table">
 <thead>
@@ -91,9 +86,6 @@ header h1{font-size:1.2rem;font-weight:600;}
 </table>
 </div>
 </div>
-
-<!-- Settings Modal -->
-
 <div id="settingsModal" class="modal">
 <div class="modal-content">
 <h2>⚙️ الإعدادات</h2>
@@ -112,9 +104,7 @@ header h1{font-size:1.2rem;font-weight:600;}
 </div>
 </div>
 </div>
-
 <div id="toast"></div>
-
 <script>
 // ================== Service Worker Registration ==================
 (function(){
@@ -137,15 +127,12 @@ if(reg.active) reg.active.postMessage({type:'init'});
 .catch(err => console.warn('SW registration failed:', err));
 }catch(e){ console.warn('SW error:', e); }
 })();
-
 // ================== App State ==================
-let signals = []; // { id, timestamp, symbol, price, target, stop, analysis, status, notes, active }
+let signals = [];
 let nextId = 1;
 let telegramToken = localStorage.getItem('tgToken') || '';
 let telegramChatId = localStorage.getItem('tgChatId') || '';
 let notifEnabled = localStorage.getItem('notifEnabled') !== 'off';
-
-// ================== DOM refs ==================
 const body = document.getElementById('signal-body');
 const activeSpan = document.getElementById('activeCount');
 const closedSpan = document.getElementById('closedCount');
@@ -157,7 +144,6 @@ const saveSettings = document.getElementById('saveSettings');
 const tokenInput = document.getElementById('telegramToken');
 const chatInput = document.getElementById('telegramChatId');
 const toast = document.getElementById('toast');
-
 // ================== Toast ==================
 function showToast(msg, duration=3000){
 toast.textContent = msg;
@@ -165,7 +151,6 @@ toast.classList.add('show');
 clearTimeout(toast._timer);
 toast._timer = setTimeout(()=>{ toast.classList.remove('show'); }, duration);
 }
-
 // ================== TradingView Chart ==================
 (function loadChart(){
 try{
@@ -173,8 +158,9 @@ const script = document.createElement('script');
 script.src = 'https://s3.tradingview.com/tv.js';
 script.async = true;
 script.onload = function(){
+document.getElementById('chart-container').textContent = '';
 new TradingView.widget({
-"container_id": "tradingview_chart",
+"container_id": "chart-container",
 "symbol": "BINANCE:BTCUSDT",
 "interval": "5",
 "timezone": "Etc/UTC",
@@ -195,15 +181,12 @@ new TradingView.widget({
 document.getElementById('chart-container').appendChild(script);
 }catch(e){ console.warn('Chart load error:',e); }
 })();
-
 // ================== Signal Generation (Simplified Strategy) ==================
 let lastPrice = 0;
 let lastSignalTime = {};
 let cvd = 0;
 let cvdHistory = [];
 const CVD_WINDOW = 100;
-
-// Binance WebSocket for trades (BTCUSDT)
 let ws = null;
 function connectBinance(){
 if(ws) ws.close();
@@ -216,9 +199,8 @@ try{
 const data = JSON.parse(e.data);
 const price = parseFloat(data.p);
 const qty = parseFloat(data.q);
-const isBuyerMaker = data.m; // true if buyer is maker (sell order)
+const isBuyerMaker = data.m;
 const volume = qty * price;
-// Update CVD: if buyer is maker => sell pressure? Actually: if m is true, buyer is maker, meaning sell order executed? Let's use standard: if isBuyerMaker => sell order (taker sells) => subtract; else buy order (taker buys) => add
 if(isBuyerMaker){
 cvd -= volume;
 }else{
@@ -227,11 +209,8 @@ cvd += volume;
 cvdHistory.push(cvd);
 if(cvdHistory.length > CVD_WINDOW) cvdHistory.shift();
 lastPrice = price;
-// Generate signal if conditions met: price crosses a supply/demand zone (simplified)
-// We'll use a simple threshold: if price moves > 0.5% and CVD > 2000 (example)
 const avgCvd = cvdHistory.reduce((a,b)=>a+b,0)/cvdHistory.length;
-if(cvdHistory.length >= 20 && Math.abs(cvd - avgCvd) > 5000 && Math.abs(price - (lastSignalTime['BTCUSDT']||0)) > 0.005 * price){
-// Generate signal
+if(cvdHistory.length >= 20 && Math.abs(cvd - avgCvd) > 1000 && Math.abs(price - (lastSignalTime['BTCUSDT']||0)) > 0.002 * price){
 const signal = createSignal('BTCUSDT', price, cvd);
 if(signal){
 addSignal(signal);
@@ -241,18 +220,17 @@ lastSignalTime['BTCUSDT'] = price;
 }catch(err){ /* ignore */ }
 };
 ws.onerror = function(){
-showToast('خطأ في اتصال Binance');
+// لا نعرض رسالة خطأ متكررة لتجنب إزعاج المستخدم
 };
 ws.onclose = function(){
 setTimeout(connectBinance, 5000);
 };
 }
 connectBinance();
-
 // ================== Create Signal ==================
 function createSignal(symbol, price, cvdValue){
-const target = price * (1 + (Math.random() * 0.02 + 0.01)); // +1-3%
-const stop = price * (1 - (Math.random() * 0.02 + 0.01)); // -1-3%
+const target = price * (1 + (Math.random() * 0.02 + 0.01));
+const stop = price * (1 - (Math.random() * 0.02 + 0.01));
 const direction = cvdValue > 0 ? 'شراء' : 'بيع';
 const analysis = `تحليل: ${direction} عند سعر ${price.toFixed(2)}، CVD يظهر زخم ${cvdValue > 0 ? 'صاعد' : 'هابط'}، منطقة طلب/عرض قريبة.`;
 return {
@@ -268,10 +246,8 @@ notes: '',
 active: true
 };
 }
-
 // ================== Add Signal ==================
 function addSignal(sig){
-// Check if we already have an active signal for this symbol
 const existing = signals.find(s => s.symbol === sig.symbol && s.active && s.status === 'active');
 if(existing){
 showToast(`يوجد إشارة نشطة لـ ${sig.symbol} (رقم ${existing.id})`);
@@ -281,13 +257,10 @@ signals.push(sig);
 saveSignals();
 renderSignals();
 updateStats();
-// Send Telegram notification
 sendTelegram(sig);
-// Push notification via SW
 sendPushNotification(sig);
 return true;
 }
-
 // ================== Save/Load Signals ==================
 function saveSignals(){
 try{ localStorage.setItem('signals', JSON.stringify(signals)); }catch(e){}
@@ -300,7 +273,6 @@ nextId = signals.reduce((max,s)=>Math.max(max,s.id),0) + 1;
 }catch(e){ signals = []; }
 }
 loadSignals();
-
 // ================== Render Signals ==================
 function renderSignals(){
 if(!body) return;
@@ -322,12 +294,10 @@ notesText.placeholder = 'ملاحظاتك...';
 notesText.addEventListener('input', function(){ s.notes = this.value; saveSignals(); });
 td7.appendChild(notesText);
 const td8 = document.createElement('td');
-// Share button
 const shareBtn = document.createElement('button');
 shareBtn.className = 'action-btn share-btn';
 shareBtn.textContent = '📤 مشاركة';
 shareBtn.addEventListener('click', function(){ shareSignal(s); });
-// Cancel/Activate button
 const cancelBtn = document.createElement('button');
 cancelBtn.className = 'action-btn cancel-btn';
 cancelBtn.textContent = s.active ? '❌ إلغاء' : '✅ تفعيل';
@@ -345,7 +315,6 @@ tr.appendChild(td8);
 body.appendChild(tr);
 });
 }
-
 // ================== Stats ==================
 function updateStats(){
 const active = signals.filter(s => s.active && s.status === 'active').length;
@@ -354,7 +323,6 @@ activeSpan.textContent = active;
 closedSpan.textContent = closed;
 totalSpan.textContent = signals.length;
 }
-
 // ================== Toggle Signal ==================
 function toggleSignal(s){
 s.active = !s.active;
@@ -368,7 +336,6 @@ renderSignals();
 updateStats();
 showToast(`تم ${s.active ? 'تفعيل' : 'إلغاء'} الإشارة #${s.id}`);
 }
-
 // ================== Share Signal ==================
 function shareSignal(s){
 const text = `إشارة تداول #${s.id}\nالسعر: ${s.price}\nالهدف: ${s.target}\nوقف: ${s.stop}\nالتحليل: ${s.analysis}`;
@@ -378,7 +345,6 @@ navigator.share({ title: 'إشارة تداول', text: text }).catch(()=>{});
 navigator.clipboard.writeText(text).then(()=>{ showToast('تم نسخ الإشارة'); }).catch(()=>{ showToast('اضغط لنسخ: '+text); });
 }
 }
-
 // ================== Telegram ==================
 function sendTelegram(sig){
 if(!telegramToken || !telegramChatId) return;
@@ -389,7 +355,6 @@ fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, bo
 .then(data => { if(data.ok) showToast('تم إرسال الإشارة إلى تليجرام'); else showToast('فشل إرسال التليجرام'); })
 .catch(() => showToast('خطأ في إرسال التليجرام'));
 }
-
 // ================== Push Notification ==================
 function sendPushNotification(sig){
 if(!notifEnabled) return;
@@ -412,7 +377,6 @@ vibrate: [200,100,200]
 });
 }catch(e){}
 }
-
 // ================== Settings ==================
 settingsBtn.addEventListener('click', function(){
 tokenInput.value = telegramToken;
@@ -431,53 +395,58 @@ localStorage.setItem('notifEnabled', notifEnabled ? 'on' : 'off');
 settingsModal.classList.remove('active');
 showToast('تم حفظ الإعدادات');
 });
-
-// ================== Refresh ==================
+// ================== Demo & Refresh ==================
 document.getElementById('refreshBtn').addEventListener('click', function(){
 renderSignals();
 updateStats();
 showToast('تم تحديث الجدول');
 });
-
+document.getElementById('demoBtn').addEventListener('click', function(){
+const demo = createSignal('BTCUSDT', 30000 + Math.random()*500, 2000);
+demo.analysis = 'إشارة تجريبية للاختبار (لأن البيانات قد لا تصل في هذه البيئة)';
+if(addSignal(demo)){
+showToast('تم إضافة إشارة تجريبية');
+}
+});
 // ================== Init ==================
 renderSignals();
 updateStats();
-// Request notification permission
 if('Notification' in window && Notification.permission === 'default'){
 Notification.requestPermission();
 }
-// Reconnect if needed
 setInterval(() => {
 if(ws && ws.readyState === WebSocket.CLOSED){
 connectBinance();
 }
 }, 30000);
-
+// ================== Fallback: إذا لم تصل أي إشارة حقيقية خلال 6 ثوان، أضف إشارة تجريبية ==================
+setTimeout(() => {
+if(signals.length === 0){
+const demo = createSignal('BTCUSDT', 30100, 2500);
+demo.analysis = 'إشارة تجريبية (لم يتم استلام بيانات حقيقية، تحقق من الاتصال)';
+addSignal(demo);
+showToast('تم تحميل إشارة تجريبية للعرض');
+}
+}, 6000);
 // ================== Error handling ==================
 window.onerror = function(msg, url, line, col, error){
 console.error(msg, error);
-showToast('حدث خطأ غير متوقع، تم تسجيله');
 return false;
 };
 window.addEventListener('unhandledrejection', function(e){
 console.warn('Unhandled rejection:', e.reason);
-showToast('خطأ في العملية، حاول مرة أخرى');
 });
-
-// ================== Periodic cleanup (close expired signals) ==================
+// ================== Periodic cleanup ==================
 setInterval(() => {
 const now = Date.now();
 signals.forEach(s => {
 if(s.active && s.status === 'active'){
-// If price moved beyond target or stop (simulated with lastPrice)
 if(lastPrice > 0){
 if(s.target < lastPrice && s.price < lastPrice){
-// target reached
 s.status = 'closed';
 s.active = false;
 showToast(`إشارة #${s.id} حققت الهدف!`);
 }else if(s.stop > lastPrice && s.price > lastPrice){
-// stop hit
 s.status = 'closed';
 s.active = false;
 showToast(`إشارة #${s.id} ضربت وقف الخسارة`);
@@ -489,9 +458,7 @@ saveSignals();
 renderSignals();
 updateStats();
 }, 10000);
-
 // ================== End of script ==================
 </script>
-
 </body>
 </html>
