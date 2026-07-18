@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1e1e2f">
-<title>تحليل صفقات التداول - Supply & Demand + CVD</title>
+<title>تحليل صفقات التداول - ADX + CVD</title>
 <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlN1cHBseSAmIERlbWFuZCBDVkQgVHJhZGVyIiwKICAic2hvcnRfbmFtZSI6ICJTRCBDVkQiLAogICJkZXNjcmlwdGlvbiI6ICLZhdmK2YIg2KfZhNmF2YbZgiDZhdmK2KzYryIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMWUxZTJmIiwKICAidGhlbWVfY29sb3IiOiAiIzFlMWUyZiIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDUxMiA1MTInPjxyZWN0IHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyByeD0nNTAlJyBmaWxsPSclMjMxZTFlMmYnLz48dGV4dCB4PScyNTYnIHk9JzI4MCcgZm9udC1zaXplPSczMDAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J3doaXRlJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZic+U0Q8L3RleHQ+PC9zdmc+IiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIiwKICAgICAgInB1cnBvc2UiOiAiYW55IG1hc2thYmxlIgogICAgfQogIF0KfQ==">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -55,11 +54,10 @@ header h1{font-size:1.2rem;font-weight:600;}
 <body>
 <div id="app">
 <header>
-<h1>📊 SD-CVD Trader</h1>
+<h1>📊 ADX-CVD Trader</h1>
 <div>
 <button class="settings-btn" id="settingsBtn">⚙️ إعدادات</button>
 <button class="header-btn" id="refreshBtn">🔄 تحديث</button>
-<button class="header-btn" id="demoBtn">🧪 إضافة تجريبية</button>
 </div>
 </header>
 <div id="signal-stats">
@@ -67,7 +65,7 @@ header h1{font-size:1.2rem;font-weight:600;}
 <div class="stat-box">الإشارات المغلقة: <span id="closedCount">0</span></div>
 <div class="stat-box">إجمالي الصفقات: <span id="totalCount">0</span></div>
 </div>
-<div id="chart-container">جاري تحميل الرسم البياني من TradingView...</div>
+<div id="chart-container">⏳ جاري تحميل الرسم البياني...</div>
 <div id="signal-table-wrapper">
 <table id="signal-table">
 <thead>
@@ -77,7 +75,7 @@ header h1{font-size:1.2rem;font-weight:600;}
 <th>السعر</th>
 <th>الهدف</th>
 <th>وقف الخسارة</th>
-<th>التحليل</th>
+<th>التحليل (ADX)</th>
 <th>ملاحظات</th>
 <th>إجراءات</th>
 </tr>
@@ -113,17 +111,14 @@ const swCode = `
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
 self.addEventListener('push', e => {
-let data = e.data ? e.data.json() : { title: 'SD-CVD', body: 'إشارة جديدة' };
+let data = e.data ? e.data.json() : { title: 'ADX-CVD', body: 'إشارة جديدة' };
 e.waitUntil(self.registration.showNotification(data.title, { body: data.body, icon: 'data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 512 512\\'><rect width=\\'512\\' height=\\'512\\' rx=\\'50%\\' fill=\\'%231e1e2f\\'/><text x=\\'256\\' y=\\'280\\' font-size=\\'300\\' text-anchor=\\'middle\\' fill=\\'white\\' font-family=\\'sans-serif\\'>SD</text></svg>' }));
 });
 `;
 const blob = new Blob([swCode], { type: 'application/javascript' });
 const swUrl = URL.createObjectURL(blob);
 navigator.serviceWorker.register(swUrl, { scope: '/' })
-.then(reg => {
-console.log('SW registered');
-if(reg.active) reg.active.postMessage({type:'init'});
-})
+.then(reg => { console.log('SW registered'); })
 .catch(err => console.warn('SW registration failed:', err));
 }catch(e){ console.warn('SW error:', e); }
 })();
@@ -133,6 +128,12 @@ let nextId = 1;
 let telegramToken = localStorage.getItem('tgToken') || '';
 let telegramChatId = localStorage.getItem('tgChatId') || '';
 let notifEnabled = localStorage.getItem('notifEnabled') !== 'off';
+let currentAdx = 0;
+let lastPrice = 0;
+let cvd = 0;
+let cvdHistory = [];
+const CVD_WINDOW = 100;
+let lastSignalTime = {};
 const body = document.getElementById('signal-body');
 const activeSpan = document.getElementById('activeCount');
 const closedSpan = document.getElementById('closedCount');
@@ -179,21 +180,64 @@ new TradingView.widget({
 });
 };
 document.getElementById('chart-container').appendChild(script);
-}catch(e){ console.warn('Chart load error:',e); }
+}catch(e){ console.warn('Chart load error:',e); document.getElementById('chart-container').textContent = '⚠️ تعذر تحميل الرسم البياني'; }
 })();
-// ================== Signal Generation (Simplified Strategy) ==================
-let lastPrice = 0;
-let lastSignalTime = {};
-let cvd = 0;
-let cvdHistory = [];
-const CVD_WINDOW = 100;
+// ================== ADX Calculation ==================
+let ohlcData = [];
+const ADX_PERIOD = 14;
+function calcADX(close, high, low){
+ohlcData.push({ close, high, low });
+if(ohlcData.length > 200) ohlcData.shift();
+if(ohlcData.length < ADX_PERIOD + 2) return 0;
+let trSum = 0, dmPlusSum = 0, dmMinusSum = 0;
+let smoothedTR = 0, smoothedDMPlus = 0, smoothedDMMinus = 0;
+for(let i = 1; i < ohlcData.length; i++){
+let prev = ohlcData[i-1];
+let curr = ohlcData[i];
+let tr = Math.max(curr.high - curr.low, Math.abs(curr.high - prev.close), Math.abs(curr.low - prev.close));
+let upMove = curr.high - prev.high;
+let downMove = prev.low - curr.low;
+let dmPlus = (upMove > downMove && upMove > 0) ? upMove : 0;
+let dmMinus = (downMove > upMove && downMove > 0) ? downMove : 0;
+if(i === 1){
+smoothedTR = tr;
+smoothedDMPlus = dmPlus;
+smoothedDMMinus = dmMinus;
+}else{
+smoothedTR = smoothedTR - (smoothedTR / ADX_PERIOD) + tr;
+smoothedDMPlus = smoothedDMPlus - (smoothedDMPlus / ADX_PERIOD) + dmPlus;
+smoothedDMMinus = smoothedDMMinus - (smoothedDMMinus / ADX_PERIOD) + dmMinus;
+}
+}
+if(smoothedTR === 0) return 0;
+let diPlus = (smoothedDMPlus / smoothedTR) * 100;
+let diMinus = (smoothedDMMinus / smoothedTR) * 100;
+let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
+currentAdx = (currentAdx * (ADX_PERIOD - 1) + dx) / ADX_PERIOD;
+return currentAdx;
+}
+// ================== Fetch Klines for ADX ==================
+function fetchKlines(){
+fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=5m&limit=100')
+.then(res => res.json())
+.then(data => {
+data.forEach(k => {
+let close = parseFloat(k[4]);
+let high = parseFloat(k[2]);
+let low = parseFloat(k[3]);
+calcADX(close, high, low);
+});
+showToast(`تم تحميل بيانات الشموع، قيمة ADX الحالية: ${currentAdx.toFixed(2)}`);
+})
+.catch(err => { console.warn('فشل جلب بيانات الشموع', err); });
+}
+fetchKlines();
+// ================== Binance Websocket & CVD ==================
 let ws = null;
 function connectBinance(){
 if(ws) ws.close();
 ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
-ws.onopen = function(){
-showToast('متصل بـ Binance');
-};
+ws.onopen = function(){};
 ws.onmessage = function(e){
 try{
 const data = JSON.parse(e.data);
@@ -210,21 +254,16 @@ cvdHistory.push(cvd);
 if(cvdHistory.length > CVD_WINDOW) cvdHistory.shift();
 lastPrice = price;
 const avgCvd = cvdHistory.reduce((a,b)=>a+b,0)/cvdHistory.length;
-if(cvdHistory.length >= 20 && Math.abs(cvd - avgCvd) > 1000 && Math.abs(price - (lastSignalTime['BTCUSDT']||0)) > 0.002 * price){
+if(cvdHistory.length >= 20 && currentAdx > 25 && Math.abs(cvd - avgCvd) > 1500 && Math.abs(price - (lastSignalTime['BTCUSDT']||0)) > 0.002 * price){
 const signal = createSignal('BTCUSDT', price, cvd);
 if(signal){
 addSignal(signal);
 lastSignalTime['BTCUSDT'] = price;
 }
 }
-}catch(err){ /* ignore */ }
+}catch(err){}
 };
-ws.onerror = function(){
-// لا نعرض رسالة خطأ متكررة لتجنب إزعاج المستخدم
-};
-ws.onclose = function(){
-setTimeout(connectBinance, 5000);
-};
+ws.onclose = function(){ setTimeout(connectBinance, 5000); };
 }
 connectBinance();
 // ================== Create Signal ==================
@@ -232,7 +271,7 @@ function createSignal(symbol, price, cvdValue){
 const target = price * (1 + (Math.random() * 0.02 + 0.01));
 const stop = price * (1 - (Math.random() * 0.02 + 0.01));
 const direction = cvdValue > 0 ? 'شراء' : 'بيع';
-const analysis = `تحليل: ${direction} عند سعر ${price.toFixed(2)}، CVD يظهر زخم ${cvdValue > 0 ? 'صاعد' : 'هابط'}، منطقة طلب/عرض قريبة.`;
+const analysis = `تحليل: ${direction} عند سعر ${price.toFixed(2)}، CVD يدعم الحركة، و ADX = ${currentAdx.toFixed(2)} (أكبر من 25).`;
 return {
 id: nextId++,
 timestamp: new Date().toISOString(),
@@ -249,10 +288,7 @@ active: true
 // ================== Add Signal ==================
 function addSignal(sig){
 const existing = signals.find(s => s.symbol === sig.symbol && s.active && s.status === 'active');
-if(existing){
-showToast(`يوجد إشارة نشطة لـ ${sig.symbol} (رقم ${existing.id})`);
-return false;
-}
+if(existing) return false;
 signals.push(sig);
 saveSignals();
 renderSignals();
@@ -395,20 +431,13 @@ localStorage.setItem('notifEnabled', notifEnabled ? 'on' : 'off');
 settingsModal.classList.remove('active');
 showToast('تم حفظ الإعدادات');
 });
-// ================== Demo & Refresh ==================
+// ================== Refresh ==================
 document.getElementById('refreshBtn').addEventListener('click', function(){
 renderSignals();
 updateStats();
 showToast('تم تحديث الجدول');
 });
-document.getElementById('demoBtn').addEventListener('click', function(){
-const demo = createSignal('BTCUSDT', 30000 + Math.random()*500, 2000);
-demo.analysis = 'إشارة تجريبية للاختبار (لأن البيانات قد لا تصل في هذه البيئة)';
-if(addSignal(demo)){
-showToast('تم إضافة إشارة تجريبية');
-}
-});
-// ================== Init ==================
+// ================== Init & Immediate Demo Signal ==================
 renderSignals();
 updateStats();
 if('Notification' in window && Notification.permission === 'default'){
@@ -419,15 +448,28 @@ if(ws && ws.readyState === WebSocket.CLOSED){
 connectBinance();
 }
 }, 30000);
-// ================== Fallback: إذا لم تصل أي إشارة حقيقية خلال 6 ثوان، أضف إشارة تجريبية ==================
+// ================== Critical Fix: Force Demo Signal if Empty ==================
 setTimeout(() => {
 if(signals.length === 0){
-const demo = createSignal('BTCUSDT', 30100, 2500);
-demo.analysis = 'إشارة تجريبية (لم يتم استلام بيانات حقيقية، تحقق من الاتصال)';
-addSignal(demo);
-showToast('تم تحميل إشارة تجريبية للعرض');
+const demoSignal = {
+id: nextId++,
+timestamp: new Date().toISOString(),
+symbol: 'BTCUSDT',
+price: 30000 + (Math.random() * 500),
+target: 31500,
+stop: 29000,
+analysis: 'إشارة تجريبية للعرض! (جاري انتظار بيانات ADX > 25 للإشارات الحقيقية)',
+status: 'active',
+notes: 'يمكنك تجربة الأزرار هنا',
+active: true
+};
+signals.push(demoSignal);
+saveSignals();
+renderSignals();
+updateStats();
+showToast('✅ تم عرض إشارة تجريبية لتأكيد عمل الواجهة');
 }
-}, 6000);
+}, 1000);
 // ================== Error handling ==================
 window.onerror = function(msg, url, line, col, error){
 console.error(msg, error);
@@ -438,10 +480,8 @@ console.warn('Unhandled rejection:', e.reason);
 });
 // ================== Periodic cleanup ==================
 setInterval(() => {
-const now = Date.now();
 signals.forEach(s => {
-if(s.active && s.status === 'active'){
-if(lastPrice > 0){
+if(s.active && s.status === 'active' && lastPrice > 0){
 if(s.target < lastPrice && s.price < lastPrice){
 s.status = 'closed';
 s.active = false;
@@ -452,13 +492,11 @@ s.active = false;
 showToast(`إشارة #${s.id} ضربت وقف الخسارة`);
 }
 }
-}
 });
 saveSignals();
 renderSignals();
 updateStats();
-}, 10000);
-// ================== End of script ==================
+}, 15000);
 </script>
 </body>
 </html>
