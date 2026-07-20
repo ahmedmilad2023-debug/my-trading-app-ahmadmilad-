@@ -3,911 +3,2270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1e1e2f">
-    <meta name="description" content="تطبيق تحليل صفقات التداول - Supply & Demand مع CVD و ADX واتجاه البيتكوين">
-    <title>تداول - Supply & Demand + ADX + BTC</title>
-    <link rel="manifest" href="data:application/json,{%22name%22:%22تداول%20Supply%20%26%20Demand%22,%22short_name%22:%22تداول%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%231e1e2f%22,%22theme_color%22:%22%231e1e2f%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'><text%20y='.9em'%20font-size='90'>📈</text></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
+    <meta name="theme-color" content="#0b0e17">
+    <meta name="description" content="CryptoSignal Pro - منصة توليد إشارات تداول العملات الرقمية">
+    <title>CryptoSignal Pro | إشارات التداول</title>
+    <link rel="manifest" href="data:application/json,{}" id="manifest-placeholder">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
     <style>
+        /* ===== CSS Reset & Base ===== */
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --bg-primary: #0b0e17;
+            --bg-secondary: #131a2b;
+            --bg-card: #1a2336;
+            --bg-card-hover: #1f2a42;
+            --border-color: #2a3a5a;
+            --text-primary: #e8edf5;
+            --text-secondary: #8899bb;
+            --text-muted: #556688;
+            --accent-green: #00d4aa;
+            --accent-red: #ff4757;
+            --accent-blue: #4a7cf7;
+            --accent-gold: #f5a623;
+            --accent-purple: #a855f7;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        html {
+            scroll-behavior: smooth;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1e1e2f;
-            color: #e0e0e0;
-            overflow-x: hidden;
-            padding: 12px;
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
+            padding-bottom: 80px;
+            overflow-x: hidden;
+            line-height: 1.6;
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 1rem;
-            text-align: center;
-            color: #f0b90b;
-            letter-spacing: 1px;
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
         }
-        .card {
-            background: #2a2a3f;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-            border: 1px solid #3a3a55;
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-blue);
+            border-radius: 10px;
         }
-        .settings-toggle {
-            background: #3a3a55;
-            border: none;
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 30px;
+        a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        button {
             cursor: pointer;
-            font-size: 0.9rem;
-            transition: 0.2s;
-            display: inline-block;
-            margin-bottom: 12px;
+            font-family: inherit;
+            border: none;
+            outline: none;
+            background: none;
+            color: inherit;
         }
-        .settings-toggle:hover {
-            background: #4a4a6f;
-        }
-        .settings-panel {
-            display: none;
-            background: #25253a;
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            border: 1px solid #444466;
-        }
-        .settings-panel.open {
-            display: block;
-        }
-        .settings-panel label {
-            display: block;
-            margin: 8px 0 4px;
-            font-size: 0.85rem;
-            color: #aaa;
-        }
-        .settings-panel input {
+        input,
+        select,
+        textarea {
+            font-family: inherit;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 14px;
             width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background: #1a1a2e;
-            color: #fff;
-            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(74, 124, 247, 0.2);
             outline: none;
         }
-        .settings-panel input:focus {
-            border-color: #f0b90b;
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--text-muted);
         }
-        .settings-panel .btn-save {
-            background: #f0b90b;
-            border: none;
-            color: #1e1e2f;
-            padding: 10px 20px;
+
+        /* ===== App Bar ===== */
+        .app-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(11, 14, 23, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .app-bar .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .app-bar .logo span {
+            font-size: 26px;
+            -webkit-text-fill-color: initial;
+        }
+        .app-bar .actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .app-bar .actions button {
+            padding: 8px 16px;
             border-radius: 30px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 12px;
-            width: 100%;
-            font-size: 1rem;
+            font-size: 13px;
+            font-weight: 600;
+            transition: var(--transition);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .app-bar .actions button:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-1px);
+        }
+        .app-bar .actions .btn-install {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-color: transparent;
+            color: #fff;
+        }
+        .app-bar .actions .btn-install:hover {
+            opacity: 0.9;
+            transform: scale(1.03);
+        }
+        .badge-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+        }
+
+        /* ===== Container ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px 16px 0;
+        }
+
+        /* ===== Ticker Strip ===== */
+        .ticker-strip {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            position: relative;
+        }
+        .ticker-strip .scroll-wrap {
+            display: flex;
+            gap: 24px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .ticker-strip .scroll-wrap::-webkit-scrollbar {
+            display: none;
+        }
+        .ticker-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .ticker-item .sym {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .ticker-item .price {
+            font-weight: 700;
+        }
+        .ticker-item .change {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+        .ticker-item .change.up {
+            color: var(--accent-green);
+            background: rgba(0, 212, 170, 0.15);
+        }
+        .ticker-item .change.down {
+            color: var(--accent-red);
+            background: rgba(255, 71, 87, 0.15);
+        }
+        .ticker-item .signal-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            background: var(--bg-secondary);
+        }
+        .ticker-item .signal-badge.buy {
+            color: var(--accent-green);
+            background: rgba(0, 212, 170, 0.2);
+        }
+        .ticker-item .signal-badge.sell {
+            color: var(--accent-red);
+            background: rgba(255, 71, 87, 0.2);
+        }
+        .ticker-item .signal-badge.neutral {
+            color: var(--text-muted);
+            background: rgba(136, 153, 187, 0.15);
+        }
+
+        /* ===== Stats Row ===== */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        .stat-card .label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-card .value {
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+        .stat-card .value.green {
+            color: var(--accent-green);
+        }
+        .stat-card .value.red {
+            color: var(--accent-red);
+        }
+        .stat-card .value.gold {
+            color: var(--accent-gold);
+        }
+
+        /* ===== Section Header ===== */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 24px 0 14px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .section-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header h2 .badge-count {
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--bg-card);
+            padding: 2px 12px;
+            border-radius: 20px;
+            color: var(--text-secondary);
+        }
+        .section-header .actions {
+            display: flex;
+            gap: 8px;
+        }
+        .section-header .actions button {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .section-header .actions button:hover {
+            background: var(--bg-card-hover);
+        }
+
+        /* ===== Signal Cards ===== */
+        .signals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 18px;
         }
         .signal-card {
-            background: #2f2f48;
-            border-radius: 14px;
-            padding: 14px;
-            margin-bottom: 14px;
-            border-left: 6px solid #f0b90b;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            padding: 18px 20px 20px;
+            transition: var(--transition);
             position: relative;
-            transition: 0.2s;
+            overflow: hidden;
+        }
+        .signal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--text-muted);
+        }
+        .signal-card.buy::before {
+            background: linear-gradient(90deg, var(--accent-green), #00e6b8);
+        }
+        .signal-card.sell::before {
+            background: linear-gradient(90deg, var(--accent-red), #ff6b7a);
+        }
+        .signal-card:hover {
+            border-color: var(--accent-blue);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
         }
         .signal-card .header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
+            align-items: flex-start;
+            margin-bottom: 12px;
         }
-        .signal-card .symbol {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: #f0b90b;
+        .signal-card .header .symbol {
+            font-size: 20px;
+            font-weight: 700;
         }
-        .signal-card .time {
-            font-size: 0.75rem;
-            color: #999;
+        .signal-card .header .symbol small {
+            font-weight: 400;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .signal-card .header .direction {
+            font-size: 14px;
+            font-weight: 700;
+            padding: 4px 16px;
+            border-radius: 20px;
+            background: var(--bg-secondary);
+        }
+        .signal-card .header .direction.buy {
+            color: var(--accent-green);
+            background: rgba(0, 212, 170, 0.15);
+        }
+        .signal-card .header .direction.sell {
+            color: var(--accent-red);
+            background: rgba(255, 71, 87, 0.15);
         }
         .signal-card .price-info {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin: 8px 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin: 12px 0;
+            padding: 12px 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
         }
-        .signal-card .price-info span {
-            background: #1a1a2e;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
+        .signal-card .price-info .item {
+            text-align: center;
+        }
+        .signal-card .price-info .item .label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+        .signal-card .price-info .item .val {
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .signal-card .price-info .item .val.green {
+            color: var(--accent-green);
+        }
+        .signal-card .price-info .item .val.red {
+            color: var(--accent-red);
         }
         .signal-card .analysis {
-            background: #1a1a2e;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            margin: 8px 0;
-            border-right: 3px solid #f0b90b;
-            color: #ccc;
+            font-size: 13px;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            margin: 12px 0;
+            border-right: 3px solid var(--accent-blue);
+            line-height: 1.7;
+            max-height: 80px;
+            overflow-y: auto;
         }
-        .signal-card .actions {
+        .signal-card .analysis strong {
+            color: var(--text-primary);
+        }
+        .signal-card .footer {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
             gap: 8px;
-            margin-top: 10px;
+            margin-top: 12px;
+        }
+        .signal-card .footer .timestamp {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .signal-card .footer .actions {
+            display: flex;
+            gap: 6px;
+        }
+        .signal-card .footer .actions button {
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+        }
+        .signal-card .footer .actions button:hover {
+            background: var(--bg-card-hover);
+        }
+        .signal-card .footer .actions .btn-share {
+            color: var(--accent-blue);
+        }
+        .signal-card .footer .actions .btn-lock {
+            color: var(--accent-gold);
+        }
+        .signal-card .footer .actions .btn-close {
+            color: var(--accent-red);
+        }
+        .signal-card .footer .actions .btn-lock.locked {
+            background: var(--accent-gold);
+            color: #fff;
+            border-color: var(--accent-gold);
+        }
+
+        /* ===== Closed Trades ===== */
+        .closed-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 14px;
+        }
+        .closed-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            padding: 14px 16px;
+            opacity: 0.7;
+            transition: var(--transition);
+        }
+        .closed-card:hover {
+            opacity: 1;
+            border-color: var(--text-muted);
+        }
+        .closed-card .header {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
+            margin-bottom: 6px;
         }
-        .signal-card .actions button {
-            border: none;
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: 0.2s;
-            background: #3a3a55;
-            color: #fff;
+        .closed-card .header .symbol {
+            font-weight: 700;
         }
-        .signal-card .actions button.share {
-            background: #0088cc;
+        .closed-card .header .result {
+            font-weight: 700;
+            font-size: 13px;
+            padding: 2px 12px;
+            border-radius: 12px;
         }
-        .signal-card .actions button.alert-toggle {
-            background: #f0b90b;
-            color: #1e1e2f;
+        .closed-card .header .result.win {
+            color: var(--accent-green);
+            background: rgba(0, 212, 170, 0.15);
         }
-        .signal-card .actions button.alert-toggle.active {
-            background: #e74c3c;
-            color: #fff;
+        .closed-card .header .result.loss {
+            color: var(--accent-red);
+            background: rgba(255, 71, 87, 0.15);
         }
-        .signal-card .actions button.delete {
-            background: #e74c3c;
+        .closed-card .header .result.neutral {
+            color: var(--text-muted);
+            background: rgba(136, 153, 187, 0.15);
         }
-        .signal-card .notes {
-            margin-top: 10px;
+        .closed-card .details {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 4px;
         }
-        .signal-card .notes textarea {
+        .closed-card .details span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ===== Modal / Settings ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            padding: 28px 24px;
+            max-width: 500px;
             width: 100%;
-            padding: 8px;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background: #1a1a2e;
-            color: #fff;
-            resize: vertical;
-            font-size: 0.8rem;
-            min-height: 50px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+            animation: modalIn 0.3s ease;
         }
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        .modal .title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .modal .form-group {
+            margin-bottom: 16px;
+        }
+        .modal .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .modal .form-group .hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .modal .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .modal .form-actions button {
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            transition: var(--transition);
+            flex: 1;
+            min-width: 100px;
+        }
+        .modal .form-actions .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: #fff;
+        }
+        .modal .form-actions .btn-primary:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+        .modal .form-actions .btn-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+        .modal .form-actions .btn-secondary:hover {
+            background: var(--bg-card-hover);
+        }
+        .modal .status-msg {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            display: none;
+        }
+        .modal .status-msg.success {
+            display: block;
+            background: rgba(0, 212, 170, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(0, 212, 170, 0.3);
+        }
+        .modal .status-msg.error {
+            display: block;
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+        }
+
+        /* ===== Loading ===== */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 0;
+            gap: 12px;
+            color: var(--text-secondary);
+        }
+        .loading-spinner .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===== Empty State ===== */
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: #888;
+            color: var(--text-secondary);
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .empty-state h3 {
+            color: var(--text-primary);
+            font-size: 18px;
         }
         .empty-state p {
-            margin-top: 8px;
-        }
-        #tradingview {
-            margin-top: 20px;
-            border-radius: 14px;
-            overflow: hidden;
-            background: #2a2a3f;
-            padding: 4px;
-        }
-        #tradingview iframe {
-            width: 100%;
-            height: 400px;
-            border: none;
-            border-radius: 12px;
-        }
-        .status-badge {
-            display: inline-block;
-            background: #2a2a3f;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            color: #aaa;
+            font-size: 14px;
             margin-top: 4px;
         }
-        .error-msg {
-            background: #3f1a1a;
-            padding: 12px;
-            border-radius: 10px;
-            color: #ff6b6b;
-            font-size: 0.85rem;
-            margin: 8px 0;
-            display: none;
-        }
-        .action-row {
+
+        /* ===== Toast ===== */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            pointer-events: none;
+            max-width: 90%;
         }
-        .action-row button {
-            background: #3a3a55;
-            border: none;
-            color: #fff;
-            padding: 10px 18px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            flex: 1;
-            min-width: 100px;
-            transition: 0.2s;
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 12px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: var(--shadow);
+            animation: toastIn 0.3s ease;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            text-align: center;
         }
-        .action-row button:hover {
-            background: #4a4a6f;
+        .toast.success {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
         }
-        .action-row button.scan {
-            background: #f0b90b;
-            color: #1e1e2f;
+        .toast.error {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
         }
-        .action-row button.analyze {
-            background: #2ecc71;
-            color: #1e1e2f;
+        .toast.info {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .app-bar .logo {
+                font-size: 18px;
+            }
+            .app-bar .actions button {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+            .signals-grid {
+                grid-template-columns: 1fr;
+            }
+            .closed-grid {
+                grid-template-columns: 1fr;
+            }
+            .signal-card .price-info {
+                grid-template-columns: 1fr 1fr;
+            }
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .modal {
+                padding: 20px 16px;
+            }
+            .container {
+                padding: 12px 12px 0;
+            }
+            .ticker-strip .scroll-wrap {
+                gap: 12px;
+            }
         }
         @media (max-width: 480px) {
-            body { padding: 8px; }
-            .signal-card .price-info span { font-size: 0.75rem; padding: 2px 10px; }
-            .signal-card .actions button { font-size: 0.7rem; padding: 4px 10px; }
-            .action-row button { font-size: 0.8rem; padding: 8px 12px; min-width: 70px; }
+            .signal-card .price-info {
+                grid-template-columns: 1fr;
+                gap: 4px;
+            }
+            .signal-card .footer {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .signal-card .footer .actions {
+                justify-content: center;
+            }
+            .app-bar {
+                padding: 8px 12px;
+            }
+            .app-bar .logo {
+                font-size: 16px;
+                gap: 6px;
+            }
+            .stat-card .value {
+                font-size: 18px;
+            }
+        }
+
+        /* ===== Utilities ===== */
+        .text-center {
+            text-align: center;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-16 {
+            margin-top: 16px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .mb-16 {
+            margin-bottom: 16px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .gap-8 {
+            gap: 8px;
+        }
+        .gap-4 {
+            gap: 4px;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>📈 Supply & Demand + ADX + BTC</h1>
-    <button class="settings-toggle" id="settingsToggle">⚙️ الإعدادات</button>
-    <div class="settings-panel" id="settingsPanel">
-        <label>🔑 توكن بوت تليجرام</label>
-        <input type="text" id="telegramToken" placeholder="مثال: 123456:ABC-DEF" />
-        <label>🆔 معرف الدردشة (Chat ID)</label>
-        <input type="text" id="telegramChatId" placeholder="مثال: -100123456789" />
-        <button class="btn-save" id="saveSettings">💾 حفظ الإعدادات</button>
-        <div style="margin-top:8px;font-size:0.75rem;color:#888;">* يتم حفظها محلياً</div>
-    </div>
 
-    <div class="action-row">
-        <button class="scan" id="scanBtn">🔍 فحص يدوي</button>
-        <button class="analyze" id="analyzeBtn">📊 تحليل يدوي</button>
-    </div>
+    <!-- ===== APP BAR ===== -->
+    <header class="app-bar" id="appBar">
+        <div class="logo">
+            <span>📈</span> CryptoSignal <span style="font-weight:300;color:var(--text-secondary);font-size:0.7em;">Pro</span>
+        </div>
+        <div class="actions">
+            <button class="btn-install" id="btnInstall" title="تثبيت التطبيق على جهازك">
+                📲 <span>تثبيت</span>
+            </button>
+            <button id="btnSettings" title="إعدادات البوت والتطبيق">
+                ⚙️ <span>إعدادات</span>
+            </button>
+            <button id="btnRefresh" title="تحديث البيانات يدوياً">
+                🔄
+            </button>
+            <span class="badge-dot" id="liveDot" title="متصل"></span>
+        </div>
+    </header>
 
-    <div id="signalsContainer">
-        <div class="empty-state" id="emptyState">
-            <div style="font-size:3rem;">📊</div>
-            <p>بانتظار الإشارات...</p>
-            <span class="status-badge" id="statusBadge">🔄 جاري الاتصال بـ Binance</span>
+    <!-- ===== CONTAINER ===== -->
+    <main class="container">
+
+        <!-- Ticker Strip -->
+        <section class="ticker-strip">
+            <div class="scroll-wrap" id="tickerStrip">
+                <div class="loading-spinner" style="padding:8px 0;width:100%;">
+                    <div class="spinner" style="width:20px;height:20px;"></div>
+                    <span style="font-size:13px;">جاري تحميل الأسعار...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="stats-row" id="statsRow">
+            <div class="stat-card">
+                <div class="label">إشارات نشطة</div>
+                <div class="value gold" id="statActive">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">إشارات اليوم</div>
+                <div class="value" id="statToday" style="color:var(--accent-blue);">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">صفقات رابحة</div>
+                <div class="value green" id="statWins">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">صفقات خاسرة</div>
+                <div class="value red" id="statLosses">0</div>
+            </div>
+        </section>
+
+        <!-- Signals Section -->
+        <div class="section-header">
+            <h2>
+                📊 إشارات التداول
+                <span class="badge-count" id="signalCount">0</span>
+            </h2>
+            <div class="actions">
+                <button id="btnExportHistory" title="تصدير السجل">📥 تصدير</button>
+                <button id="btnClearHistory" title="مسح السجل" style="color:var(--accent-red);">🗑️ مسح</button>
+            </div>
+        </div>
+        <div id="signalsContainer">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <span>جاري تحليل الأسواق...</span>
+            </div>
+        </div>
+
+        <!-- Closed Trades Section -->
+        <div class="section-header" style="margin-top:32px;">
+            <h2>
+                📁 سجل الصفقات المغلقة
+                <span class="badge-count" id="closedCount">0</span>
+            </h2>
+        </div>
+        <div id="closedContainer">
+            <div class="empty-state">
+                <div class="icon">📂</div>
+                <h3>لا توجد صفقات مغلقة بعد</h3>
+                <p>سيظهر هنا سجل الصفقات التي تم إغلاقها يدوياً</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ===== SETTINGS MODAL ===== -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="title">⚙️ إعدادات التطبيق</div>
+            <div class="form-group">
+                <label>🤖 توكن بوت التليجرام (Bot Token)</label>
+                <input type="text" id="telegramToken" placeholder="مثال: 1234567890:ABCdefGHIjkl..." />
+                <div class="hint">احصل عليه من @BotFather على تليجرام</div>
+            </div>
+            <div class="form-group">
+                <label>🆔 معرف الدردشة (Chat ID)</label>
+                <input type="text" id="telegramChatId" placeholder="مثال: -1001234567890" />
+                <div class="hint">معرف القناة أو المجموعة، أو معرف المستخدم</div>
+            </div>
+            <div class="form-group">
+                <label>⏱️ تحديث البيانات (بالدقائق)</label>
+                <input type="number" id="updateInterval" min="1" max="60" value="2" />
+                <div class="hint">كل كم دقيقة يتم تحديث الأسعار والتحليل</div>
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+                <label style="margin:0;cursor:pointer;">
+                    <input type="checkbox" id="autoSendTelegram" checked />
+                    إرسال الإشارات تلقائياً للتليجرام
+                </label>
+            </div>
+            <div class="status-msg" id="settingsStatus"></div>
+            <div class="form-actions">
+                <button class="btn-primary" id="settingsSave">💾 حفظ الإعدادات</button>
+                <button class="btn-secondary" id="settingsClose">إغلاق</button>
+                <button class="btn-secondary" id="settingsTest" style="flex:0.5;border-color:var(--accent-gold);color:var(--accent-gold);">🧪 اختبار</button>
+            </div>
         </div>
     </div>
 
-    <div id="tradingview">
-        <iframe src="https://www.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=BINANCE%3ABTCUSDT&interval=60&theme=dark&autosize=1&studies=%5B%5D" allowfullscreen></iframe>
-    </div>
-    <div id="errorMsg" class="error-msg"></div>
-</div>
+    <!-- ===== TOAST CONTAINER ===== -->
+    <div class="toast-container" id="toastContainer"></div>
 
-<script>
-    (function() {
-        'use strict';
+    <!-- ============================================================ -->
+    <!-- ===== JAVASCRIPT ===== -->
+    <!-- ============================================================ -->
+    <script>
+        /**
+         * ============================================================
+         *  CryptoSignal Pro – Full PWA Single-File Application
+         *  Strategy: EMA 200 + Stochastic + ADX + Candlestick Patterns
+         *  Timeframe: 15m
+         *  Data Source: Binance API (public)
+         *  Telegram Bot integration
+         *  PWA with install button & background sync
+         * ============================================================
+         */
 
-        // ---------- إعدادات التخزين ----------
-        const STORAGE_KEY = 'tradeAppSettings';
-        const SIGNALS_KEY = 'tradeAppSignals';
-        let settings = {
-            telegramToken: '',
-            telegramChatId: ''
-        };
-        let signals = []; 
-        let tradeIdCounter = 0;
+        (function() {
+            'use strict';
 
-        // عناصر DOM
-        const signalsContainer = document.getElementById('signalsContainer');
-        const emptyState = document.getElementById('emptyState');
-        const statusBadge = document.getElementById('statusBadge');
-        const errorMsg = document.getElementById('errorMsg');
-        const settingsToggle = document.getElementById('settingsToggle');
-        const settingsPanel = document.getElementById('settingsPanel');
-        const telegramTokenInput = document.getElementById('telegramToken');
-        const telegramChatIdInput = document.getElementById('telegramChatId');
-        const saveSettingsBtn = document.getElementById('saveSettings');
-        const scanBtn = document.getElementById('scanBtn');
-        const analyzeBtn = document.getElementById('analyzeBtn');
+            // ============================================================
+            //  CONFIGURATION
+            // ============================================================
+            const CONFIG = {
+                SYMBOLS: [
+                    'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
+                    'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT', 'MATICUSDT'
+                ],
+                INTERVAL: '15m',
+                KLINE_LIMIT: 220, // we need 200 for EMA + room for indicators
+                STOCH_RSI_PERIOD: 14,
+                STOCH_K_SMOOTH: 3,
+                STOCH_D_SMOOTH: 3,
+                ADX_PERIOD: 14,
+                EMA_PERIOD: 200,
+                ADX_THRESHOLD: 25,
+                STOCH_OVERBOUGHT: 80,
+                STOCH_OVERSOLD: 20,
+                UPDATE_INTERVAL_DEFAULT: 2, // minutes
+                MAX_SIGNALS_PER_SYMBOL: 3, // keep last N signals per symbol
+                TELEGRAM_API: 'https://api.telegram.org/bot',
+                BINANCE_BASE: 'https://api.binance.com/api/v3',
+                CACHE_KEY: 'cryptosignal_data',
+                SETTINGS_KEY: 'cryptosignal_settings',
+                HISTORY_KEY: 'cryptosignal_history',
+                SENT_SIGNALS_KEY: 'cryptosignal_sent'
+            };
 
-        // ---------- تحميل الإعدادات والإشارات ----------
-        function loadSettings() {
-            try {
-                const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    settings = { ...settings, ...parsed };
-                    telegramTokenInput.value = settings.telegramToken || '';
-                    telegramChatIdInput.value = settings.telegramChatId || '';
-                }
-            } catch (e) {}
-        }
-        function saveSettingsToStorage() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-        }
+            // ============================================================
+            //  STATE
+            // ============================================================
+            let state = {
+                signals: [], // active signals
+                closedTrades: [], // history
+                prices: {}, // latest prices
+                settings: {
+                    telegramToken: '',
+                    telegramChatId: '',
+                    updateInterval: CONFIG.UPDATE_INTERVAL_DEFAULT,
+                    autoSendTelegram: true
+                },
+                sentSignals: [], // IDs of signals already sent to Telegram
+                isUpdating: false,
+                lastUpdate: null,
+                installPrompt: null,
+                updateTimer: null
+            };
 
-        function loadSignals() {
-            try {
-                const saved = localStorage.getItem(SIGNALS_KEY);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    signals = parsed;
-                    if (signals.length > 0) {
-                        tradeIdCounter = Math.max(...signals.map(s => s.tradeId || 0)) + 1;
-                    }
-                }
-            } catch (e) {}
-        }
-        function saveSignalsToStorage() {
-            localStorage.setItem(SIGNALS_KEY, JSON.stringify(signals));
-        }
+            // ============================================================
+            //  DOM REFS
+            // ============================================================
+            const $ = (id) => document.getElementById(id);
+            const $$ = (sel) => document.querySelectorAll(sel);
+            const tickerStrip = $('tickerStrip');
+            const signalsContainer = $('signalsContainer');
+            const closedContainer = $('closedContainer');
+            const signalCount = $('signalCount');
+            const closedCount = $('closedCount');
+            const statActive = $('statActive');
+            const statToday = $('statToday');
+            const statWins = $('statWins');
+            const statLosses = $('statLosses');
+            const settingsModal = $('settingsModal');
+            const settingsToken = $('telegramToken');
+            const settingsChatId = $('telegramChatId');
+            const settingsInterval = $('updateInterval');
+            const settingsAutoSend = $('autoSendTelegram');
+            const settingsStatus = $('settingsStatus');
+            const btnInstall = $('btnInstall');
+            const btnSettings = $('btnSettings');
+            const btnRefresh = $('btnRefresh');
+            const btnSettingsClose = $('settingsClose');
+            const btnSettingsSave = $('settingsSave');
+            const btnSettingsTest = $('settingsTest');
+            const btnExportHistory = $('btnExportHistory');
+            const btnClearHistory = $('btnClearHistory');
+            const liveDot = $('liveDot');
+            const toastContainer = $('toastContainer');
 
-        // ---------- دوال مساعدة ----------
-        function generateTradeId() {
-            return ++tradeIdCounter;
-        }
-
-        function formatTime(ts) {
-            const d = new Date(ts);
-            return d.toLocaleString('ar-EG', { hour12: false });
-        }
-
-        // ---------- إشعارات المتصفح (Service Worker) ----------
-        async function registerServiceWorker() {
-            if (!('serviceWorker' in navigator)) {
-                console.warn('Service Worker غير مدعوم');
-                return;
+            // ============================================================
+            //  UTILITY FUNCTIONS
+            // ============================================================
+            function fmt(n, d = 2) {
+                if (n === undefined || n === null || !isFinite(n)) return '—';
+                if (Math.abs(n) >= 1000) return n.toFixed(2);
+                if (Math.abs(n) >= 1) return n.toFixed(4);
+                return n.toFixed(6);
             }
-            try {
-                const swCode = `
-                    self.addEventListener('install', e => {
-                        e.waitUntil(self.skipWaiting());
-                    });
-                    self.addEventListener('activate', e => {
-                        e.waitUntil(self.clients.claim());
-                    });
-                    self.addEventListener('push', e => {
-                        const data = e.data ? e.data.json() : {};
-                        const options = {
-                            body: data.body || 'إشارة تداول جديدة',
-                            icon: data.icon || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📈</text></svg>',
-                            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📈</text></svg>',
-                            vibrate: [200, 100, 200],
-                            tag: data.tag || 'trade-signal',
-                            requireInteraction: true,
-                        };
-                        e.waitUntil(self.registration.showNotification(data.title || 'إشارة تداول', options));
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                const registration = await navigator.serviceWorker.register(swUrl);
-                console.log('Service Worker مسجل');
-                return registration;
-            } catch (err) {
-                console.error('فشل تسجيل Service Worker:', err);
-            }
-        }
 
-        async function sendBrowserNotification(title, body, tag) {
-            if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-                console.warn('الإشعارات غير مدعومة');
-                return;
+            function fmtPrice(n) {
+                if (n === undefined || n === null || !isFinite(n)) return '—';
+                if (n >= 10000) return n.toFixed(2);
+                if (n >= 1) return n.toFixed(4);
+                if (n >= 0.01) return n.toFixed(6);
+                return n.toFixed(8);
             }
-            if (Notification.permission === 'granted') {
+
+            function fmtDate(ts) {
+                const d = new Date(ts);
+                return d.toLocaleString('ar-EG', { hour12: false, day: '2-digit', month: '2-digit', hour: '2-digit',
+                    minute: '2-digit' });
+            }
+
+            function fmtDateFull(ts) {
+                const d = new Date(ts);
+                return d.toLocaleString('ar-EG', { hour12: false, day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+
+            function now() { return Date.now(); }
+
+            function isToday(ts) {
+                const d = new Date(ts);
+                const t = new Date();
+                return d.getDate() === t.getDate() && d.getMonth() === t.getMonth() && d.getFullYear() === t.getFullYear();
+            }
+
+            function id() { return Math.random().toString(36).substring(2) + Date.now().toString(36); }
+
+            function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+            function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+            function getSymbolDisplay(sym) {
+                return sym.replace('USDT', '');
+            }
+
+            // ============================================================
+            //  LOCAL STORAGE
+            // ============================================================
+            function loadState() {
                 try {
-                    const registration = await navigator.serviceWorker.ready;
-                    registration.showNotification(title, {
-                        body: body,
-                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📈</text></svg>',
-                        tag: tag || 'trade-signal',
-                        requireInteraction: true,
-                        vibrate: [200, 100, 200],
-                    });
-                } catch (e) {
-                    console.error(e);
-                }
-            } else if (Notification.permission === 'default') {
-                Notification.requestPermission();
+                    const raw = localStorage.getItem(CONFIG.CACHE_KEY);
+                    if (raw) {
+                        const data = JSON.parse(raw);
+                        if (data.signals) state.signals = data.signals;
+                        if (data.closedTrades) state.closedTrades = data.closedTrades;
+                        if (data.prices) state.prices = data.prices;
+                        if (data.sentSignals) state.sentSignals = data.sentSignals;
+                        if (data.lastUpdate) state.lastUpdate = data.lastUpdate;
+                    }
+                } catch (e) { /* ignore */ }
+                try {
+                    const raw = localStorage.getItem(CONFIG.SETTINGS_KEY);
+                    if (raw) {
+                        const s = JSON.parse(raw);
+                        Object.assign(state.settings, s);
+                    }
+                } catch (e) { /* ignore */ }
+                try {
+                    const raw = localStorage.getItem(CONFIG.HISTORY_KEY);
+                    if (raw) {
+                        const h = JSON.parse(raw);
+                        if (Array.isArray(h)) state.closedTrades = h;
+                    }
+                } catch (e) { /* ignore */ }
             }
-        }
 
-        // ---------- إرسال إلى تليجرام ----------
-        async function sendTelegramMessage(text) {
-            if (!settings.telegramToken || !settings.telegramChatId) {
-                console.warn('تليجرام غير مهيأ');
-                return false;
+            function persistState() {
+                try {
+                    const data = {
+                        signals: state.signals,
+                        closedTrades: state.closedTrades,
+                        prices: state.prices,
+                        sentSignals: state.sentSignals,
+                        lastUpdate: state.lastUpdate
+                    };
+                    localStorage.setItem(CONFIG.CACHE_KEY, JSON.stringify(data));
+                    localStorage.setItem(CONFIG.HISTORY_KEY, JSON.stringify(state.closedTrades));
+                } catch (e) { /* ignore */ }
             }
-            const url = `https://api.telegram.org/bot${settings.telegramToken}/sendMessage`;
-            try {
+
+            function persistSettings() {
+                try {
+                    localStorage.setItem(CONFIG.SETTINGS_KEY, JSON.stringify(state.settings));
+                } catch (e) { /* ignore */ }
+            }
+
+            // ============================================================
+            //  TELEGRAM
+            // ============================================================
+            async function sendTelegramMessage(text) {
+                const { telegramToken, telegramChatId } = state.settings;
+                if (!telegramToken || !telegramChatId) {
+                    throw new Error('يرجى إعداد توكن التليجرام ومعرف الدردشة أولاً');
+                }
+                const url = `${CONFIG.TELEGRAM_API}${telegramToken}/sendMessage`;
+                const payload = {
+                    chat_id: telegramChatId,
+                    text: text,
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: true
+                };
                 const resp = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: settings.telegramChatId,
-                        text: text,
-                        parse_mode: 'HTML'
-                    })
+                    body: JSON.stringify(payload)
                 });
-                const data = await resp.json();
-                if (!data.ok) {
-                    console.error('خطأ تليجرام:', data);
-                    return false;
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.description || 'فشل إرسال الرسالة');
                 }
-                return true;
-            } catch (e) {
-                console.error('فشل إرسال تليجرام:', e);
-                return false;
-            }
-        }
-
-        // ---------- حساب ADX ----------
-        function calculateADX(klines) {
-            const period = 14;
-            if (klines.length < period + 1) return null;
-
-            const high = klines.map(k => parseFloat(k[2]));
-            const low = klines.map(k => parseFloat(k[3]));
-            const close = klines.map(k => parseFloat(k[4]));
-
-            const plusDM = [];
-            const minusDM = [];
-            const tr = [];
-            for (let i = 1; i < high.length; i++) {
-                const upMove = high[i] - high[i-1];
-                const downMove = low[i-1] - low[i];
-                let pm = 0, mm = 0;
-                if (upMove > downMove && upMove > 0) pm = upMove;
-                if (downMove > upMove && downMove > 0) mm = downMove;
-                plusDM.push(pm);
-                minusDM.push(mm);
-                const h = high[i];
-                const l = low[i];
-                const c = close[i-1];
-                const tr1 = h - l;
-                const tr2 = Math.abs(h - c);
-                const tr3 = Math.abs(l - c);
-                tr.push(Math.max(tr1, tr2, tr3));
+                return await resp.json();
             }
 
-            function sma(data, period) {
+            function formatSignalMessage(signal) {
+                const dir = signal.direction === 'buy' ? '🟢 شراء' : '🔴 بيع';
+                const sym = getSymbolDisplay(signal.symbol);
+                const price = fmtPrice(signal.entryPrice);
+                const tp = fmtPrice(signal.takeProfit);
+                const sl = fmtPrice(signal.stopLoss);
+                const time = fmtDateFull(signal.timestamp);
+                let analysis = signal.analysis || 'تحليل فني شامل';
+                if (analysis.length > 200) analysis = analysis.substring(0, 200) + '...';
+                return `
+        🔔 <b>إشارة تداول جديدة</b> 🔔
+        ───────────────
+        💰 العملة: ${sym} (${signal.symbol})
+        📈 الاتجاه: ${dir}
+        💵 سعر الدخول: ${price}
+        🎯 الهدف: ${tp}
+        🛑 وقف الخسارة: ${sl}
+        📊 التحليل: ${analysis}
+        🕐 الوقت: ${time}
+        ───────────────
+        ⚡ CryptoSignal Pro
+                `.trim();
+            }
+
+            // ============================================================
+            //  BINANCE API
+            // ============================================================
+            async function fetchKlines(symbol, interval = CONFIG.INTERVAL, limit = CONFIG.KLINE_LIMIT) {
+                const url =
+                    `${CONFIG.BINANCE_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`Binance API error: ${resp.status}`);
+                const data = await resp.json();
+                return data.map(k => ({
+                    time: k[0],
+                    open: parseFloat(k[1]),
+                    high: parseFloat(k[2]),
+                    low: parseFloat(k[3]),
+                    close: parseFloat(k[4]),
+                    volume: parseFloat(k[5])
+                }));
+            }
+
+            async function fetchTickerPrice(symbol) {
+                const url = `${CONFIG.BINANCE_BASE}/ticker/price?symbol=${symbol}`;
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`Binance ticker error: ${resp.status}`);
+                const data = await resp.json();
+                return parseFloat(data.price);
+            }
+
+            // ============================================================
+            //  TECHNICAL INDICATORS
+            // ============================================================
+
+            // EMA
+            function calcEMA(data, period) {
                 const result = [];
-                for (let i = 0; i < data.length - period + 1; i++) {
-                    let sum = 0;
-                    for (let j = 0; j < period; j++) {
-                        sum += data[i+j];
-                    }
-                    result.push(sum / period);
+                if (data.length < period) return result;
+                const multiplier = 2 / (period + 1);
+                let ema = data.slice(0, period).reduce((a, b) => a + b, 0) / period;
+                result.push(ema);
+                for (let i = period; i < data.length; i++) {
+                    ema = (data[i] - ema) * multiplier + ema;
+                    result.push(ema);
                 }
                 return result;
             }
 
-            if (plusDM.length < period) return null;
-
-            const smaPlusDM = sma(plusDM, period);
-            const smaMinusDM = sma(minusDM, period);
-            const smaTR = sma(tr, period);
-
-            if (smaPlusDM.length === 0 || smaMinusDM.length === 0 || smaTR.length === 0) return null;
-
-            const plusDI = smaPlusDM.map((v, i) => (v / smaTR[i]) * 100);
-            const minusDI = smaMinusDM.map((v, i) => (v / smaTR[i]) * 100);
-
-            const dx = [];
-            for (let i = 0; i < plusDI.length; i++) {
-                const diSum = plusDI[i] + minusDI[i];
-                if (diSum === 0) {
-                    dx.push(0);
-                } else {
-                    dx.push(Math.abs(plusDI[i] - minusDI[i]) / diSum * 100);
-                }
-            }
-
-            if (dx.length < period) return null;
-            const adx = sma(dx, period);
-            return adx[adx.length - 1];
-        }
-
-        // ---------- تحديد اتجاه البيتكوين (1 ساعة) ----------
-        async function getBitcoinDirection() {
-            try {
-                const klines = await fetchKlines('BTCUSDT', '1h', 50);
-                if (!klines || klines.length < 20) return null;
-                // نأخذ متوسط سعر آخر 12 شمعة (نصف يوم) ونقارنه بـ 12 شمعة سابقة
-                const closes = klines.map(k => parseFloat(k[4]));
-                const recent = closes.slice(-12);
-                const prev = closes.slice(-24, -12);
-                if (recent.length < 12 || prev.length < 12) return null;
-                const avgRecent = recent.reduce((a,b) => a+b, 0) / recent.length;
-                const avgPrev = prev.reduce((a,b) => a+b, 0) / prev.length;
-                if (avgRecent > avgPrev) return 'UP';
-                else if (avgRecent < avgPrev) return 'DOWN';
-                else return null;
-            } catch (e) {
-                console.error('خطأ في تحديد اتجاه البيتكوين:', e);
-                return null;
-            }
-        }
-
-        // ---------- استراتيجية Supply & Demand + CVD + ADX + اتجاه BTC ----------
-        // 10 عملات عالية الارتباط بالبيتكوين
-        const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT', 'MATICUSDT', 'LTCUSDT', 'BCHUSDT'];
-
-        async function fetchKlines(symbol, interval = '1m', limit = 100) {
-            const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-            try {
-                const resp = await fetch(url);
-                if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                const data = await resp.json();
-                return data;
-            } catch (e) {
-                throw new Error(`فشل جلب بيانات ${symbol}: ${e.message}`);
-            }
-        }
-
-        function computeCVD(klines) {
-            let cvd = 0;
-            for (let i = 0; i < klines.length; i++) {
-                const open = parseFloat(klines[i][1]);
-                const close = parseFloat(klines[i][4]);
-                const volume = parseFloat(klines[i][5]);
-                if (close > open) {
-                    cvd += volume;
-                } else if (close < open) {
-                    cvd -= volume;
-                }
-            }
-            return cvd;
-        }
-
-        function findSupportResistance(klines) {
-            const highs = klines.map(k => parseFloat(k[2]));
-            const lows = klines.map(k => parseFloat(k[3]));
-            const closes = klines.map(k => parseFloat(k[4]));
-            const window = 30;
-            const recentHighs = highs.slice(-window);
-            const recentLows = lows.slice(-window);
-            const maxHigh = Math.max(...recentHighs);
-            const minLow = Math.min(...recentLows);
-            const currentPrice = closes[closes.length - 1];
-            const supplyZone = maxHigh * 1.002;
-            const demandZone = minLow * 0.998;
-            return { supplyZone, demandZone, currentPrice, maxHigh, minLow };
-        }
-
-        async function scanSymbol(symbol, btcDirection) {
-            try {
-                // إذا كان الرمز هو BTC نفسه نتعامل معه بشكل منفصل أو نسمح به
-                // نطبق الشروط نفسها ولكن نعتمد على اتجاه البيتكوين العام
-                const klines = await fetchKlines(symbol);
-                if (!klines || klines.length < 30) return null;
-
-                const adx = calculateADX(klines);
-                if (adx === null) return null;
-                if (adx <= 25) return null;
-
-                const cvd = computeCVD(klines);
-                const { supplyZone, demandZone, currentPrice, maxHigh, minLow } = findSupportResistance(klines);
-
-                const avgVolume = klines.slice(-20).reduce((sum, k) => sum + parseFloat(k[5]), 0) / 20;
-                const threshold = avgVolume * 0.3;
-
-                let signalType = null;
-                let reason = '';
-                let tp = 0, sl = 0;
-
-                // تحديد إشارة محتملة
-                let potentialType = null;
-                let potentialReason = '';
-                if (currentPrice > supplyZone && cvd > threshold) {
-                    potentialType = 'SELL';
-                    potentialReason = `السعر فوق منطقة العرض (${supplyZone.toFixed(2)}) مع CVD إيجابي (${cvd.toFixed(0)}) و ADX (${adx.toFixed(1)}) > 25`;
-                } else if (currentPrice < demandZone && cvd < -threshold) {
-                    potentialType = 'BUY';
-                    potentialReason = `السعر تحت منطقة الطلب (${demandZone.toFixed(2)}) مع CVD سلبي (${cvd.toFixed(0)}) و ADX (${adx.toFixed(1)}) > 25`;
-                }
-
-                if (!potentialType) return null;
-
-                // التحقق من التوافق مع اتجاه البيتكوين
-                if (btcDirection === 'UP' && potentialType === 'SELL') {
-                    // غير متوافق: البيتكوين صاعد فلا نبيع
-                    return null;
-                }
-                if (btcDirection === 'DOWN' && potentialType === 'BUY') {
-                    // غير متوافق: البيتكوين هابط فلا نشتري
-                    return null;
-                }
-
-                // إذا كان البيتكوين مستقراً (لا اتجاه) نسمح بأي إشارة لكن نفضل عدم الدخول
-                // لكن سنسمح بها لأننا قد نغتنم الفرصة
-                // لكن الشرط هو أن تكون متوافقة، إذا كان الاتجاه غير واضح نسمح بها
-
-                // إذا وصلنا هنا فالإشارة متوافقة
-                signalType = potentialType;
-                reason = potentialReason + ` واتجاه البيتكوين ${btcDirection === 'UP' ? 'صاعد' : btcDirection === 'DOWN' ? 'هابط' : 'محايد'}، متوافق.`;
-
-                // تحديد الهدف 2% ووقف 0.5%
-                const entryPrice = currentPrice;
-                if (signalType === 'BUY') {
-                    tp = entryPrice * 1.02;  // +2%
-                    sl = entryPrice * 0.995; // -0.5%
-                } else { // SELL
-                    tp = entryPrice * 0.98;  // -2%
-                    sl = entryPrice * 1.005; // +0.5%
-                }
-
-                // التحقق من عدم وجود إشارة مفتوحة لنفس العملة
-                const existing = signals.find(s => s.symbol === symbol && s.status === 'active');
-                if (existing) {
-                    return null;
-                }
-
-                const tradeId = generateTradeId();
-                const now = Date.now();
-                const signal = {
-                    tradeId: tradeId,
-                    symbol: symbol,
-                    type: signalType,
-                    entryPrice: entryPrice,
-                    tp: tp,
-                    sl: sl,
-                    timestamp: now,
-                    reason: reason,
-                    status: 'active',
-                    notes: '',
-                    alertEnabled: true,
-                    adx: adx,
-                    btcDirection: btcDirection,
-                };
-                return signal;
-            } catch (e) {
-                console.error(`خطأ في فحص ${symbol}:`, e);
-                return null;
-            }
-        }
-
-        // ---------- إضافة إشارة ومعالجة التنبيهات ----------
-        async function addSignal(signal) {
-            if (!signal) return;
-            signals.push(signal);
-            saveSignalsToStorage();
-            renderSignals();
-
-            const title = `🔔 إشارة ${signal.symbol}`;
-            const body = `${signal.type === 'BUY' ? 'شراء' : 'بيع'} عند ${signal.entryPrice.toFixed(2)} | الهدف: ${signal.tp.toFixed(2)} | الوقف: ${signal.sl.toFixed(2)} | ADX: ${signal.adx.toFixed(1)}`;
-            sendBrowserNotification(title, body, `trade-${signal.tradeId}`);
-
-            const msg = `<b>🔔 إشارة تداول جديدة</b>\n\n` +
-                `🪙 العملة: ${signal.symbol}\n` +
-                `📈 الاتجاه: ${signal.type === 'BUY' ? 'شراء (Long)' : 'بيع (Short)'}\n` +
-                `💰 سعر الدخول: ${signal.entryPrice.toFixed(2)}\n` +
-                `🎯 الهدف (2%): ${signal.tp.toFixed(2)}\n` +
-                `🛑 وقف الخسارة (0.5%): ${signal.sl.toFixed(2)}\n` +
-                `📊 ADX: ${signal.adx.toFixed(1)} (فوق 25)\n` +
-                `📊 اتجاه البيتكوين: ${signal.btcDirection === 'UP' ? 'صاعد' : signal.btcDirection === 'DOWN' ? 'هابط' : 'محايد'}\n` +
-                `📊 التحليل: ${signal.reason}\n` +
-                `⏰ الوقت: ${formatTime(signal.timestamp)}`;
-            await sendTelegramMessage(msg);
-        }
-
-        // ---------- عرض الإشارات ----------
-        function renderSignals() {
-            const activeSignals = signals.filter(s => s.status === 'active');
-            const container = signalsContainer;
-
-            if (activeSignals.length === 0) {
-                emptyState.style.display = 'block';
-                const cards = container.querySelectorAll('.signal-card');
-                cards.forEach(c => c.remove());
-                statusBadge.textContent = '🔄 في انتظار الإشارات...';
-                return;
-            }
-            emptyState.style.display = 'none';
-            statusBadge.textContent = `📊 ${activeSignals.length} إشارة نشطة`;
-
-            const cards = container.querySelectorAll('.signal-card');
-            cards.forEach(c => c.remove());
-
-            activeSignals.sort((a, b) => b.timestamp - a.timestamp);
-
-            for (const sig of activeSignals) {
-                const card = document.createElement('div');
-                card.className = 'signal-card';
-                card.dataset.tradeId = sig.tradeId;
-                card.style.borderLeftColor = sig.type === 'BUY' ? '#2ecc71' : '#e74c3c';
-
-                const header = document.createElement('div');
-                header.className = 'header';
-                header.innerHTML = `
-                    <span class="symbol">${sig.symbol} ${sig.type === 'BUY' ? '📈' : '📉'}</span>
-                    <span class="time">${formatTime(sig.timestamp)}</span>
-                `;
-                card.appendChild(header);
-
-                const priceInfo = document.createElement('div');
-                priceInfo.className = 'price-info';
-                priceInfo.innerHTML = `
-                    <span>💰 الدخول: ${sig.entryPrice.toFixed(2)}</span>
-                    <span>🎯 الهدف (2%): ${sig.tp.toFixed(2)}</span>
-                    <span>🛑 الوقف (0.5%): ${sig.sl.toFixed(2)}</span>
-                    <span>📈 ADX: ${sig.adx ? sig.adx.toFixed(1) : 'N/A'}</span>
-                `;
-                card.appendChild(priceInfo);
-
-                const analysis = document.createElement('div');
-                analysis.className = 'analysis';
-                analysis.textContent = sig.reason || 'تحليل غير متوفر';
-                card.appendChild(analysis);
-
-                const actions = document.createElement('div');
-                actions.className = 'actions';
-
-                // زر مشاركة
-                const shareBtn = document.createElement('button');
-                shareBtn.className = 'share';
-                shareBtn.textContent = '📤 مشاركة';
-                shareBtn.addEventListener('click', () => {
-                    const text = `إشارة ${sig.symbol} ${sig.type === 'BUY' ? 'شراء' : 'بيع'}\nالدخول: ${sig.entryPrice.toFixed(2)}\nالهدف: ${sig.tp.toFixed(2)}\nالوقف: ${sig.sl.toFixed(2)}\nADX: ${sig.adx ? sig.adx.toFixed(1) : 'N/A'}\nالتحليل: ${sig.reason}`;
-                    if (navigator.share) {
-                        navigator.share({ title: 'إشارة تداول', text: text });
+            // Stochastic
+            function calcStochastic(high, low, close, kPeriod = 14, kSmooth = 3, dSmooth = 3) {
+                const len = high.length;
+                if (len < kPeriod + kSmooth + dSmooth) return { k: [], d: [] };
+                const kValues = [];
+                for (let i = kPeriod - 1; i < len; i++) {
+                    const hh = Math.max(...high.slice(i - kPeriod + 1, i + 1));
+                    const ll = Math.min(...low.slice(i - kPeriod + 1, i + 1));
+                    const c = close[i];
+                    if (hh === ll) {
+                        kValues.push(50);
                     } else {
-                        navigator.clipboard.writeText(text).then(() => {
-                            alert('تم نسخ النص للحافظة');
-                        }).catch(() => {
-                            prompt('انسخ النص:', text);
-                        });
+                        kValues.push(((c - ll) / (hh - ll)) * 100);
                     }
-                });
-                actions.appendChild(shareBtn);
-
-                // زر إلغاء/تفعيل التنبيه
-                const alertToggle = document.createElement('button');
-                alertToggle.className = 'alert-toggle' + (sig.alertEnabled ? ' active' : '');
-                alertToggle.textContent = sig.alertEnabled ? '🔔 تفعيل' : '🔕 إلغاء';
-                alertToggle.addEventListener('click', () => {
-                    sig.alertEnabled = !sig.alertEnabled;
-                    alertToggle.textContent = sig.alertEnabled ? '🔔 تفعيل' : '🔕 إلغاء';
-                    alertToggle.classList.toggle('active');
-                    saveSignalsToStorage();
-                });
-                actions.appendChild(alertToggle);
-
-                // زر إغلاق الصفقة (إنهاء)
-                const closeBtn = document.createElement('button');
-                closeBtn.className = 'delete';
-                closeBtn.textContent = '❌ إنهاء';
-                closeBtn.addEventListener('click', () => {
-                    if (confirm('هل أنت متأكد من إنهاء هذه الصفقة؟')) {
-                        sig.status = 'closed';
-                        saveSignalsToStorage();
-                        renderSignals();
-                    }
-                });
-                actions.appendChild(closeBtn);
-
-                card.appendChild(actions);
-
-                // مربع الملاحظات
-                const notesDiv = document.createElement('div');
-                notesDiv.className = 'notes';
-                const textarea = document.createElement('textarea');
-                textarea.placeholder = 'ملاحظاتك الشخصية...';
-                textarea.value = sig.notes || '';
-                textarea.addEventListener('input', () => {
-                    sig.notes = textarea.value;
-                    saveSignalsToStorage();
-                });
-                notesDiv.appendChild(textarea);
-                card.appendChild(notesDiv);
-
-                container.appendChild(card);
-            }
-        }
-
-        // ---------- المسح الدوري و اليدوي ----------
-        let scanInterval = null;
-        async function scanAllSymbols() {
-            // جلب اتجاه البيتكوين أولاً
-            const btcDir = await getBitcoinDirection();
-            if (!btcDir) {
-                console.warn('لم نتمكن من تحديد اتجاه البيتكوين، سنعمل بدون شرط الاتجاه');
-                // نستمر ولكن بدون تصفية الاتجاه
-            }
-            for (const symbol of SYMBOLS) {
-                try {
-                    const signal = await scanSymbol(symbol, btcDir);
-                    if (signal) {
-                        await addSignal(signal);
-                    }
-                } catch (e) {
-                    console.error('خطأ في فحص ' + symbol, e);
-                    showError(`فشل فحص ${symbol}: ${e.message}`);
                 }
+                // smooth %K
+                const kSmoothValues = [];
+                for (let i = kSmooth - 1; i < kValues.length; i++) {
+                    const sum = kValues.slice(i - kSmooth + 1, i + 1).reduce((a, b) => a + b, 0);
+                    kSmoothValues.push(sum / kSmooth);
+                }
+                // %D
+                const dValues = [];
+                for (let i = dSmooth - 1; i < kSmoothValues.length; i++) {
+                    const sum = kSmoothValues.slice(i - dSmooth + 1, i + 1).reduce((a, b) => a + b, 0);
+                    dValues.push(sum / dSmooth);
+                }
+                // align lengths
+                const offset = kPeriod - 1 + kSmooth - 1 + dSmooth - 1;
+                const kFinal = kSmoothValues.slice(dSmooth - 1);
+                const dFinal = dValues;
+                return { k: kFinal, d: dFinal, offset };
             }
-        }
 
-        async function manualAnalysis() {
-            const symbol = prompt('أدخل رمز العملة (مثل BTCUSDT):', 'BTCUSDT');
-            if (!symbol) return;
-            try {
-                const btcDir = await getBitcoinDirection();
-                const signal = await scanSymbol(symbol.toUpperCase(), btcDir);
-                if (signal) {
-                    await addSignal(signal);
-                    alert(`تم العثور على إشارة لـ ${symbol}`);
+            // ADX
+            function calcADX(high, low, close, period = 14) {
+                const len = high.length;
+                if (len < period + 1) return { adx: [], plusDI: [], minusDI: [] };
+                const tr = [];
+                const plusDM = [];
+                const minusDM = [];
+                for (let i = 1; i < len; i++) {
+                    const h = high[i],
+                        l = low[i],
+                        c = close[i - 1];
+                    tr.push(Math.max(h - l, Math.abs(h - c), Math.abs(l - c)));
+                    const up = high[i] - high[i - 1];
+                    const down = low[i - 1] - low[i];
+                    plusDM.push(up > down && up > 0 ? up : 0);
+                    minusDM.push(down > up && down > 0 ? down : 0);
+                }
+                const atr = [];
+                let atrVal = tr.slice(0, period).reduce((a, b) => a + b, 0) / period;
+                atr.push(atrVal);
+                for (let i = period; i < tr.length; i++) {
+                    atrVal = (atrVal * (period - 1) + tr[i]) / period;
+                    atr.push(atrVal);
+                }
+                const plusDI14 = [];
+                const minusDI14 = [];
+                let plusSum = plusDM.slice(0, period).reduce((a, b) => a + b, 0);
+                let minusSum = minusDM.slice(0, period).reduce((a, b) => a + b, 0);
+                plusDI14.push((plusSum / (atr[0] * period)) * 100);
+                minusDI14.push((minusSum / (atr[0] * period)) * 100);
+                for (let i = period; i < plusDM.length; i++) {
+                    plusSum = plusSum - (plusDM[i - period] || 0) + plusDM[i];
+                    minusSum = minusSum - (minusDM[i - period] || 0) + minusDM[i];
+                    const atrIdx = i - period + 1;
+                    if (atrIdx < atr.length) {
+                        plusDI14.push((plusSum / (atr[atrIdx] * period)) * 100);
+                        minusDI14.push((minusSum / (atr[atrIdx] * period)) * 100);
+                    }
+                }
+                const dx = [];
+                const minLen = Math.min(plusDI14.length, minusDI14.length);
+                for (let i = 0; i < minLen; i++) {
+                    const p = plusDI14[i],
+                        m = minusDI14[i];
+                    const sum = p + m;
+                    if (sum === 0) dx.push(0);
+                    else dx.push((Math.abs(p - m) / sum) * 100);
+                }
+                const adx = [];
+                if (dx.length >= period) {
+                    let adxVal = dx.slice(0, period).reduce((a, b) => a + b, 0) / period;
+                    adx.push(adxVal);
+                    for (let i = period; i < dx.length; i++) {
+                        adxVal = (adxVal * (period - 1) + dx[i]) / period;
+                        adx.push(adxVal);
+                    }
+                }
+                return {
+                    adx: adx,
+                    plusDI: plusDI14.slice(0, adx.length),
+                    minusDI: minusDI14.slice(0, adx.length)
+                };
+            }
+
+            // ============================================================
+            //  CANDLESTICK PATTERNS
+            // ============================================================
+            function detectPattern(klines, idx) {
+                if (idx < 2 || idx >= klines.length) return null;
+                const c = klines[idx];
+                const p = klines[idx - 1];
+                const pp = klines[idx - 2];
+                const body = Math.abs(c.close - c.open);
+                const upper = c.high - Math.max(c.close, c.open);
+                const lower = Math.min(c.close, c.open) - c.low;
+                const range = c.high - c.low;
+                if (range === 0) return null;
+                const bodyRatio = body / range;
+                const isGreen = c.close > c.open;
+                const isRed = c.close < c.open;
+
+                // Hammer / Hanging Man
+                if (bodyRatio < 0.3 && lower > body * 2 && upper < body * 0.5) {
+                    return isGreen ? 'hammer' : 'hanging_man';
+                }
+                // Shooting Star
+                if (bodyRatio < 0.3 && upper > body * 2 && lower < body * 0.5) {
+                    return isRed ? 'shooting_star' : 'inverted_hammer';
+                }
+                // Bullish Engulfing
+                if (isGreen && p.close < p.open && c.close > p.open && c.open < p.close) {
+                    return 'bullish_engulfing';
+                }
+                // Bearish Engulfing
+                if (isRed && p.close > p.open && c.close < p.open && c.open > p.close) {
+                    return 'bearish_engulfing';
+                }
+                // Morning Star (simplified)
+                if (idx >= 2 && p.close < p.open && isGreen && c.close > (p.open + p.close) / 2) {
+                    const body1 = Math.abs(pp.close - pp.open);
+                    const body2 = Math.abs(p.close - p.open);
+                    if (pp.close < pp.open && body2 > body1 * 0.5) {
+                        return 'morning_star';
+                    }
+                }
+                // Evening Star
+                if (idx >= 2 && p.close > p.open && isRed && c.close < (p.open + p.close) / 2) {
+                    const body1 = Math.abs(pp.close - pp.open);
+                    const body2 = Math.abs(p.close - p.open);
+                    if (pp.close > pp.open && body2 > body1 * 0.5) {
+                        return 'evening_star';
+                    }
+                }
+                // Doji
+                if (bodyRatio < 0.1) {
+                    return 'doji';
+                }
+                return null;
+            }
+
+            // ============================================================
+            //  SIGNAL GENERATION
+            // ============================================================
+            function generateSignal(symbol, klines) {
+                if (!klines || klines.length < 200) return null;
+
+                const closes = klines.map(k => k.close);
+                const highs = klines.map(k => k.high);
+                const lows = klines.map(k => k.low);
+
+                // EMA 200
+                const emaValues = calcEMA(closes, CONFIG.EMA_PERIOD);
+                if (emaValues.length === 0) return null;
+                const currentEMA = emaValues[emaValues.length - 1];
+                const lastClose = closes[closes.length - 1];
+                const prevClose = closes[closes.length - 2];
+
+                // Stochastic
+                const stoch = calcStochastic(highs, lows, closes, CONFIG.STOCH_RSI_PERIOD, CONFIG.STOCH_K_SMOOTH,
+                    CONFIG.STOCH_D_SMOOTH);
+                if (stoch.k.length < 2 || stoch.d.length < 2) return null;
+                const kLast = stoch.k[stoch.k.length - 1];
+                const dLast = stoch.d[stoch.d.length - 1];
+                const kPrev = stoch.k[stoch.k.length - 2];
+                const dPrev = stoch.d[stoch.d.length - 2];
+
+                // ADX
+                const adxResult = calcADX(highs, lows, closes, CONFIG.ADX_PERIOD);
+                if (adxResult.adx.length === 0) return null;
+                const adxLast = adxResult.adx[adxResult.adx.length - 1];
+
+                // Pattern
+                const pattern = detectPattern(klines, klines.length - 1);
+
+                // Determine direction
+                let direction = 'neutral';
+                let confidence = 0;
+                let reasons = [];
+
+                // ---- BUY CONDITIONS ----
+                let buyScore = 0;
+                // 1. Price above EMA 200
+                if (lastClose > currentEMA) {
+                    buyScore += 25;
+                    reasons.push('السعر فوق EMA 200');
+                }
+                // 2. Stochastic oversold + cross
+                if (kLast < CONFIG.STOCH_OVERSOLD && kPrev < CONFIG.STOCH_OVERSOLD) {
+                    buyScore += 15;
+                    reasons.push('مؤشر ستوكاستيك في منطقة تشبع بيعي');
+                }
+                if (kLast > dLast && kPrev <= dPrev && kLast < CONFIG.STOCH_OVERSOLD + 10) {
+                    buyScore += 20;
+                    reasons.push('تقاطع صاعد للستوكاستيك في منطقة التشبع');
+                }
+                // 3. ADX > threshold
+                if (adxLast > CONFIG.ADX_THRESHOLD) {
+                    buyScore += 20;
+                    reasons.push(`ADX قوي (${adxLast.toFixed(1)})`);
+                }
+                // 4. Bullish pattern
+                if (pattern === 'hammer' || pattern === 'bullish_engulfing' || pattern === 'morning_star' ||
+                    pattern === 'inverted_hammer') {
+                    buyScore += 20;
+                    reasons.push(`نمط شموع إيجابي: ${pattern}`);
+                }
+                // 5. Price action: higher low
+                if (closes.length >= 3 && closes[closes.length - 1] > closes[closes.length - 3]) {
+                    buyScore += 10;
+                    reasons.push('اتجاه صاعد قصير المدى');
+                }
+
+                // ---- SELL CONDITIONS ----
+                let sellScore = 0;
+                if (lastClose < currentEMA) {
+                    sellScore += 25;
+                    reasons.push('السعر تحت EMA 200');
+                }
+                if (kLast > CONFIG.STOCH_OVERBOUGHT && kPrev > CONFIG.STOCH_OVERBOUGHT) {
+                    sellScore += 15;
+                    reasons.push('مؤشر ستوكاستيك في منطقة تشبع شرائي');
+                }
+                if (kLast < dLast && kPrev >= dPrev && kLast > CONFIG.STOCH_OVERBOUGHT - 10) {
+                    sellScore += 20;
+                    reasons.push('تقاطع هابط للستوكاستيك في منطقة التشبع');
+                }
+                if (adxLast > CONFIG.ADX_THRESHOLD) {
+                    sellScore += 20;
+                    reasons.push(`ADX قوي (${adxLast.toFixed(1)})`);
+                }
+                if (pattern === 'shooting_star' || pattern === 'bearish_engulfing' || pattern === 'evening_star' ||
+                    pattern === 'hanging_man') {
+                    sellScore += 20;
+                    reasons.push(`نمط شموع سلبي: ${pattern}`);
+                }
+                if (closes.length >= 3 && closes[closes.length - 1] < closes[closes.length - 3]) {
+                    sellScore += 10;
+                    reasons.push('اتجاه هابط قصير المدى');
+                }
+
+                // Determine direction
+                if (buyScore >= 60 && buyScore > sellScore + 10) {
+                    direction = 'buy';
+                    confidence = Math.min(100, buyScore);
+                } else if (sellScore >= 60 && sellScore > buyScore + 10) {
+                    direction = 'sell';
+                    confidence = Math.min(100, sellScore);
                 } else {
-                    alert(`لا توجد إشارة لـ ${symbol} حالياً (قد يكون ADX <= 25، أو عدم توافق مع اتجاه البيتكوين، أو عدم توفر شروط أخرى)`);
+                    direction = 'neutral';
+                    confidence = Math.max(buyScore, sellScore);
                 }
-            } catch (e) {
-                showError(`خطأ في التحليل: ${e.message}`);
+
+                if (direction === 'neutral' || confidence < 55) {
+                    return null; // no clear signal
+                }
+
+                // Calculate targets
+                const entryPrice = lastClose;
+                const atr = calcATR(klines, 14);
+                const atrVal = atr.length > 0 ? atr[atr.length - 1] : (lastClose * 0.02);
+                let takeProfit, stopLoss;
+                if (direction === 'buy') {
+                    takeProfit = entryPrice + atrVal * 2.0;
+                    stopLoss = entryPrice - atrVal * 1.2;
+                } else {
+                    takeProfit = entryPrice - atrVal * 2.0;
+                    stopLoss = entryPrice + atrVal * 1.2;
+                }
+
+                // Build analysis text
+                const analysisText = `
+        📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)}</strong>
+        ───────────────
+        ✅ <strong>القرار:</strong> ${direction === 'buy' ? 'شراء' : 'بيع'} (ثقة ${confidence.toFixed(0)}%)
+        📊 <strong>EMA 200:</strong> السعر ${lastClose > currentEMA ? 'فوق' : 'تحت'} المتوسط (${fmtPrice(currentEMA)})
+        📉 <strong>Stochastic:</strong> K=${kLast.toFixed(1)}, D=${dLast.toFixed(1)} ${kLast > dLast ? '↑' : '↓'}
+        📈 <strong>ADX:</strong> ${adxLast.toFixed(1)} ${adxLast > CONFIG.ADX_THRESHOLD ? '✔️ قوي' : '⚠️ ضعيف'}
+        🕯️ <strong>نمط الشموع:</strong> ${pattern || 'غير واضح'}
+        💡 <strong>الأسباب:</strong> ${reasons.join(' | ')}
+                `.trim();
+
+                return {
+                    id: id(),
+                    symbol: symbol,
+                    direction: direction,
+                    entryPrice: entryPrice,
+                    takeProfit: takeProfit,
+                    stopLoss: stopLoss,
+                    confidence: confidence,
+                    analysis: analysisText,
+                    timestamp: now(),
+                    pattern: pattern || 'none',
+                    ema: currentEMA,
+                    stochasticK: kLast,
+                    stochasticD: dLast,
+                    adx: adxLast,
+                    isLocked: false,
+                    isClosed: false,
+                    closedAt: null,
+                    closedResult: null // 'win' | 'loss' | 'neutral'
+                };
             }
-        }
 
-        function showError(msg) {
-            errorMsg.textContent = msg;
-            errorMsg.style.display = 'block';
-            setTimeout(() => {
-                errorMsg.style.display = 'none';
-            }, 5000);
-        }
-
-        // ---------- بدء التشغيل ----------
-        async function init() {
-            loadSettings();
-            loadSignals();
-            renderSignals();
-
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission();
+            // ATR helper
+            function calcATR(klines, period = 14) {
+                if (klines.length < period + 1) return [];
+                const tr = [];
+                for (let i = 1; i < klines.length; i++) {
+                    const h = klines[i].high,
+                        l = klines[i].low,
+                        c = klines[i - 1].close;
+                    tr.push(Math.max(h - l, Math.abs(h - c), Math.abs(l - c)));
+                }
+                const atr = [];
+                let atrVal = tr.slice(0, period).reduce((a, b) => a + b, 0) / period;
+                atr.push(atrVal);
+                for (let i = period; i < tr.length; i++) {
+                    atrVal = (atrVal * (period - 1) + tr[i]) / period;
+                    atr.push(atrVal);
+                }
+                return atr;
             }
 
-            await registerServiceWorker();
+            // ============================================================
+            //  UPDATE ALL DATA
+            // ============================================================
+            async function updateAllData(force = false) {
+                if (state.isUpdating && !force) return;
+                state.isUpdating = true;
+                liveDot.style.background = '#f5a623';
+                liveDot.style.animation = 'none';
 
-            settingsToggle.addEventListener('click', () => {
-                settingsPanel.classList.toggle('open');
-            });
+                try {
+                    const symbols = CONFIG.SYMBOLS;
+                    const allKlines = {};
+                    const allPrices = {};
 
-            saveSettingsBtn.addEventListener('click', () => {
-                settings.telegramToken = telegramTokenInput.value.trim();
-                settings.telegramChatId = telegramChatIdInput.value.trim();
-                saveSettingsToStorage();
-                alert('تم حفظ الإعدادات');
-            });
+                    // Fetch klines for all symbols
+                    const fetchPromises = symbols.map(async sym => {
+                        try {
+                            const k = await fetchKlines(sym, CONFIG.INTERVAL, CONFIG.KLINE_LIMIT);
+                            allKlines[sym] = k;
+                            if (k.length > 0) {
+                                allPrices[sym] = k[k.length - 1].close;
+                            }
+                            return { sym, ok: true };
+                        } catch (e) {
+                            console.warn(`Failed to fetch ${sym}:`, e);
+                            // try to get price via ticker
+                            try {
+                                const p = await fetchTickerPrice(sym);
+                                allPrices[sym] = p;
+                            } catch (e2) { /* ignore */ }
+                            return { sym, ok: false };
+                        }
+                    });
 
-            scanBtn.addEventListener('click', async () => {
-                scanBtn.textContent = '⏳ جاري...';
-                scanBtn.disabled = true;
-                await scanAllSymbols();
-                scanBtn.textContent = '🔍 فحص يدوي';
-                scanBtn.disabled = false;
-            });
+                    await Promise.all(fetchPromises);
+                    state.prices = allPrices;
 
-            analyzeBtn.addEventListener('click', manualAnalysis);
+                    // Generate signals
+                    const newSignals = [];
+                    for (const sym of symbols) {
+                        const k = allKlines[sym];
+                        if (!k || k.length < 200) continue;
+                        const signal = generateSignal(sym, k);
+                        if (signal) {
+                            // Check if we already have an active signal for this symbol with same direction
+                            const existing = state.signals.find(s => s.symbol === sym && s.direction === signal
+                                .direction && !s.isClosed && !s.isLocked);
+                            if (!existing) {
+                                newSignals.push(signal);
+                            }
+                        }
+                    }
 
-            scanAllSymbols(); 
-            scanInterval = setInterval(scanAllSymbols, 30000);
-        }
+                    // Add new signals to state (keep max per symbol)
+                    for (const sig of newSignals) {
+                        // Check if this signal was already sent (by id or by symbol+direction+timestamp close)
+                        const alreadySent = state.sentSignals.includes(sig.id);
+                        if (!alreadySent) {
+                            state.signals.push(sig);
+                            // Send to Telegram if enabled
+                            if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings
+                                .telegramChatId) {
+                                try {
+                                    const msg = formatSignalMessage(sig);
+                                    await sendTelegramMessage(msg);
+                                    state.sentSignals.push(sig.id);
+                                    // keep sent signals list manageable
+                                    if (state.sentSignals.length > 200) {
+                                        state.sentSignals = state.sentSignals.slice(-100);
+                                    }
+                                    showToast(`📨 إشارة ${getSymbolDisplay(sig.symbol)} أرسلت للتليجرام`, 'success');
+                                } catch (e) {
+                                    console.warn('Telegram send failed:', e);
+                                    showToast(`⚠️ فشل إرسال إشارة ${getSymbolDisplay(sig.symbol)} للتليجرام`, 'error');
+                                }
+                            } else {
+                                // still mark as sent if we don't have telegram configured
+                                state.sentSignals.push(sig.id);
+                            }
+                        }
+                    }
 
-        window.addEventListener('beforeunload', () => {
-            if (scanInterval) clearInterval(scanInterval);
-        });
+                    // Prune signals: remove old closed, keep max per symbol
+                    const activeSignals = state.signals.filter(s => !s.isClosed);
+                    const closedSignals = state.signals.filter(s => s.isClosed);
+                    // Keep only latest N per symbol for active
+                    const activeBySymbol = {};
+                    for (const s of activeSignals) {
+                        if (!activeBySymbol[s.symbol]) activeBySymbol[s.symbol] = [];
+                        activeBySymbol[s.symbol].push(s);
+                    }
+                    let prunedActive = [];
+                    for (const sym in activeBySymbol) {
+                        const list = activeBySymbol[sym];
+                        list.sort((a, b) => b.timestamp - a.timestamp);
+                        prunedActive.push(...list.slice(0, CONFIG.MAX_SIGNALS_PER_SYMBOL));
+                    }
+                    state.signals = [...prunedActive, ...closedSignals];
 
-        init();
-    })();
-</script>
+                    // Update last update time
+                    state.lastUpdate = now();
+
+                    // Persist
+                    persistState();
+
+                    // Update UI
+                    renderAll();
+
+                    liveDot.style.background = '#00d4aa';
+                    liveDot.style.animation = 'pulse-dot 2s infinite';
+
+                } catch (e) {
+                    console.error('Update error:', e);
+                    showToast('⚠️ خطأ في تحديث البيانات: ' + e.message, 'error');
+                    liveDot.style.background = '#ff4757';
+                    liveDot.style.animation = 'pulse-dot 2s infinite';
+                } finally {
+                    state.isUpdating = false;
+                }
+            }
+
+            // ============================================================
+            //  RENDER
+            // ============================================================
+
+            // Ticker
+            function renderTicker() {
+                const symbols = CONFIG.SYMBOLS;
+                let html = '';
+                for (const sym of symbols) {
+                    const price = state.prices[sym];
+                    const display = getSymbolDisplay(sym);
+                    // find active signal for this symbol
+                    const activeSig = state.signals.find(s => s.symbol === sym && !s.isClosed);
+                    let badge = '';
+                    if (activeSig) {
+                        badge =
+                            `<span class="signal-badge ${activeSig.direction}">${activeSig.direction === 'buy' ? '🟢 شراء' : '🔴 بيع'}</span>`;
+                    } else {
+                        badge = `<span class="signal-badge neutral">● محايد</span>`;
+                    }
+                    const priceStr = price !== undefined ? fmtPrice(price) : '—';
+                    html += `
+                <div class="ticker-item">
+                    <span class="sym">${display}</span>
+                    <span class="price">${priceStr}</span>
+                    ${badge}
+                </div>
+              `;
+                }
+                tickerStrip.innerHTML = html;
+            }
+
+            // Signals
+            function renderSignals() {
+                const active = state.signals.filter(s => !s.isClosed);
+                const container = signalsContainer;
+                signalCount.textContent = active.length;
+
+                if (active.length === 0) {
+                    container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">📊</div>
+                    <h3>لا توجد إشارات نشطة حالياً</h3>
+                    <p>جاري مراقبة الأسواق... سيتم عرض الإشارات عند توفرها</p>
+                </div>
+              `;
+                    return;
+                }
+
+                // Sort by timestamp descending (newest first)
+                active.sort((a, b) => b.timestamp - a.timestamp);
+
+                let html = '<div class="signals-grid">';
+                for (const sig of active) {
+                    const dirClass = sig.direction === 'buy' ? 'buy' : 'sell';
+                    const dirLabel = sig.direction === 'buy' ? '🟢 شراء' : '🔴 بيع';
+                    const sym = getSymbolDisplay(sig.symbol);
+                    const time = fmtDate(sig.timestamp);
+                    const lockLabel = sig.isLocked ? '🔓 فتح' : '🔒 قفل';
+                    const lockClass = sig.isLocked ? 'locked' : '';
+                    html += `
+                <div class="signal-card ${dirClass}">
+                    <div class="header">
+                        <div class="symbol">${sym} <small>${sig.symbol}</small></div>
+                        <div class="direction ${dirClass}">${dirLabel}</div>
+                    </div>
+                    <div class="price-info">
+                        <div class="item">
+                            <div class="label">دخول</div>
+                            <div class="val">${fmtPrice(sig.entryPrice)}</div>
+                        </div>
+                        <div class="item">
+                            <div class="label">🎯 الهدف</div>
+                            <div class="val green">${fmtPrice(sig.takeProfit)}</div>
+                        </div>
+                        <div class="item">
+                            <div class="label">🛑 وقف الخسارة</div>
+                            <div class="val red">${fmtPrice(sig.stopLoss)}</div>
+                        </div>
+                    </div>
+                    <div class="analysis">${sig.analysis}</div>
+                    <div class="footer">
+                        <div class="timestamp">🕐 ${time} • ثقة ${sig.confidence.toFixed(0)}%</div>
+                        <div class="actions">
+                            <button class="btn-share" data-id="${sig.id}" title="مشاركة الإشارة">📤 مشاركة</button>
+                            <button class="btn-lock ${lockClass}" data-id="${sig.id}" title="قفل/فتح الصفقة">${lockLabel}</button>
+                            <button class="btn-close" data-id="${sig.id}" title="إغلاق الصفقة">✖️ إغلاق</button>
+                        </div>
+                    </div>
+                </div>
+              `;
+                }
+                html += '</div>';
+                container.innerHTML = html;
+
+                // Attach event listeners
+                container.querySelectorAll('.btn-share').forEach(btn => {
+                    btn.addEventListener('click', () => shareSignal(btn.dataset.id));
+                });
+                container.querySelectorAll('.btn-lock').forEach(btn => {
+                    btn.addEventListener('click', () => toggleLock(btn.dataset.id));
+                });
+                container.querySelectorAll('.btn-close').forEach(btn => {
+                    btn.addEventListener('click', () => closeTrade(btn.dataset.id));
+                });
+            }
+
+            // Closed Trades
+            function renderClosed() {
+                const closed = state.signals.filter(s => s.isClosed);
+                closedCount.textContent = closed.length;
+
+                const container = closedContainer;
+                if (closed.length === 0) {
+                    container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">📂</div>
+                    <h3>لا توجد صفقات مغلقة بعد</h3>
+                    <p>سيظهر هنا سجل الصفقات التي تم إغلاقها يدوياً</p>
+                </div>
+              `;
+                    return;
+                }
+
+                // Sort by closedAt descending
+                closed.sort((a, b) => (b.closedAt || 0) - (a.closedAt || 0));
+
+                let html = '<div class="closed-grid">';
+                for (const sig of closed) {
+                    const sym = getSymbolDisplay(sig.symbol);
+                    const result = sig.closedResult || 'neutral';
+                    const resultLabel = result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد';
+                    const time = fmtDate(sig.closedAt || sig.timestamp);
+                    html += `
+                <div class="closed-card">
+                    <div class="header">
+                        <div class="symbol">${sym} <small style="color:var(--text-muted);">${sig.symbol}</small></div>
+                        <div class="result ${result}">${resultLabel}</div>
+                    </div>
+                    <div class="details">
+                        <span>📌 ${sig.direction === 'buy' ? 'شراء' : 'بيع'}</span>
+                        <span>💰 دخول: ${fmtPrice(sig.entryPrice)}</span>
+                        <span>🎯 هدف: ${fmtPrice(sig.takeProfit)}</span>
+                        <span>🛑 وقف: ${fmtPrice(sig.stopLoss)}</span>
+                        <span>🕐 ${time}</span>
+                    </div>
+                </div>
+              `;
+                }
+                html += '</div>';
+                container.innerHTML = html;
+            }
+
+            // Stats
+            function renderStats() {
+                const active = state.signals.filter(s => !s.isClosed);
+                const closed = state.signals.filter(s => s.isClosed);
+                const wins = closed.filter(s => s.closedResult === 'win');
+                const losses = closed.filter(s => s.closedResult === 'loss');
+                const today = state.signals.filter(s => isToday(s.timestamp));
+
+                statActive.textContent = active.length;
+                statToday.textContent = today.length;
+                statWins.textContent = wins.length;
+                statLosses.textContent = losses.length;
+            }
+
+            function renderAll() {
+                renderTicker();
+                renderSignals();
+                renderClosed();
+                renderStats();
+            }
+
+            // ============================================================
+            //  ACTIONS
+            // ============================================================
+
+            // Share signal
+            function shareSignal(id) {
+                const sig = state.signals.find(s => s.id === id);
+                if (!sig) return;
+                const sym = getSymbolDisplay(sig.symbol);
+                const dir = sig.direction === 'buy' ? 'شراء' : 'بيع';
+                const text =
+                    `📈 إشارة تداول: ${sym} - ${dir}\n💰 الدخول: ${fmtPrice(sig.entryPrice)}\n🎯 الهدف: ${fmtPrice(sig.takeProfit)}\n🛑 وقف الخسارة: ${fmtPrice(sig.stopLoss)}\n⏱️ ${fmtDateFull(sig.timestamp)}\n\n#CryptoSignal #${sym}`;
+                if (navigator.share) {
+                    navigator.share({ title: `إشارة ${sym}`, text: text }).catch(() => {});
+                } else {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showToast('📋 تم نسخ الإشارة للحافظة', 'success');
+                    }).catch(() => {
+                        showToast('⚠️ تعذر النسخ، يمكنك نسخ النص يدوياً', 'error');
+                    });
+                }
+            }
+
+            // Toggle lock
+            function toggleLock(id) {
+                const sig = state.signals.find(s => s.id === id);
+                if (!sig || sig.isClosed) return;
+                sig.isLocked = !sig.isLocked;
+                persistState();
+                renderSignals();
+                showToast(sig.isLocked ? '🔒 تم قفل الصفقة' : '🔓 تم فتح الصفقة', 'info');
+            }
+
+            // Close trade
+            function closeTrade(id) {
+                const sig = state.signals.find(s => s.id === id);
+                if (!sig || sig.isClosed) return;
+                if (sig.isLocked) {
+                    showToast('🔒 الصفقة مقفولة، يجب فتحها أولاً', 'error');
+                    return;
+                }
+                // Determine result based on current price vs entry
+                const currentPrice = state.prices[sig.symbol];
+                let result = 'neutral';
+                if (currentPrice !== undefined) {
+                    if (sig.direction === 'buy') {
+                        if (currentPrice >= sig.takeProfit) result = 'win';
+                        else if (currentPrice <= sig.stopLoss) result = 'loss';
+                        else result = 'neutral';
+                    } else {
+                        if (currentPrice <= sig.takeProfit) result = 'win';
+                        else if (currentPrice >= sig.stopLoss) result = 'loss';
+                        else result = 'neutral';
+                    }
+                }
+                sig.isClosed = true;
+                sig.closedAt = now();
+                sig.closedResult = result;
+                persistState();
+                renderAll();
+                showToast(`✖️ تم إغلاق الصفقة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}`,
+                    result === 'win' ? 'success' : result === 'loss' ? 'error' : 'info');
+            }
+
+            // ============================================================
+            //  SETTINGS
+            // ============================================================
+            function openSettings() {
+                settingsToken.value = state.settings.telegramToken || '';
+                settingsChatId.value = state.settings.telegramChatId || '';
+                settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
+                settingsAutoSend.checked = state.settings.autoSendTelegram !== false;
+                settingsStatus.className = 'status-msg';
+                settingsStatus.textContent = '';
+                settingsModal.classList.add('active');
+            }
+
+            function closeSettings() {
+                settingsModal.classList.remove('active');
+            }
+
+            function saveSettings() {
+                const token = settingsToken.value.trim();
+                const chatId = settingsChatId.value.trim();
+                const interval = parseInt(settingsInterval.value) || CONFIG.UPDATE_INTERVAL_DEFAULT;
+                const autoSend = settingsAutoSend.checked;
+
+                state.settings.telegramToken = token;
+                state.settings.telegramChatId = chatId;
+                state.settings.updateInterval = Math.max(1, Math.min(60, interval));
+                state.settings.autoSendTelegram = autoSend;
+
+                persistSettings();
+
+                // Reset update timer
+                if (state.updateTimer) {
+                    clearInterval(state.updateTimer);
+                    state.updateTimer = null;
+                }
+                startUpdateTimer();
+
+                settingsStatus.className = 'status-msg success';
+                settingsStatus.textContent = '✅ تم حفظ الإعدادات بنجاح';
+                showToast('✅ تم حفظ الإعدادات', 'success');
+            }
+
+            async function testTelegram() {
+                const token = settingsToken.value.trim();
+                const chatId = settingsChatId.value.trim();
+                if (!token || !chatId) {
+                    settingsStatus.className = 'status-msg error';
+                    settingsStatus.textContent = '⚠️ يرجى إدخال توكن التليجرام ومعرف الدردشة';
+                    return;
+                }
+                try {
+                    settingsStatus.className = 'status-msg';
+                    settingsStatus.textContent = '⏳ جاري الاختبار...';
+                    await sendTelegramMessage('🧪 <b>اختبار اتصال</b>\nتم استلام إعدادات التليجرام بنجاح! 🚀');
+                    settingsStatus.className = 'status-msg success';
+                    settingsStatus.textContent = '✅ تم إرسال رسالة الاختبار بنجاح!';
+                    showToast('✅ رسالة اختبار أرسلت للتليجرام', 'success');
+                } catch (e) {
+                    settingsStatus.className = 'status-msg error';
+                    settingsStatus.textContent = '❌ فشل الإرسال: ' + e.message;
+                    showToast('❌ فشل اختبار التليجرام: ' + e.message, 'error');
+                }
+            }
+
+            // ============================================================
+            //  TOAST
+            // ============================================================
+            function showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                toastContainer.appendChild(toast);
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.style.opacity = '0';
+                        toast.style.transform = 'translateY(10px)';
+                        setTimeout(() => {
+                            if (toast.parentNode) toast.remove();
+                        }, 300);
+                    }
+                }, 3500);
+            }
+
+            // ============================================================
+            //  UPDATE TIMER
+            // ============================================================
+            function startUpdateTimer() {
+                if (state.updateTimer) {
+                    clearInterval(state.updateTimer);
+                }
+                const interval = (state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT) * 60 * 1000;
+                state.updateTimer = setInterval(() => {
+                    updateAllData(false);
+                }, interval);
+                // Also update on visibility change
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) {
+                        updateAllData(false);
+                    }
+                });
+            }
+
+            // ============================================================
+            //  PWA - INSTALL
+            // ============================================================
+            function setupPWA() {
+                // Listen for install prompt
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    state.installPrompt = e;
+                    btnInstall.style.display = 'flex';
+                    btnInstall.textContent = '📲 تثبيت التطبيق';
+                });
+
+                btnInstall.addEventListener('click', async () => {
+                    if (state.installPrompt) {
+                        try {
+                            const result = await state.installPrompt.prompt();
+                            if (result.outcome === 'accepted') {
+                                showToast('✅ تم تثبيت التطبيق بنجاح!', 'success');
+                                btnInstall.style.display = 'none';
+                            } else {
+                                showToast('تم إلغاء التثبيت', 'info');
+                            }
+                            state.installPrompt = null;
+                        } catch (e) {
+                            console.warn('Install prompt error:', e);
+                            showToast('⚠️ تعذر التثبيت، حاول مرة أخرى', 'error');
+                        }
+                    } else {
+                        showToast('📱 يمكنك تثبيت هذا التطبيق من متصفحك عبر "إضافة إلى الشاشة الرئيسية"', 'info');
+                    }
+                });
+
+                // Hide install button if not available
+                if (!('beforeinstallprompt' in window)) {
+                    btnInstall.style.display = 'none';
+                }
+
+                // Register service worker via blob
+                registerServiceWorker();
+            }
+
+            function registerServiceWorker() {
+                const swCode = `
+              self.addEventListener('install', e => {
+                e.waitUntil(self.skipWaiting());
+              });
+              self.addEventListener('activate', e => {
+                e.waitUntil(self.clients.claim());
+              });
+              self.addEventListener('fetch', e => {
+                e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+              });
+            `;
+                try {
+                    const blob = new Blob([swCode], { type: 'application/javascript' });
+                    const swUrl = URL.createObjectURL(blob);
+                    navigator.serviceWorker.register(swUrl, { scope: '/' })
+                        .then(() => {
+                            console.log('SW registered (blob)');
+                        })
+                        .catch((err) => {
+                            console.warn('SW registration failed (blob):', err);
+                            // fallback: try to register inline via a data URI? not possible.
+                            // just log and continue.
+                        });
+                } catch (e) {
+                    console.warn('SW setup error:', e);
+                }
+
+                // Also try to set manifest via blob
+                try {
+                    const manifest = {
+                        name: 'CryptoSignal Pro',
+                        short_name: 'CryptoSignal',
+                        description: 'منصة توليد إشارات تداول العملات الرقمية',
+                        start_url: location.href.split('?')[0],
+                        display: 'standalone',
+                        background_color: '#0b0e17',
+                        theme_color: '#0b0e17',
+                        icons: [{
+                            src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📈</text></svg>',
+                            sizes: '512x512',
+                            type: 'image/svg+xml',
+                            purpose: 'any'
+                        }]
+                    };
+                    const mBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+                    const mUrl = URL.createObjectURL(mBlob);
+                    const link = document.querySelector('link[rel="manifest"]');
+                    if (link) {
+                        link.href = mUrl;
+                    }
+                } catch (e) { /* ignore */ }
+            }
+
+            // ============================================================
+            //  EXPORT / CLEAR HISTORY
+            // ============================================================
+            function exportHistory() {
+                const data = {
+                    exportedAt: new Date().toISOString(),
+                    signals: state.signals,
+                    closedTrades: state.signals.filter(s => s.isClosed),
+                    stats: {
+                        total: state.signals.length,
+                        closed: state.signals.filter(s => s.isClosed).length,
+                        wins: state.signals.filter(s => s.isClosed && s.closedResult === 'win').length,
+                        losses: state.signals.filter(s => s.isClosed && s.closedResult === 'loss').length,
+                    }
+                };
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cryptosignal_export_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('📥 تم تصدير السجل بنجاح', 'success');
+            }
+
+            function clearHistory() {
+                if (!confirm('هل أنت متأكد من مسح جميع الصفقات المغلقة؟')) return;
+                state.signals = state.signals.filter(s => !s.isClosed);
+                state.closedTrades = [];
+                persistState();
+                renderAll();
+                showToast('🗑️ تم مسح سجل الصفقات المغلقة', 'info');
+            }
+
+            // ============================================================
+            //  INIT
+            // ============================================================
+            async function init() {
+                // Load state from localStorage
+                loadState();
+
+                // Set settings UI
+                settingsToken.value = state.settings.telegramToken || '';
+                settingsChatId.value = state.settings.telegramChatId || '';
+                settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
+                settingsAutoSend.checked = state.settings.autoSendTelegram !== false;
+
+                // Render initial data
+                renderAll();
+
+                // PWA setup
+                setupPWA();
+
+                // Event listeners
+                btnSettings.addEventListener('click', openSettings);
+                btnSettingsClose.addEventListener('click', closeSettings);
+                btnSettingsSave.addEventListener('click', saveSettings);
+                btnSettingsTest.addEventListener('click', testTelegram);
+                btnRefresh.addEventListener('click', () => updateAllData(true));
+                btnExportHistory.addEventListener('click', exportHistory);
+                btnClearHistory.addEventListener('click', clearHistory);
+
+                // Close modal on overlay click
+                settingsModal.addEventListener('click', (e) => {
+                    if (e.target === settingsModal) closeSettings();
+                });
+
+                // Keyboard: Escape to close
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') closeSettings();
+                });
+
+                // Start update timer
+                startUpdateTimer();
+
+                // Initial data fetch
+                await updateAllData(true);
+
+                // Auto-refresh every time user comes back
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) {
+                        const last = state.lastUpdate || 0;
+                        if (now() - last > 60000) { // if more than 1 min since last update
+                            updateAllData(false);
+                        }
+                    }
+                });
+
+                // Network status
+                window.addEventListener('online', () => {
+                    showToast('🌐 تم استعادة الاتصال بالإنترنت', 'success');
+                    updateAllData(false);
+                });
+                window.addEventListener('offline', () => {
+                    showToast('📡 انقطع الاتصال بالإنترنت، البيانات قد تكون قديمة', 'error');
+                });
+
+                console.log('🚀 CryptoSignal Pro initialized');
+                console.log(`📊 ${state.signals.length} signals, ${state.signals.filter(s=>!s.isClosed).length} active`);
+            }
+
+            // Run when DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+            // Expose some functions for debugging
+            window.__cryptoSignal = {
+                state,
+                updateAllData,
+                renderAll,
+                sendTelegramMessage,
+                generateSignal,
+                CONFIG
+            };
+
+        })();
+    </script>
+
 </body>
-</html>
+    </html>
