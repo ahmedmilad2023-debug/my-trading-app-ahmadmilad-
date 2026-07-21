@@ -918,7 +918,7 @@
             <div class="empty-state">
                 <div class="icon">📂</div>
                 <h3>لا توجد صفقات مغلقة بعد</h3>
-                <p>سيظهر هنا سجل الصفقات التي تم إغلاقها يدوياً</p>
+                <p>سيظهر هنا سجل الصفقات التي تم إغلاقها يدوياً أو تلقائياً</p>
             </div>
         </div>
 
@@ -1619,7 +1619,7 @@
             }
 
             // ============================================================
-            //  UPDATE ALL DATA
+            //  UPDATE ALL DATA (مع الإغلاق التلقائي عند انعكاس الاتجاه)
             // ============================================================
             async function updateAllData(force = false) {
                 if (state.isUpdating && !force) return;
@@ -1660,22 +1660,75 @@
                         const k = allKlines[sym];
                         if (!k || k.length < 200) continue;
                         const signal = generateSignal(sym, k);
-                        if (signal) {
-                            // Check if we already have an active signal for this symbol with same direction
-                            const existing = state.signals.find(s => s.symbol === sym && s.direction === signal
-                                .direction && !s.isClosed && !s.isLocked);
-                            if (!existing) {
-                                newSignals.push(signal);
+                        if (!signal) continue;
+
+                        // البحث عن صفقة مفتوحة حالية لهذه العملة (غير مقفولة)
+                        const existingOpen = state.signals.find(s => s.symbol === sym && !s.isClosed);
+
+                        if (existingOpen) {
+                            // إذا كانت الصفقة مقفولة يدوياً، لا نغلقها تلقائياً ونتجاهل الإشارة الجديدة
+                            if (existingOpen.isLocked) {
+                                continue;
                             }
+
+                            // إذا كانت الإشارة الجديدة بنفس اتجاه الصفقة المفتوحة، نتجاهلها (منع التكرار)
+                            if (existingOpen.direction === signal.direction) {
+                                continue;
+                            }
+
+                            // --- هنا: تغير الاتجاه (إشارة معاكسة) ---
+                            // 1. حساب نتيجة الصفقة الحالية
+                            const currentPrice = state.prices[sym];
+                            let result = 'neutral';
+                            if (currentPrice !== undefined) {
+                                if (existingOpen.direction === 'buy') {
+                                    if (currentPrice >= existingOpen.takeProfit) result = 'win';
+                                    else if (currentPrice <= existingOpen.stopLoss) result = 'loss';
+                                    else result = 'neutral';
+                                } else {
+                                    if (currentPrice <= existingOpen.takeProfit) result = 'win';
+                                    else if (currentPrice >= existingOpen.stopLoss) result = 'loss';
+                                    else result = 'neutral';
+                                }
+                            }
+
+                            // 2. إغلاق الصفقة الحالية
+                            existingOpen.isClosed = true;
+                            existingOpen.closedAt = now();
+                            existingOpen.closedResult = result;
+                            const closeReason = `🔄 <strong>إغلاق تلقائي:</strong> تغير الاتجاه إلى ${signal.direction === 'buy' ? 'شراء' : 'بيع'}. السعر الحالي عند الإغلاق: ${fmtPrice(currentPrice)}.`;
+                            existingOpen.analysis += `\n\n${closeReason}`;
+
+                            // 3. إرسال إشعار إغلاق للتليجرام
+                            if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
+                                try {
+                                    let closeMsg = `🔔 <b>إغلاق صفقة تلقائي</b>\n`;
+                                    closeMsg += `💰 العملة: ${getSymbolDisplay(sym)}\n`;
+                                    closeMsg += `📉 الصفقة السابقة: ${existingOpen.direction === 'buy' ? 'شراء' : 'بيع'}\n`;
+                                    closeMsg += `📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}\n`;
+                                    closeMsg += `📈 الاتجاه الجديد: ${signal.direction === 'buy' ? 'شراء' : 'بيع'}\n`;
+                                    closeMsg += `🕐 وقت الإغلاق: ${fmtDateFull(now())}`;
+                                    await sendTelegramMessage(closeMsg);
+                                } catch (e) {
+                                    console.warn('Telegram close notification failed:', e);
+                                }
+                            }
+
+                            // 4. فتح الصفقة الجديدة
+                            state.signals.push(signal);
+                            newSignals.push(signal); // لتتبعها للإرسال
+
+                        } else {
+                            // لا توجد صفقة مفتوحة، أضف الإشارة الجديدة مباشرة
+                            state.signals.push(signal);
+                            newSignals.push(signal);
                         }
                     }
 
-                    // Add new signals to state (keep max per symbol)
+                    // إرسال إشعارات الصفقات الجديدة للتليجرام (إن وجدت)
                     for (const sig of newSignals) {
                         const alreadySent = state.sentSignals.includes(sig.id);
                         if (!alreadySent) {
-                            state.signals.push(sig);
-                            // Send to Telegram if enabled
                             if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings
                                 .telegramChatId) {
                                 try {
@@ -1687,7 +1740,7 @@
                                     }
                                     showToast(`📨 إشارة ${getSymbolDisplay(sig.symbol)} أرسلت للتليجرام`, 'success');
                                 } catch (e) {
-                                    console.warn('Telegram send failed:', e);
+                                    console.warn('Telegram send failed for new signal:', e);
                                     showToast(`⚠️ فشل إرسال إشارة ${getSymbolDisplay(sig.symbol)} للتليجرام`, 'error');
                                 }
                             } else {
@@ -1845,7 +1898,7 @@
                 <div class="empty-state">
                     <div class="icon">📂</div>
                     <h3>لا توجد صفقات مغلقة بعد</h3>
-                    <p>سيظهر هنا سجل الصفقات التي تم إغلاقها يدوياً</p>
+                    <p>سيظهر هنا سجل الصفقات التي تم إغلاقها يدوياً أو تلقائياً</p>
                 </div>
               `;
                     return;
@@ -2259,4 +2312,4 @@
     </script>
 
 </body>
-                </html>
+    </html>
