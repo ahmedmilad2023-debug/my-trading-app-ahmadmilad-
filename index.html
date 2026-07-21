@@ -391,7 +391,7 @@
             'use strict';
 
             // ============================================================
-            //  CONFIGURATION (MATIC Removed)
+            //  CONFIGURATION
             // ============================================================
             const CONFIG = {
                 SYMBOLS: ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT'],
@@ -405,10 +405,11 @@
                 ADX_THRESHOLD: 25,
                 STOCH_OVERBOUGHT: 80,
                 STOCH_OVERSOLD: 20,
-                TARGET_PERCENT: 0.02, // 2% هدف
-                STOP_PERCENT_MAX: 0.008, // 0.8% أقصى وقف خسارة
-                UPDATE_INTERVAL_DEFAULT: 2, // minutes
-                MAX_SIGNALS_PER_SYMBOL: 3, 
+                TARGET_PERCENT: 0.02,
+                STOP_PERCENT_MAX: 0.008,
+                UPDATE_INTERVAL_DEFAULT: 2,
+                MAX_SIGNALS_PER_SYMBOL: 3,
+                RETRY_DELAY_MS: 5000, // 5 ثواني إعادة المحاولة إذا توقف الاتصال
                 TELEGRAM_API: 'https://api.telegram.org/bot',
                 BINANCE_BASE: 'https://api.binance.com/api/v3',
                 CACHE_KEY: 'cryptosignal_data',
@@ -418,7 +419,7 @@
             };
 
             // ============================================================
-            //  STATE (تم وضع التوكن مع النقطتين(:) مباشرة لضمان الصحة)
+            //  STATE
             // ============================================================
             let state = {
                 signals: [], closedTrades: [], prices: {}, 
@@ -429,7 +430,8 @@
                     autoSendTelegram: true 
                 },
                 sentSignals: [], isUpdating: false, lastUpdate: null, installPrompt: null, updateTimer: null,
-                btcFilterEnabled: true // Default: ON
+                btcFilterEnabled: true,
+                failureCount: 0 // عداد لمراقبة الأعطال
             };
 
             // ============================================================
@@ -475,6 +477,7 @@
             function isToday(ts) { const d = new Date(ts); const t = new Date(); return d.getDate() === t.getDate() && d.getMonth() === t.getMonth() && d.getFullYear() === t.getFullYear(); }
             function id() { return Math.random().toString(36).substring(2) + Date.now().toString(36); }
             function getSymbolDisplay(sym) { return sym.replace('USDT', ''); }
+            function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
             // ============================================================
             //  LOCAL STORAGE
@@ -496,7 +499,6 @@
                     const raw = localStorage.getItem(CONFIG.SETTINGS_KEY);
                     if (raw) { 
                         const s = JSON.parse(raw); 
-                        // إذا كان المستخدم قد حفظ إعدادات سابقة، نستخدمها، وإلا نستخدم الافتراضية المحددة أعلاه
                         if (s.telegramToken) state.settings.telegramToken = s.telegramToken;
                         if (s.telegramChatId) state.settings.telegramChatId = s.telegramChatId;
                         if (s.updateInterval) state.settings.updateInterval = s.updateInterval;
@@ -641,7 +643,7 @@
             }
 
             // ============================================================
-            //  SIGNAL GENERATION (Strict Rules based on User Request)
+            //  SIGNAL GENERATION
             // ============================================================
             function generateSignal(symbol, klines) {
                 if (!klines || klines.length < 200) return null;
@@ -672,10 +674,6 @@
                 let confidence = 0;
                 let reasons = [];
 
-                // --- STRICT BUY RULES ---
-                // 1. Stochastic Cross Up UNDER 20 (Both K and D must be < 20 for the cross to happen)
-                // 2. ADX > 25
-                // 3. Price > EMA 200
                 const isStochBuyCross = (kLast > dLast) && (kPrev <= dPrev) && (kLast < CONFIG.STOCH_OVERSOLD) && (dLast < CONFIG.STOCH_OVERSOLD);
                 const isAdxStrong = adxLast > CONFIG.ADX_THRESHOLD;
                 const isPriceAboveEma = lastClose > currentEMA;
@@ -689,10 +687,6 @@
                         `السعر فوق EMA 200: ${fmtPrice(lastClose)} > ${fmtPrice(currentEMA)}`
                     ];
                 } else {
-                    // --- STRICT SELL RULES ---
-                    // 1. Stochastic Cross Down OVER 80 (Both K and D must be > 80 for the cross to happen)
-                    // 2. ADX > 25
-                    // 3. Price < EMA 200
                     const isStochSellCross = (kLast < dLast) && (kPrev >= dPrev) && (kLast > CONFIG.STOCH_OVERBOUGHT) && (dLast > CONFIG.STOCH_OVERBOUGHT);
                     const isPriceBelowEma = lastClose < currentEMA;
 
@@ -709,7 +703,6 @@
 
                 if (direction === 'neutral') return null;
 
-                // Calculate Targets and Stops
                 const entryPrice = lastClose;
                 const atrValues = calcATR(klines, 14);
                 const atrVal = atrValues.length > 0 ? atrValues[atrValues.length - 1] : (entryPrice * 0.02);
@@ -754,31 +747,89 @@
             }
 
             // ============================================================
-            //  UPDATE ALL DATA (مع إضافة مراقبة ضرب الهدف ووقف الخسارة)
+            //  FETCH WITH AUTO-RETRY (لحل مشكلة توقف التطبيق)
+            // ============================================================
+            async function fetchKlinesWithRetry(symbol, interval = CONFIG.INTERVAL, limit = CONFIG.KLINE_LIMIT, retries = 3) {
+                for (let i = 0; i < retries; i++) {
+                    try {
+                        const resp = await fetch(`${CONFIG.BINANCE_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+                        if (!resp.ok) {
+                            if (resp.status === 429 || resp.status >= 500) {
+                                // إذا كان الحظر (429) أو خطأ خادم (500+)، ننتظر ونحاول مجدداً
+                                if (i < retries - 1) {
+                                    console.warn(`⚠️ تم حظر ${symbol} مؤقتاً. إعادة المحاولة بعد ${CONFIG.RETRY_DELAY_MS/1000} ثوانٍ...`);
+                                    await sleep(CONFIG.RETRY_DELAY_MS);
+                                    continue;
+                                }
+                            }
+                            throw new Error(`Binance API error: ${resp.status}`);
+                        }
+                        const data = await resp.json();
+                        return data.map(k => ({ time: k[0], open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5]) }));
+                    } catch (e) {
+                        console.warn(`⚠️ فشل جلب بيانات ${symbol} (محاولة ${i+1}/${retries}):`, e.message);
+                        if (i === retries - 1) throw e;
+                        await sleep(CONFIG.RETRY_DELAY_MS);
+                    }
+                }
+                return null;
+            }
+
+            async function fetchTickerPriceWithRetry(symbol, retries = 2) {
+                for (let i = 0; i < retries; i++) {
+                    try {
+                        const resp = await fetch(`${CONFIG.BINANCE_BASE}/ticker/price?symbol=${symbol}`);
+                        if (!resp.ok) throw new Error(`Binance ticker error: ${resp.status}`);
+                        const data = await resp.json(); 
+                        return parseFloat(data.price);
+                    } catch (e) {
+                        console.warn(`⚠️ فشل جلب سعر ${symbol} (محاولة ${i+1}/${retries})`);
+                        if (i === retries - 1) throw e;
+                        await sleep(CONFIG.RETRY_DELAY_MS);
+                    }
+                }
+            }
+
+            // ============================================================
+            //  UPDATE ALL DATA (مع نظام مراقبة وإعادة محاولة ذكي)
             // ============================================================
             async function updateAllData(force = false) {
-                if (state.isUpdating && !force) return;
+                // إذا كان التحديث يعمل بالفعل، نخرج لتجنب التداخل
+                if (state.isUpdating && !force) {
+                    console.log('⏳ تحديث سابق قيد التنفيذ، انتظار...');
+                    return;
+                }
+                
                 state.isUpdating = true;
                 liveDot.style.background = '#f5a623';
                 liveDot.style.animation = 'none';
 
                 try {
+                    console.log('🔄 بدء دورة تحديث جديدة...');
                     const symbols = CONFIG.SYMBOLS;
                     const allKlines = {};
                     const allPrices = {};
 
+                    // محاولة جلب البيانات مع إعادة المحاولة التلقائية
                     const fetchPromises = symbols.map(async sym => {
                         try {
-                            const k = await fetchKlines(sym, CONFIG.INTERVAL, CONFIG.KLINE_LIMIT);
-                            allKlines[sym] = k;
-                            if (k.length > 0) allPrices[sym] = k[k.length - 1].close;
+                            const k = await fetchKlinesWithRetry(sym, CONFIG.INTERVAL, CONFIG.KLINE_LIMIT);
+                            if (k) {
+                                allKlines[sym] = k;
+                                if (k.length > 0) allPrices[sym] = k[k.length - 1].close;
+                            }
                             return { sym, ok: true };
                         } catch (e) {
-                            console.warn(`Failed to fetch ${sym}:`, e);
-                            try { const p = await fetchTickerPrice(sym); allPrices[sym] = p; } catch (e2) { /* ignore */ }
+                            console.error(`❌ فشل نهائي في جلب ${sym}:`, e);
+                            // محاولة بديلة لجلب السعر فقط
+                            try { 
+                                const p = await fetchTickerPriceWithRetry(sym); 
+                                allPrices[sym] = p; 
+                            } catch (e2) { /* تجاهل */ }
                             return { sym, ok: false };
                         }
                     });
+
                     await Promise.all(fetchPromises);
                     state.prices = allPrices;
 
@@ -787,7 +838,6 @@
                         const currentPrice = state.prices[sym];
                         if (currentPrice === undefined) continue;
 
-                        // الحصول على جميع الصفقات المفتوحة لهذه العملة
                         const activeTrades = state.signals.filter(s => s.symbol === sym && !s.isClosed);
                         
                         for (const trade of activeTrades) {
@@ -796,30 +846,16 @@
                             let result = 'neutral';
 
                             if (trade.direction === 'buy') {
-                                // تحقق من الهدف للشراء
                                 if (currentPrice >= trade.takeProfit) {
-                                    shouldClose = true;
-                                    result = 'win';
-                                    closeReason = `🎯 <strong>إغلاق تلقائي:</strong> تم تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
-                                } 
-                                // تحقق من وقف الخسارة للشراء
-                                else if (currentPrice <= trade.stopLoss) {
-                                    shouldClose = true;
-                                    result = 'loss';
-                                    closeReason = `🛑 <strong>إغلاق تلقائي:</strong> تم ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
+                                    shouldClose = true; result = 'win'; closeReason = `🎯 <strong>إغلاق تلقائي:</strong> تم تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
+                                } else if (currentPrice <= trade.stopLoss) {
+                                    shouldClose = true; result = 'loss'; closeReason = `🛑 <strong>إغلاق تلقائي:</strong> تم ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
                                 }
-                            } else { // Sell
-                                // تحقق من الهدف للبيع
+                            } else {
                                 if (currentPrice <= trade.takeProfit) {
-                                    shouldClose = true;
-                                    result = 'win';
-                                    closeReason = `🎯 <strong>إغلاق تلقائي:</strong> تم تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
-                                } 
-                                // تحقق من وقف الخسارة للبيع
-                                else if (currentPrice >= trade.stopLoss) {
-                                    shouldClose = true;
-                                    result = 'loss';
-                                    closeReason = `🛑 <strong>إغلاق تلقائي:</strong> تم ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
+                                    shouldClose = true; result = 'win'; closeReason = `🎯 <strong>إغلاق تلقائي:</strong> تم تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
+                                } else if (currentPrice >= trade.stopLoss) {
+                                    shouldClose = true; result = 'loss'; closeReason = `🛑 <strong>إغلاق تلقائي:</strong> تم ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
                                 }
                             }
 
@@ -829,15 +865,9 @@
                                 trade.closedResult = result;
                                 trade.analysis += `\n\n${closeReason}`;
 
-                                // إرسال إشعار تليجرام لإغلاق الصفقة
                                 if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
                                     try {
-                                        let closeMsg = `🔔 <b>إغلاق صفقة تلقائي</b>\n`;
-                                        closeMsg += `💰 العملة: ${getSymbolDisplay(sym)}\n`;
-                                        closeMsg += `📉 الصفقة: ${trade.direction === 'buy' ? 'شراء' : 'بيع'}\n`;
-                                        closeMsg += `📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}\n`;
-                                        closeMsg += `💵 سعر الإغلاق: ${fmtPrice(currentPrice)}\n`;
-                                        closeMsg += `🕐 الوقت: ${fmtDateFull(now())}`;
+                                        let closeMsg = `🔔 <b>إغلاق صفقة تلقائي</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة: ${trade.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}\n💵 سعر الإغلاق: ${fmtPrice(currentPrice)}\n🕐 الوقت: ${fmtDateFull(now())}`;
                                         await sendTelegramMessage(closeMsg);
                                     } catch (e) { /* ignore */ }
                                 }
@@ -845,7 +875,7 @@
                         }
                     }
 
-                    // --- 2. منطق الإشارات الجديدة (ابقاء منطق البيتكوين كما هو) ---
+                    // --- 2. منطق الإشارات الجديدة ---
                     const newSignals = [];
                     let btcDirection = 'neutral';
                     const btcKlines = allKlines['BTCUSDT'];
@@ -870,7 +900,6 @@
                             if (existingOpen.isLocked) continue;
                             if (existingOpen.direction === signal.direction) continue;
 
-                            // إغلاق الصفقة السابقة بسبب انعكاس الاتجاه
                             const currentPrice = state.prices[sym];
                             let result = 'neutral';
                             if (currentPrice !== undefined) {
@@ -902,7 +931,6 @@
                         }
                     }
 
-                    // إرسال إشعارات الإشارات الجديدة
                     for (const sig of newSignals) {
                         const alreadySent = state.sentSignals.includes(sig.id);
                         if (!alreadySent) {
@@ -921,7 +949,6 @@
                         }
                     }
 
-                    // تنظيف الإشارات
                     const activeSignals = state.signals.filter(s => !s.isClosed);
                     const closedSignals = state.signals.filter(s => s.isClosed);
                     const activeBySymbol = {};
@@ -938,6 +965,7 @@
                     state.signals = [...prunedActive, ...closedSignals];
 
                     state.lastUpdate = now();
+                    state.failureCount = 0; // تصفير عداد الأخطاء عند النجاح
                     persistState();
                     renderAll();
 
@@ -945,12 +973,14 @@
                     liveDot.style.animation = 'pulse-dot 2s infinite';
 
                 } catch (e) {
-                    console.error('Update error:', e);
-                    showToast('⚠️ خطأ في تحديث البيانات: ' + e.message, 'error');
+                    console.error('❌ خطأ جسيم في دورة التحديث:', e);
+                    state.failureCount++;
+                    showToast(`⚠️ خطأ في تحديث البيانات (المحاولة ${state.failureCount})، سيتم إعادة المحاولة تلقائياً...`, 'error');
                     liveDot.style.background = '#ff4757';
                     liveDot.style.animation = 'pulse-dot 2s infinite';
                 } finally {
                     state.isUpdating = false;
+                    console.log('✅ انتهت دورة التحديث.');
                 }
             }
 
@@ -1093,7 +1123,6 @@
             //  SETTINGS & PWA
             // ============================================================
             function openSettings() {
-                // تحديث الحقول بما هو موجود في الـ state
                 settingsToken.value = state.settings.telegramToken || '';
                 settingsChatId.value = state.settings.telegramChatId || '';
                 settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
@@ -1131,8 +1160,15 @@
             function startUpdateTimer() {
                 if (state.updateTimer) clearInterval(state.updateTimer);
                 const interval = (state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT) * 60 * 1000;
-                state.updateTimer = setInterval(() => updateAllData(false), interval);
-                document.addEventListener('visibilitychange', () => { if (!document.hidden) updateAllData(false); });
+                console.log(`⏰ بدء تحديث تلقائي كل ${interval/1000} ثانية.`);
+                // التأكد من أن الموقت لا يتوقف أبداً حتى لو حدث خطأ
+                state.updateTimer = setInterval(() => {
+                    updateAllData(false);
+                }, interval);
+                
+                document.addEventListener('visibilitychange', () => { 
+                    if (!document.hidden) updateAllData(false); 
+                });
             }
 
             function setupPWA() {
@@ -1165,27 +1201,11 @@
             }
 
             // ============================================================
-            //  FETCH HELPERS
-            // ============================================================
-            async function fetchKlines(symbol, interval = CONFIG.INTERVAL, limit = CONFIG.KLINE_LIMIT) {
-                const resp = await fetch(`${CONFIG.BINANCE_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-                if (!resp.ok) throw new Error(`Binance API error: ${resp.status}`);
-                const data = await resp.json();
-                return data.map(k => ({ time: k[0], open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5]) }));
-            }
-            async function fetchTickerPrice(symbol) {
-                const resp = await fetch(`${CONFIG.BINANCE_BASE}/ticker/price?symbol=${symbol}`);
-                if (!resp.ok) throw new Error(`Binance ticker error: ${resp.status}`);
-                const data = await resp.json(); return parseFloat(data.price);
-            }
-
-            // ============================================================
             //  INIT
             // ============================================================
             async function init() {
                 loadState();
                 
-                // نقوم بتحديث حقل الإدخال ليكون مطابقاً لما في الـ state (أو القيم الافتراضية التي وضعناها)
                 settingsToken.value = state.settings.telegramToken || '';
                 settingsChatId.value = state.settings.telegramChatId || '';
                 settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
@@ -1210,7 +1230,7 @@
                 document.addEventListener('visibilitychange', () => { if (!document.hidden && (now() - (state.lastUpdate || 0) > 60000)) updateAllData(false); });
                 window.addEventListener('online', () => { showToast('🌐 تم استعادة الاتصال', 'success'); updateAllData(false); });
                 window.addEventListener('offline', () => { showToast('📡 انقطع الاتصال', 'error'); });
-                console.log('🚀 CryptoSignal Pro initialized (Auto Close on TP/SL Added)');
+                console.log('🚀 CryptoSignal Pro initialized (Stable & Auto-Retry Added)');
             }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
@@ -1220,4 +1240,4 @@
         })();
     </script>
 </body>
-        </html>
+    </html>
