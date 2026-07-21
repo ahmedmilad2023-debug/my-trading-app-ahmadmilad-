@@ -10,40 +10,18 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
     <style>
         /* ===== CSS Reset & Base ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg-primary: #0b0e17;
-            --bg-secondary: #131a2b;
-            --bg-card: #1a2336;
-            --bg-card-hover: #1f2a42;
-            --border-color: #2a3a5a;
-            --text-primary: #e8edf5;
-            --text-secondary: #8899bb;
-            --text-muted: #556688;
-            --accent-green: #00d4aa;
-            --accent-red: #ff4757;
-            --accent-blue: #4a7cf7;
-            --accent-gold: #f5a623;
-            --accent-purple: #a855f7;
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-            --radius: 16px;
-            --radius-sm: 10px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --bg-primary: #0b0e17; --bg-secondary: #131a2b; --bg-card: #1a2336; --bg-card-hover: #1f2a42;
+            --border-color: #2a3a5a; --text-primary: #e8edf5; --text-secondary: #8899bb; --text-muted: #556688;
+            --accent-green: #00d4aa; --accent-red: #ff4757; --accent-blue: #4a7cf7; --accent-gold: #f5a623;
+            --accent-purple: #a855f7; --shadow: 0 8px 32px rgba(0, 0, 0, 0.6); --radius: 16px; --radius-sm: 10px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
         html { scroll-behavior: smooth; }
         body {
-            font-family: var(--font);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            padding-bottom: 80px;
-            overflow-x: hidden;
-            line-height: 1.6;
+            font-family: var(--font); background: var(--bg-primary); color: var(--text-primary);
+            min-height: 100vh; padding-bottom: 100px; overflow-x: hidden; line-height: 1.6;
         }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-secondary); }
@@ -51,94 +29,47 @@
         a { color: var(--accent-blue); text-decoration: none; }
         button { cursor: pointer; font-family: inherit; border: none; outline: none; background: none; color: inherit; }
         input, select, textarea {
-            font-family: inherit;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            padding: 10px 14px;
-            font-size: 14px;
-            width: 100%;
-            transition: var(--transition);
+            font-family: inherit; background: var(--bg-secondary); color: var(--text-primary);
+            border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px 14px;
+            font-size: 14px; width: 100%; transition: var(--transition);
         }
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 0 3px rgba(74, 124, 247, 0.2);
-            outline: none;
-        }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(74, 124, 247, 0.2); outline: none; }
         input::placeholder, textarea::placeholder { color: var(--text-muted); }
 
         /* ===== App Bar ===== */
         .app-bar {
-            position: sticky; top: 0; z-index: 100;
-            background: rgba(11, 14, 23, 0.92);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-color);
-            padding: 12px 20px;
-            display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+            position: sticky; top: 0; z-index: 100; background: rgba(11, 14, 23, 0.92); backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-color);
+            padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
         }
-        .app-bar .logo {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 22px; font-weight: 700;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-        }
+        .app-bar .logo { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .app-bar .logo span { font-size: 26px; -webkit-text-fill-color: initial; }
         .app-bar .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .app-bar .actions button {
-            padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600;
-            transition: var(--transition); background: var(--bg-card); border: 1px solid var(--border-color);
-            display: flex; align-items: center; gap: 6px;
-        }
+        .app-bar .actions button { padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; transition: var(--transition); background: var(--bg-card); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px; }
         .app-bar .actions button:hover { background: var(--bg-card-hover); transform: translateY(-1px); }
-        .app-bar .actions .btn-install {
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-color: transparent; color: #fff;
-        }
+        .app-bar .actions .btn-install { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); border-color: transparent; color: #fff; }
         .app-bar .actions .btn-install:hover { opacity: 0.9; transform: scale(1.03); }
-        .badge-dot {
-            display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-            background: var(--accent-green); animation: pulse-dot 2s infinite;
-        }
+        .badge-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); animation: pulse-dot 2s infinite; }
         @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
 
         /* ===== Container ===== */
         .container { max-width: 1200px; margin: 0 auto; padding: 16px 16px 0; }
 
         /* ===== Ticker Strip ===== */
-        .ticker-strip {
-            background: var(--bg-secondary); border-radius: var(--radius);
-            padding: 12px 16px; margin-bottom: 20px; border: 1px solid var(--border-color);
-            overflow: hidden; position: relative;
-        }
-        .ticker-strip .scroll-wrap {
-            display: flex; gap: 24px; overflow-x: auto; padding-bottom: 4px;
-            scrollbar-width: none; -webkit-overflow-scrolling: touch;
-        }
+        .ticker-strip { background: var(--bg-secondary); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; border: 1px solid var(--border-color); overflow: hidden; position: relative; }
+        .ticker-strip .scroll-wrap { display: flex; gap: 24px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .ticker-strip .scroll-wrap::-webkit-scrollbar { display: none; }
-        .ticker-item {
-            display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 14px; font-weight: 500;
-            padding: 4px 10px; border-radius: 20px; background: var(--bg-card);
-            border: 1px solid var(--border-color); flex-shrink: 0;
-        }
+        .ticker-item { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 14px; font-weight: 500; padding: 4px 10px; border-radius: 20px; background: var(--bg-card); border: 1px solid var(--border-color); flex-shrink: 0; }
         .ticker-item .sym { color: var(--text-secondary); font-weight: 600; }
         .ticker-item .price { font-weight: 700; }
-        .ticker-item .signal-badge {
-            font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 700; background: var(--bg-secondary);
-        }
+        .ticker-item .signal-badge { font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 700; background: var(--bg-secondary); }
         .ticker-item .signal-badge.buy { color: var(--accent-green); background: rgba(0, 212, 170, 0.2); }
         .ticker-item .signal-badge.sell { color: var(--accent-red); background: rgba(255, 71, 87, 0.2); }
         .ticker-item .signal-badge.neutral { color: var(--text-muted); background: rgba(136, 153, 187, 0.15); }
 
         /* ===== Stats Row ===== */
-        .stats-row {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;
-        }
-        .stat-card {
-            background: var(--bg-card); border-radius: var(--radius-sm);
-            padding: 14px 16px; text-align: center; border: 1px solid var(--border-color);
-        }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--bg-card); border-radius: var(--radius-sm); padding: 14px 16px; text-align: center; border: 1px solid var(--border-color); }
         .stat-card .label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
         .stat-card .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
         .stat-card .value.green { color: var(--accent-green); }
@@ -146,63 +77,37 @@
         .stat-card .value.gold { color: var(--accent-gold); }
 
         /* ===== Section Header ===== */
-        .section-header {
-            display: flex; align-items: center; justify-content: space-between; margin: 24px 0 14px; flex-wrap: wrap; gap: 8px;
-        }
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin: 24px 0 14px; flex-wrap: wrap; gap: 8px; }
         .section-header h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-        .section-header h2 .badge-count {
-            font-size: 13px; font-weight: 600; background: var(--bg-card); padding: 2px 12px; border-radius: 20px; color: var(--text-secondary);
-        }
-        .section-header .actions button {
-            padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-            background: var(--bg-card); border: 1px solid var(--border-color); transition: var(--transition);
-        }
+        .section-header h2 .badge-count { font-size: 13px; font-weight: 600; background: var(--bg-card); padding: 2px 12px; border-radius: 20px; color: var(--text-secondary); }
+        .section-header .actions button { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--bg-card); border: 1px solid var(--border-color); transition: var(--transition); }
         .section-header .actions button:hover { background: var(--bg-card-hover); }
 
         /* ===== Signal Cards ===== */
-        .signals-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px;
-        }
-        .signal-card {
-            background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border-color);
-            padding: 18px 20px 20px; transition: var(--transition); position: relative; overflow: hidden;
-        }
-        .signal-card::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--text-muted);
-        }
+        .signals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
+        .signal-card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border-color); padding: 18px 20px 20px; transition: var(--transition); position: relative; overflow: hidden; }
+        .signal-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--text-muted); }
         .signal-card.buy::before { background: linear-gradient(90deg, var(--accent-green), #00e6b8); }
         .signal-card.sell::before { background: linear-gradient(90deg, var(--accent-red), #ff6b7a); }
         .signal-card:hover { border-color: var(--accent-blue); transform: translateY(-2px); box-shadow: var(--shadow); }
         .signal-card .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
         .signal-card .header .symbol { font-size: 20px; font-weight: 700; }
         .signal-card .header .symbol small { font-weight: 400; font-size: 14px; color: var(--text-secondary); }
-        .signal-card .header .direction {
-            font-size: 14px; font-weight: 700; padding: 4px 16px; border-radius: 20px; background: var(--bg-secondary);
-        }
+        .signal-card .header .direction { font-size: 14px; font-weight: 700; padding: 4px 16px; border-radius: 20px; background: var(--bg-secondary); }
         .signal-card .header .direction.buy { color: var(--accent-green); background: rgba(0, 212, 170, 0.15); }
         .signal-card .header .direction.sell { color: var(--accent-red); background: rgba(255, 71, 87, 0.15); }
-        .signal-card .price-info {
-            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; padding: 12px 0;
-            border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
-        }
+        .signal-card .price-info { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; padding: 12px 0; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
         .signal-card .price-info .item { text-align: center; }
         .signal-card .price-info .item .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; }
         .signal-card .price-info .item .val { font-size: 16px; font-weight: 700; margin-top: 2px; }
         .signal-card .price-info .item .val.green { color: var(--accent-green); }
         .signal-card .price-info .item .val.red { color: var(--accent-red); }
-        .signal-card .analysis {
-            font-size: 13px; color: var(--text-secondary); background: var(--bg-secondary);
-            padding: 10px 14px; border-radius: var(--radius-sm); margin: 12px 0;
-            border-right: 3px solid var(--accent-blue); line-height: 1.7; max-height: 80px; overflow-y: auto;
-        }
+        .signal-card .analysis { font-size: 13px; color: var(--text-secondary); background: var(--bg-secondary); padding: 10px 14px; border-radius: var(--radius-sm); margin: 12px 0; border-right: 3px solid var(--accent-blue); line-height: 1.7; max-height: 80px; overflow-y: auto; }
         .signal-card .analysis strong { color: var(--text-primary); }
         .signal-card .footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
         .signal-card .footer .timestamp { font-size: 12px; color: var(--text-muted); }
         .signal-card .footer .actions { display: flex; gap: 6px; }
-        .signal-card .footer .actions button {
-            padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 600;
-            transition: var(--transition); border: 1px solid var(--border-color); background: var(--bg-secondary);
-        }
+        .signal-card .footer .actions button { padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; transition: var(--transition); border: 1px solid var(--border-color); background: var(--bg-secondary); }
         .signal-card .footer .actions button:hover { background: var(--bg-card-hover); }
         .signal-card .footer .actions .btn-share { color: var(--accent-blue); }
         .signal-card .footer .actions .btn-lock { color: var(--accent-gold); }
@@ -211,10 +116,7 @@
 
         /* ===== Closed Trades ===== */
         .closed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-        .closed-card {
-            background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-color);
-            padding: 14px 16px; opacity: 0.7; transition: var(--transition);
-        }
+        .closed-card { background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-color); padding: 14px 16px; opacity: 0.7; transition: var(--transition); }
         .closed-card:hover { opacity: 1; border-color: var(--text-muted); }
         .closed-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .closed-card .header .symbol { font-weight: 700; }
@@ -226,25 +128,16 @@
         .closed-card .details span { display: flex; align-items: center; gap: 4px; }
 
         /* ===== Modal / Settings ===== */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
-        }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
-        .modal {
-            background: var(--bg-secondary); border-radius: var(--radius); border: 1px solid var(--border-color);
-            padding: 28px 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;
-            box-shadow: var(--shadow); animation: modalIn 0.3s ease;
-        }
+        .modal { background: var(--bg-secondary); border-radius: var(--radius); border: 1px solid var(--border-color); padding: 28px 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow); animation: modalIn 0.3s ease; }
         @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         .modal .title { font-size: 22px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
         .modal .form-group { margin-bottom: 16px; }
         .modal .form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
         .modal .form-group .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
         .modal .form-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-        .modal .form-actions button {
-            padding: 10px 24px; border-radius: 30px; font-weight: 600; transition: var(--transition); flex: 1; min-width: 100px;
-        }
+        .modal .form-actions button { padding: 10px 24px; border-radius: 30px; font-weight: 600; transition: var(--transition); flex: 1; min-width: 100px; }
         .modal .form-actions .btn-primary { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: #fff; }
         .modal .form-actions .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
         .modal .form-actions .btn-secondary { background: var(--bg-card); border: 1px solid var(--border-color); }
@@ -254,20 +147,20 @@
         .modal .status-msg.error { display: block; background: rgba(255, 71, 87, 0.15); color: var(--accent-red); border: 1px solid rgba(255, 71, 87, 0.3); }
 
         /* ===== Toast ===== */
-        .toast-container {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 300;
-            display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; max-width: 90%;
-        }
-        .toast {
-            background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px 20px;
-            border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; box-shadow: var(--shadow);
-            animation: toastIn 0.3s ease; pointer-events: auto; backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px); text-align: center;
-        }
+        .toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; max-width: 90%; }
+        .toast { background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; box-shadow: var(--shadow); animation: toastIn 0.3s ease; pointer-events: auto; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); text-align: center; }
         .toast.success { border-color: var(--accent-green); color: var(--accent-green); }
         .toast.error { border-color: var(--accent-red); color: var(--accent-red); }
         .toast.info { border-color: var(--accent-blue); color: var(--accent-blue); }
         @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        /* ===== Debug Log ===== */
+        .debug-container { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-top: 20px; margin-bottom: 20px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; color: var(--text-secondary); }
+        .debug-container .log-line { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .debug-container .log-line.success { color: var(--accent-green); }
+        .debug-container .log-line.error { color: var(--accent-red); }
+        .debug-container .log-line.info { color: var(--accent-blue); }
+        .debug-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary); }
 
         /* ===== Responsive ===== */
         @media (max-width: 768px) {
@@ -337,6 +230,12 @@
             <div class="loading-spinner"><div class="spinner"></div><span>جاري تحليل الأسواق...</span></div>
         </div>
 
+        <!-- سجل الأحداث (مهم جداً للمتابعة) -->
+        <div class="debug-container" id="debugLogContainer">
+            <div class="debug-label">📋 سجل الأحداث والمراقبة</div>
+            <div id="debugLogContent"><div style="color:var(--text-muted);">بانتظار بدء التحديث...</div></div>
+        </div>
+
         <div class="section-header" style="margin-top:32px;">
             <h2>📁 سجل الصفقات المغلقة <span class="badge-count" id="closedCount">0</span></h2>
         </div>
@@ -351,7 +250,6 @@
             <div class="title">⚙️ إعدادات التطبيق</div>
             <div class="form-group">
                 <label>🤖 توكن بوت التليجرام (Bot Token)</label>
-                <!-- تم وضع التوكن مع النقطتين (:) -->
                 <input type="text" id="telegramToken" value="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" placeholder="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" />
                 <div class="hint">احصل عليه من @BotFather على تليجرام</div>
             </div>
@@ -362,8 +260,8 @@
             </div>
             <div class="form-group">
                 <label>⏱️ تحديث البيانات (بالدقائق)</label>
-                <input type="number" id="updateInterval" min="1" max="60" value="2" />
-                <div class="hint">كل كم دقيقة يتم تحديث الأسعار والتحليل</div>
+                <input type="number" id="updateInterval" min="1" max="60" value="1" />
+                <div class="hint">كل كم دقيقة يتم تحديث الأسعار والتحليل (يُفضل 1-2 دقيقة)</div>
             </div>
             <div class="form-group" style="display:flex;align-items:center;gap:10px;">
                 <label style="margin:0;cursor:pointer;">
@@ -407,9 +305,9 @@
                 STOCH_OVERSOLD: 20,
                 TARGET_PERCENT: 0.02,
                 STOP_PERCENT_MAX: 0.008,
-                UPDATE_INTERVAL_DEFAULT: 2,
+                UPDATE_INTERVAL_DEFAULT: 1, // تغيير الافتراضي إلى دقيقة واحدة
                 MAX_SIGNALS_PER_SYMBOL: 3,
-                RETRY_DELAY_MS: 5000, // 5 ثواني إعادة المحاولة إذا توقف الاتصال
+                RETRY_DELAY_MS: 5000,
                 TELEGRAM_API: 'https://api.telegram.org/bot',
                 BINANCE_BASE: 'https://api.binance.com/api/v3',
                 CACHE_KEY: 'cryptosignal_data',
@@ -431,7 +329,7 @@
                 },
                 sentSignals: [], isUpdating: false, lastUpdate: null, installPrompt: null, updateTimer: null,
                 btcFilterEnabled: true,
-                failureCount: 0 // عداد لمراقبة الأعطال
+                failureCount: 0
             };
 
             // ============================================================
@@ -441,6 +339,7 @@
             const tickerStrip = $('tickerStrip');
             const signalsContainer = $('signalsContainer');
             const closedContainer = $('closedContainer');
+            const debugLogContent = $('debugLogContent');
             const signalCount = $('signalCount');
             const closedCount = $('closedCount');
             const statActive = $('statActive');
@@ -465,6 +364,23 @@
             const btnClearHistory = $('btnClearHistory');
             const liveDot = $('liveDot');
             const toastContainer = $('toastContainer');
+
+            // ============================================================
+            //  DEBUG LOG (وظيفة جديدة لعرض السجل)
+            // ============================================================
+            function addLog(message, type = 'info') {
+                const div = document.createElement('div');
+                div.className = `log-line ${type}`;
+                const time = new Date().toLocaleTimeString();
+                div.textContent = `[${time}] ${message}`;
+                debugLogContent.appendChild(div);
+                // إبقاء السجل محدوداً (آخر 50 سطراً)
+                while (debugLogContent.children.length > 50) {
+                    debugLogContent.removeChild(debugLogContent.firstChild);
+                }
+                debugLogContent.scrollTop = debugLogContent.scrollHeight;
+                console.log(`[DEBUG] ${message}`);
+            }
 
             // ============================================================
             //  UTILITY
@@ -747,7 +663,7 @@
             }
 
             // ============================================================
-            //  FETCH WITH AUTO-RETRY (لحل مشكلة توقف التطبيق)
+            //  FETCH WITH AUTO-RETRY
             // ============================================================
             async function fetchKlinesWithRetry(symbol, interval = CONFIG.INTERVAL, limit = CONFIG.KLINE_LIMIT, retries = 3) {
                 for (let i = 0; i < retries; i++) {
@@ -755,9 +671,8 @@
                         const resp = await fetch(`${CONFIG.BINANCE_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
                         if (!resp.ok) {
                             if (resp.status === 429 || resp.status >= 500) {
-                                // إذا كان الحظر (429) أو خطأ خادم (500+)، ننتظر ونحاول مجدداً
                                 if (i < retries - 1) {
-                                    console.warn(`⚠️ تم حظر ${symbol} مؤقتاً. إعادة المحاولة بعد ${CONFIG.RETRY_DELAY_MS/1000} ثوانٍ...`);
+                                    addLog(`⚠️ تم حظر ${symbol} مؤقتاً. إعادة المحاولة...`, 'error');
                                     await sleep(CONFIG.RETRY_DELAY_MS);
                                     continue;
                                 }
@@ -767,7 +682,7 @@
                         const data = await resp.json();
                         return data.map(k => ({ time: k[0], open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5]) }));
                     } catch (e) {
-                        console.warn(`⚠️ فشل جلب بيانات ${symbol} (محاولة ${i+1}/${retries}):`, e.message);
+                        addLog(`⚠️ فشل جلب ${symbol} (محاولة ${i+1})`, 'error');
                         if (i === retries - 1) throw e;
                         await sleep(CONFIG.RETRY_DELAY_MS);
                     }
@@ -783,7 +698,6 @@
                         const data = await resp.json(); 
                         return parseFloat(data.price);
                     } catch (e) {
-                        console.warn(`⚠️ فشل جلب سعر ${symbol} (محاولة ${i+1}/${retries})`);
                         if (i === retries - 1) throw e;
                         await sleep(CONFIG.RETRY_DELAY_MS);
                     }
@@ -791,26 +705,20 @@
             }
 
             // ============================================================
-            //  UPDATE ALL DATA (مع نظام مراقبة وإعادة محاولة ذكي)
+            //  UPDATE ALL DATA
             // ============================================================
             async function updateAllData(force = false) {
-                // إذا كان التحديث يعمل بالفعل، نخرج لتجنب التداخل
-                if (state.isUpdating && !force) {
-                    console.log('⏳ تحديث سابق قيد التنفيذ، انتظار...');
-                    return;
-                }
-                
+                if (state.isUpdating && !force) return;
                 state.isUpdating = true;
                 liveDot.style.background = '#f5a623';
                 liveDot.style.animation = 'none';
+                addLog('🔄 بدء دورة تحديث جديدة...', 'info');
 
                 try {
-                    console.log('🔄 بدء دورة تحديث جديدة...');
                     const symbols = CONFIG.SYMBOLS;
                     const allKlines = {};
                     const allPrices = {};
 
-                    // محاولة جلب البيانات مع إعادة المحاولة التلقائية
                     const fetchPromises = symbols.map(async sym => {
                         try {
                             const k = await fetchKlinesWithRetry(sym, CONFIG.INTERVAL, CONFIG.KLINE_LIMIT);
@@ -820,12 +728,8 @@
                             }
                             return { sym, ok: true };
                         } catch (e) {
-                            console.error(`❌ فشل نهائي في جلب ${sym}:`, e);
-                            // محاولة بديلة لجلب السعر فقط
-                            try { 
-                                const p = await fetchTickerPriceWithRetry(sym); 
-                                allPrices[sym] = p; 
-                            } catch (e2) { /* تجاهل */ }
+                            addLog(`❌ فشل نهائي في جلب ${sym}`, 'error');
+                            try { const p = await fetchTickerPriceWithRetry(sym); allPrices[sym] = p; } catch (e2) {}
                             return { sym, ok: false };
                         }
                     });
@@ -833,7 +737,7 @@
                     await Promise.all(fetchPromises);
                     state.prices = allPrices;
 
-                    // --- 1. فحص الصفقات المفتوحة لإغلاقها عند ضرب الهدف أو وقف الخسارة ---
+                    // --- 1. فحص الصفقات المفتوحة ---
                     for (const sym of symbols) {
                         const currentPrice = state.prices[sym];
                         if (currentPrice === undefined) continue;
@@ -847,15 +751,15 @@
 
                             if (trade.direction === 'buy') {
                                 if (currentPrice >= trade.takeProfit) {
-                                    shouldClose = true; result = 'win'; closeReason = `🎯 <strong>إغلاق تلقائي:</strong> تم تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
+                                    shouldClose = true; result = 'win'; closeReason = `🎯 تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
                                 } else if (currentPrice <= trade.stopLoss) {
-                                    shouldClose = true; result = 'loss'; closeReason = `🛑 <strong>إغلاق تلقائي:</strong> تم ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
+                                    shouldClose = true; result = 'loss'; closeReason = `🛑 ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
                                 }
                             } else {
                                 if (currentPrice <= trade.takeProfit) {
-                                    shouldClose = true; result = 'win'; closeReason = `🎯 <strong>إغلاق تلقائي:</strong> تم تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
+                                    shouldClose = true; result = 'win'; closeReason = `🎯 تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
                                 } else if (currentPrice >= trade.stopLoss) {
-                                    shouldClose = true; result = 'loss'; closeReason = `🛑 <strong>إغلاق تلقائي:</strong> تم ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
+                                    shouldClose = true; result = 'loss'; closeReason = `🛑 ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
                                 }
                             }
 
@@ -864,12 +768,13 @@
                                 trade.closedAt = now();
                                 trade.closedResult = result;
                                 trade.analysis += `\n\n${closeReason}`;
+                                addLog(`✖️ إغلاق صفقة ${getSymbolDisplay(sym)}: ${result === 'win' ? 'ربح' : 'خسارة'}`, result === 'win' ? 'success' : 'error');
 
                                 if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
                                     try {
-                                        let closeMsg = `🔔 <b>إغلاق صفقة تلقائي</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة: ${trade.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}\n💵 سعر الإغلاق: ${fmtPrice(currentPrice)}\n🕐 الوقت: ${fmtDateFull(now())}`;
+                                        let closeMsg = `🔔 <b>إغلاق صفقة تلقائي</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة: ${trade.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}\n💵 سعر الإغلاق: ${fmtPrice(currentPrice)}`;
                                         await sendTelegramMessage(closeMsg);
-                                    } catch (e) { /* ignore */ }
+                                    } catch (e) {}
                                 }
                             }
                         }
@@ -914,20 +819,23 @@
                             existingOpen.isClosed = true;
                             existingOpen.closedAt = now();
                             existingOpen.closedResult = result;
-                            existingOpen.analysis += `\n\n🔄 <strong>إغلاق تلقائي (انعكاس اتجاه):</strong> ظهرت إشارة جديدة معاكسة.`;
+                            existingOpen.analysis += `\n\n🔄 انعكاس اتجاه: ظهرت إشارة جديدة معاكسة.`;
+                            addLog(`🔄 انعكاس اتجاه لـ ${getSymbolDisplay(sym)}. إغلاق الصفقة السابقة.`, 'info');
 
                             if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
                                 try {
                                     let closeMsg = `🔔 <b>إغلاق صفقة تلقائي (انعكاس)</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة السابقة: ${existingOpen.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}`;
                                     await sendTelegramMessage(closeMsg);
-                                } catch (e) { /* ignore */ }
+                                } catch (e) {}
                             }
 
                             state.signals.push(signal);
                             newSignals.push(signal);
+                            addLog(`📈 تم توليد إشارة جديدة لـ ${getSymbolDisplay(sym)} (${signal.direction})`, 'success');
                         } else {
                             state.signals.push(signal);
                             newSignals.push(signal);
+                            addLog(`📈 تم توليد إشارة جديدة لـ ${getSymbolDisplay(sym)} (${signal.direction})`, 'success');
                         }
                     }
 
@@ -965,22 +873,22 @@
                     state.signals = [...prunedActive, ...closedSignals];
 
                     state.lastUpdate = now();
-                    state.failureCount = 0; // تصفير عداد الأخطاء عند النجاح
+                    state.failureCount = 0;
                     persistState();
                     renderAll();
 
                     liveDot.style.background = '#00d4aa';
                     liveDot.style.animation = 'pulse-dot 2s infinite';
+                    addLog('✅ انتهت دورة التحديث بنجاح.', 'success');
 
                 } catch (e) {
                     console.error('❌ خطأ جسيم في دورة التحديث:', e);
                     state.failureCount++;
-                    showToast(`⚠️ خطأ في تحديث البيانات (المحاولة ${state.failureCount})، سيتم إعادة المحاولة تلقائياً...`, 'error');
+                    addLog(`❌ خطأ في التحديث (المحاولة ${state.failureCount})`, 'error');
                     liveDot.style.background = '#ff4757';
                     liveDot.style.animation = 'pulse-dot 2s infinite';
                 } finally {
                     state.isUpdating = false;
-                    console.log('✅ انتهت دورة التحديث.');
                 }
             }
 
@@ -1160,8 +1068,7 @@
             function startUpdateTimer() {
                 if (state.updateTimer) clearInterval(state.updateTimer);
                 const interval = (state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT) * 60 * 1000;
-                console.log(`⏰ بدء تحديث تلقائي كل ${interval/1000} ثانية.`);
-                // التأكد من أن الموقت لا يتوقف أبداً حتى لو حدث خطأ
+                addLog(`⏰ بدء تحديث تلقائي كل ${interval/1000} ثانية.`, 'info');
                 state.updateTimer = setInterval(() => {
                     updateAllData(false);
                 }, interval);
@@ -1205,14 +1112,13 @@
             // ============================================================
             async function init() {
                 loadState();
-                
                 settingsToken.value = state.settings.telegramToken || '';
                 settingsChatId.value = state.settings.telegramChatId || '';
                 settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
                 settingsAutoSend.checked = state.settings.autoSendTelegram !== false;
-                
                 renderAll();
                 setupPWA();
+                addLog('🚀 تم بدء تشغيل التطبيق بنجاح.', 'success');
                 
                 btnSettings.addEventListener('click', openSettings);
                 btnSettingsClose.addEventListener('click', closeSettings);
@@ -1230,7 +1136,6 @@
                 document.addEventListener('visibilitychange', () => { if (!document.hidden && (now() - (state.lastUpdate || 0) > 60000)) updateAllData(false); });
                 window.addEventListener('online', () => { showToast('🌐 تم استعادة الاتصال', 'success'); updateAllData(false); });
                 window.addEventListener('offline', () => { showToast('📡 انقطع الاتصال', 'error'); });
-                console.log('🚀 CryptoSignal Pro initialized (Stable & Auto-Retry Added)');
             }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
@@ -1240,4 +1145,4 @@
         })();
     </script>
 </body>
-    </html>
+                </html>
