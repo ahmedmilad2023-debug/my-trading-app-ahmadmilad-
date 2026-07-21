@@ -191,6 +191,9 @@
             <span>📈</span> CryptoSignal <span style="font-weight:300;color:var(--text-secondary);font-size:0.7em;">Pro</span>
         </div>
         <div class="actions">
+            <button id="btnModeToggle" title="التبديل بين النظام المرن والنظام الصارم" style="border-color:var(--accent-gold); color:var(--accent-gold);">
+                ⚙️ <span id="modeLabel">مرن</span>
+            </button>
             <button id="btnBtcFilter" title="تفعيل/إيقاف فلتر اتجاه البيتكوين" style="border-color:var(--accent-blue);">
                 ⚡ <span id="btcFilterLabel">BTC ON</span>
             </button>
@@ -289,8 +292,25 @@
             'use strict';
 
             // ============================================================
-            //  CONFIGURATION (تم تعديل القيم لزيادة الحساسية)
+            //  CONFIGURATION
             // ============================================================
+            const MODES = {
+                FLEXIBLE: {
+                    label: 'مرن',
+                    ADX_THRESHOLD: 15,
+                    STOCH_OVERBOUGHT: 70,
+                    STOCH_OVERSOLD: 30,
+                },
+                STRICT: {
+                    label: 'صارم',
+                    ADX_THRESHOLD: 20,
+                    STOCH_OVERBOUGHT: 80,
+                    STOCH_OVERSOLD: 20,
+                }
+            };
+
+            let currentMode = 'FLEXIBLE';
+
             const CONFIG = {
                 SYMBOLS: ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT'],
                 INTERVAL: '30m',
@@ -300,9 +320,10 @@
                 STOCH_D_SMOOTH: 3,
                 ADX_PERIOD: 14,
                 EMA_PERIOD: 200,
-                ADX_THRESHOLD: 15,           // تم التخفيض من 20 إلى 15
-                STOCH_OVERBOUGHT: 70,         // تم التخفيض من 80 إلى 70
-                STOCH_OVERSOLD: 30,           // تم الرفع من 20 إلى 30
+                // القيم التالية ديناميكية
+                ADX_THRESHOLD: MODES.FLEXIBLE.ADX_THRESHOLD,
+                STOCH_OVERBOUGHT: MODES.FLEXIBLE.STOCH_OVERBOUGHT,
+                STOCH_OVERSOLD: MODES.FLEXIBLE.STOCH_OVERSOLD,
                 TARGET_PERCENT: 0.02,
                 STOP_PERCENT_MAX: 0.008,
                 UPDATE_INTERVAL_DEFAULT: 1,
@@ -313,7 +334,8 @@
                 CACHE_KEY: 'cryptosignal_data',
                 SETTINGS_KEY: 'cryptosignal_settings',
                 HISTORY_KEY: 'cryptosignal_history',
-                SENT_SIGNALS_KEY: 'cryptosignal_sent'
+                SENT_SIGNALS_KEY: 'cryptosignal_sent',
+                MODE_KEY: 'cryptosignal_mode'
             };
 
             // ============================================================
@@ -329,7 +351,10 @@
                 },
                 sentSignals: [], isUpdating: false, lastUpdate: null, installPrompt: null, updateTimer: null,
                 btcFilterEnabled: true,
-                failureCount: 0
+                failureCount: 0,
+                // متغيرات لمحاربة وضع السكون
+                wakeLock: null,
+                audioCtx: null
             };
 
             // ============================================================
@@ -357,6 +382,8 @@
             const btnRefresh = $('btnRefresh');
             const btnBtcFilter = $('btnBtcFilter');
             const btcFilterLabel = $('btcFilterLabel');
+            const btnModeToggle = $('btnModeToggle');
+            const modeLabel = $('modeLabel');
             const btnSettingsClose = $('settingsClose');
             const btnSettingsSave = $('settingsSave');
             const btnSettingsTest = $('settingsTest');
@@ -364,6 +391,50 @@
             const btnClearHistory = $('btnClearHistory');
             const liveDot = $('liveDot');
             const toastContainer = $('toastContainer');
+
+            // ============================================================
+            //  MODE MANAGEMENT
+            // ============================================================
+            function loadMode() {
+                try {
+                    const saved = localStorage.getItem(CONFIG.MODE_KEY);
+                    if (saved === 'STRICT' || saved === 'FLEXIBLE') {
+                        currentMode = saved;
+                    }
+                } catch (e) {}
+                applyModeConfig();
+            }
+
+            function saveMode() {
+                try {
+                    localStorage.setItem(CONFIG.MODE_KEY, currentMode);
+                } catch (e) {}
+            }
+
+            function applyModeConfig() {
+                const mode = MODES[currentMode];
+                if (!mode) return;
+                CONFIG.ADX_THRESHOLD = mode.ADX_THRESHOLD;
+                CONFIG.STOCH_OVERBOUGHT = mode.STOCH_OVERBOUGHT;
+                CONFIG.STOCH_OVERSOLD = mode.STOCH_OVERSOLD;
+                modeLabel.textContent = mode.label;
+                if (currentMode === 'STRICT') {
+                    btnModeToggle.style.borderColor = 'var(--accent-red)';
+                    btnModeToggle.style.color = 'var(--accent-red)';
+                } else {
+                    btnModeToggle.style.borderColor = 'var(--accent-green)';
+                    btnModeToggle.style.color = 'var(--accent-green)';
+                }
+                addLog(`🔄 تم التبديل إلى النظام ${mode.label} (ADX=${mode.ADX_THRESHOLD}, OB=${mode.STOCH_OVERBOUGHT}, OS=${mode.STOCH_OVERSOLD})`, 'info');
+            }
+
+            function toggleMode() {
+                currentMode = (currentMode === 'FLEXIBLE') ? 'STRICT' : 'FLEXIBLE';
+                saveMode();
+                applyModeConfig();
+                showToast(`✅ تم التبديل إلى النظام ${MODES[currentMode].label}`, 'info');
+                updateAllData(true);
+            }
 
             // ============================================================
             //  DEBUG LOG
@@ -424,6 +495,7 @@
                     const raw = localStorage.getItem(CONFIG.HISTORY_KEY);
                     if (raw) { const h = JSON.parse(raw); if (Array.isArray(h)) state.closedTrades = h; }
                 } catch (e) { /* ignore */ }
+                loadMode();
             }
 
             function persistState() {
@@ -459,6 +531,7 @@
             function formatSignalMessage(signal) {
                 const dir = signal.direction === 'buy' ? '🟢 شراء' : '🔴 بيع';
                 const sym = getSymbolDisplay(signal.symbol);
+                const modeLabel = MODES[currentMode].label;
                 return `
         🔔 <b>إشارة تداول جديدة</b> 🔔
         ───────────────
@@ -469,6 +542,7 @@
         🛑 وقف الخسارة: ${fmtPrice(signal.stopLoss)} (0.8%)
         📊 التحليل: ${signal.analysis.substring(0,200)}...
         🕐 الوقت: ${fmtDateFull(signal.timestamp)}
+        📌 النظام: ${modeLabel}
         ───────────────
         ⚡ CryptoSignal Pro`.trim();
             }
@@ -558,7 +632,7 @@
             }
 
             // ============================================================
-            //  SIGNAL GENERATION (تم تعديل المنطق لقبول إشارات متوسطة وقوية)
+            //  SIGNAL GENERATION
             // ============================================================
             function generateSignal(symbol, klines) {
                 if (!klines || klines.length < 200) return null;
@@ -589,47 +663,27 @@
                 let confidence = 0;
                 let reasons = [];
 
-                // شروط مرنة
                 const isStochBuyCross = (kLast > dLast) && (kPrev <= dPrev) && (kLast < CONFIG.STOCH_OVERSOLD) && (dLast < CONFIG.STOCH_OVERSOLD);
                 const isStochSellCross = (kLast < dLast) && (kPrev >= dPrev) && (kLast > CONFIG.STOCH_OVERBOUGHT) && (dLast > CONFIG.STOCH_OVERBOUGHT);
                 const isAdxStrong = adxLast > CONFIG.ADX_THRESHOLD;
                 const isPriceAboveEma = lastClose > currentEMA;
                 const isPriceBelowEma = lastClose < currentEMA;
 
-                // منطق الإشارة الجديد (يقبل الإشارات القوية والمتوسطة)
-                if (isStochBuyCross) {
-                    if (isAdxStrong && isPriceAboveEma) { // قوية
-                        direction = 'buy';
-                        confidence = 90;
-                        reasons = [
-                            `ستوكاستيك تقاطع صاعد تحت ${CONFIG.STOCH_OVERSOLD} (K=${kLast.toFixed(1)}, D=${dLast.toFixed(1)})`,
-                            `ADX قوي: ${adxLast.toFixed(1)}`,
-                            `السعر فوق EMA 200`
-                        ];
-                    } else if (isAdxStrong || isPriceAboveEma) { // متوسطة
-                        direction = 'buy';
-                        confidence = 70;
-                        reasons = [
-                            `ستوكاستيك تقاطع صاعد تحت ${CONFIG.STOCH_OVERSOLD}`,
-                            isAdxStrong ? `ADX قوي` : `السعر فوق EMA 200`
-                        ];
+                if (currentMode === 'STRICT') {
+                    if (isStochBuyCross && isAdxStrong && isPriceAboveEma) {
+                        direction = 'buy'; confidence = 95;
+                        reasons = [`ستوكاستيك تقاطع صاعد تحت ${CONFIG.STOCH_OVERSOLD}`, `ADX قوي: ${adxLast.toFixed(1)}`, `السعر فوق EMA`];
+                    } else if (isStochSellCross && isAdxStrong && isPriceBelowEma) {
+                        direction = 'sell'; confidence = 95;
+                        reasons = [`ستوكاستيك تقاطع هابط فوق ${CONFIG.STOCH_OVERBOUGHT}`, `ADX قوي: ${adxLast.toFixed(1)}`, `السعر تحت EMA`];
                     }
-                } else if (isStochSellCross) {
-                    if (isAdxStrong && isPriceBelowEma) { // قوية
-                        direction = 'sell';
-                        confidence = 90;
-                        reasons = [
-                            `ستوكاستيك تقاطع هابط فوق ${CONFIG.STOCH_OVERBOUGHT} (K=${kLast.toFixed(1)}, D=${dLast.toFixed(1)})`,
-                            `ADX قوي: ${adxLast.toFixed(1)}`,
-                            `السعر تحت EMA 200`
-                        ];
-                    } else if (isAdxStrong || isPriceBelowEma) { // متوسطة
-                        direction = 'sell';
-                        confidence = 70;
-                        reasons = [
-                            `ستوكاستيك تقاطع هابط فوق ${CONFIG.STOCH_OVERBOUGHT}`,
-                            isAdxStrong ? `ADX قوي` : `السعر تحت EMA 200`
-                        ];
+                } else {
+                    if (isStochBuyCross) {
+                        if (isAdxStrong && isPriceAboveEma) { direction = 'buy'; confidence = 90; reasons = [`ستوكاستيك تقاطع صاعد`, `ADX قوي`, `السعر فوق EMA`]; }
+                        else if (isAdxStrong || isPriceAboveEma) { direction = 'buy'; confidence = 70; reasons = [`ستوكاستيك تقاطع صاعد`, isAdxStrong ? `ADX قوي` : `السعر فوق EMA`]; }
+                    } else if (isStochSellCross) {
+                        if (isAdxStrong && isPriceBelowEma) { direction = 'sell'; confidence = 90; reasons = [`ستوكاستيك تقاطع هابط`, `ADX قوي`, `السعر تحت EMA`]; }
+                        else if (isAdxStrong || isPriceBelowEma) { direction = 'sell'; confidence = 70; reasons = [`ستوكاستيك تقاطع هابط`, isAdxStrong ? `ADX قوي` : `السعر تحت EMA`]; }
                     }
                 }
 
@@ -657,16 +711,18 @@
                 const stopDist = Math.abs(entryPrice - stopLoss);
                 if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) return null;
 
+                const modeLabel = MODES[currentMode].label;
                 const analysisText = `
         📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة)</strong>
         ───────────────
         ✅ <strong>القرار:</strong> ${direction === 'buy' ? 'شراء' : 'بيع'} (ثقة ${confidence.toFixed(0)}%)
-        📉 <strong>الستوكاستيك:</strong> ${reasons[0]}
+        📉 <strong>الستوكاستيك:</strong> ${reasons[0] || '—'}
         📊 <strong>ADX:</strong> ${reasons[1] || '—'}
         📈 <strong>EMA 200:</strong> ${reasons[2] || '—'}
         🕯️ <strong>نمط الشموع:</strong> ${pattern || 'غير واضح'}
         🎯 <strong>الهدف:</strong> 2% (${fmtPrice(takeProfit)})
         🛑 <strong>وقف الخسارة:</strong> 0.8% (${fmtPrice(stopLoss)})
+        📌 <strong>النظام:</strong> ${modeLabel}
                 `.trim();
 
                 return {
@@ -721,7 +777,59 @@
             }
 
             // ============================================================
-            //  UPDATE ALL DATA
+            //  BACKGROUND KEEP-ALIVE (مهم جداً للعمل في الخلفية)
+            // ============================================================
+            async function requestWakeLock() {
+                try {
+                    if ('wakeLock' in navigator) {
+                        state.wakeLock = await navigator.wakeLock.request('screen');
+                        addLog('💤 تم تفعيل WakeLock (الحفاظ على نشاط الشاشة)', 'info');
+                        state.wakeLock.addEventListener('release', () => {
+                            addLog('💤 تم تحرير WakeLock، سيتم إعادة طلبه', 'info');
+                            // إعادة الطلب إذا تم تحريره تلقائياً
+                            setTimeout(requestWakeLock, 1000);
+                        });
+                    } else {
+                        addLog('⚠️ المتصفح لا يدعم WakeLock API', 'info');
+                    }
+                } catch (e) {
+                    addLog(`⚠️ فشل تفعيل WakeLock: ${e.message}`, 'error');
+                }
+            }
+
+            // خدعة Web Audio للحفاظ على نشاط الخلفية
+            function startSilentAudioLoop() {
+                try {
+                    // إذا لم يكن مدعوماً أو تم إنشاؤه مسبقاً، تجاهل
+                    if (state.audioCtx) return;
+                    // إنشاء سياق صوتي
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContext) return;
+                    state.audioCtx = new AudioContext();
+                    // إنشاء مذبذب بتردد 0 هرتز (صامت تماماً)
+                    const oscillator = state.audioCtx.createOscillator();
+                    const gainNode = state.audioCtx.createGain();
+                    oscillator.frequency.value = 0;
+                    gainNode.gain.value = 0;
+                    oscillator.connect(gainNode);
+                    gainNode.connect(state.audioCtx.destination);
+                    oscillator.start();
+                    // حلقة لا نهائية للحفاظ على نشاط السياق
+                    function keepAlive() {
+                        if (state.audioCtx && state.audioCtx.state === 'suspended') {
+                            state.audioCtx.resume();
+                        }
+                        setTimeout(keepAlive, 5000);
+                    }
+                    keepAlive();
+                    addLog('🔊 تم تفعيل الحلقة الصوتية الصامتة (لمنع السكون)', 'info');
+                } catch (e) {
+                    addLog(`⚠️ فشل تفعيل الصوت الصامت: ${e.message}`, 'error');
+                }
+            }
+
+            // ============================================================
+            //  UPDATE ALL DATA (محسّن للعمل في الخلفية)
             // ============================================================
             async function updateAllData(force = false) {
                 if (state.isUpdating && !force) {
@@ -793,7 +901,9 @@
                                     try {
                                         let closeMsg = `🔔 <b>إغلاق صفقة تلقائي</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة: ${trade.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}\n💵 سعر الإغلاق: ${fmtPrice(currentPrice)}`;
                                         await sendTelegramMessage(closeMsg);
-                                    } catch (e) {}
+                                    } catch (e) {
+                                        addLog(`⚠️ فشل إرسال إغلاق الصفقة للتليجرام`, 'error');
+                                    }
                                 }
                             }
                         }
@@ -821,7 +931,6 @@
                             continue;
                         }
 
-                        // تطبيق فلتر BTC
                         if (state.btcFilterEnabled) {
                             if (btcDirection === 'buy' && signal.direction === 'sell') {
                                 addLog(`⛔ تم تصفية إشارة بيع لـ ${getSymbolDisplay(sym)} بسبب اتجاه BTC صاعد`, 'info');
@@ -870,7 +979,9 @@
                                 try {
                                     let closeMsg = `🔔 <b>إغلاق صفقة تلقائي (انعكاس)</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة السابقة: ${existingOpen.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}`;
                                     await sendTelegramMessage(closeMsg);
-                                } catch (e) {}
+                                } catch (e) {
+                                    addLog(`⚠️ فشل إرسال إغلاق الانعكاس للتليجرام`, 'error');
+                                }
                             }
 
                             state.signals.push(signal);
@@ -883,7 +994,7 @@
                         }
                     }
 
-                    // إرسال الإشارات الجديدة للتليجرام
+                    // إرسال الإشارات الجديدة للتليجرام بشكل فوري
                     for (const sig of newSignals) {
                         const alreadySent = state.sentSignals.includes(sig.id);
                         if (!alreadySent) {
@@ -892,9 +1003,10 @@
                                     await sendTelegramMessage(formatSignalMessage(sig));
                                     state.sentSignals.push(sig.id);
                                     if (state.sentSignals.length > 200) state.sentSignals = state.sentSignals.slice(-100);
-                                    showToast(`📨 إشارة ${getSymbolDisplay(sig.symbol)} أرسلت للتليجرام`, 'success');
+                                    // لا تظهر توست هنا لأن المتصفح قد يكون في الخلفية، نعتمد على التليجرام
+                                    addLog(`📨 تم إرسال إشارة ${getSymbolDisplay(sig.symbol)} إلى التليجرام`, 'success');
                                 } catch (e) {
-                                    showToast(`⚠️ فشل إرسال إشارة ${getSymbolDisplay(sig.symbol)}`, 'error');
+                                    addLog(`⚠️ فشل إرسال إشارة ${getSymbolDisplay(sig.symbol)}`, 'error');
                                 }
                             } else {
                                 state.sentSignals.push(sig.id);
@@ -902,7 +1014,6 @@
                         }
                     }
 
-                    // تنظيف الإشارات النشطة
                     const activeSignals = state.signals.filter(s => !s.isClosed);
                     const closedSignals = state.signals.filter(s => s.isClosed);
                     const activeBySymbol = {};
@@ -1111,19 +1222,44 @@
                 }
             }
 
-            function startUpdateTimer() {
-                if (state.updateTimer) clearInterval(state.updateTimer);
+            // ============================================================
+            //  TIMER & BACKGROUND (استخدام setTimeout بدلاً من setInterval)
+            // ============================================================
+            let nextUpdateTimeout = null;
+
+            function scheduleNextUpdate() {
+                if (nextUpdateTimeout) clearTimeout(nextUpdateTimeout);
                 const interval = (state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT) * 60 * 1000;
-                addLog(`⏰ بدء تحديث تلقائي كل ${interval/1000} ثانية.`, 'info');
-                state.updateTimer = setInterval(() => {
+                // تحديث متكرر كل 15 ثانية بدلاً من دقيقة لإبقاء الخلفية نشطة جداً
+                const effectiveInterval = Math.max(15000, interval); 
+                nextUpdateTimeout = setTimeout(() => {
                     updateAllData(false);
-                }, interval);
+                    scheduleNextUpdate(); // إعادة الجدولة
+                }, effectiveInterval);
+            }
+
+            function startUpdateTimer() {
+                if (state.updateTimer) { clearInterval(state.updateTimer); state.updateTimer = null; }
+                if (nextUpdateTimeout) { clearTimeout(nextUpdateTimeout); nextUpdateTimeout = null; }
+                
+                addLog(`⏰ بدء تحديث تلقائي في الخلفية.`, 'info');
+                // نستخدم حلقة setTimeout بدلاً من setInterval
+                scheduleNextUpdate();
                 
                 document.addEventListener('visibilitychange', () => { 
-                    if (!document.hidden) updateAllData(false); 
+                    if (!document.hidden) {
+                        // عند العودة للتطبيق، تحديث فوري
+                        updateAllData(false);
+                        // إعادة جدولة الدورة
+                        if (nextUpdateTimeout) clearTimeout(nextUpdateTimeout);
+                        scheduleNextUpdate();
+                    }
                 });
             }
 
+            // ============================================================
+            //  PWA
+            // ============================================================
             function setupPWA() {
                 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); state.installPrompt = e; btnInstall.style.display = 'flex'; btnInstall.textContent = '📲 تثبيت التطبيق'; });
                 btnInstall.addEventListener('click', async () => {
@@ -1162,6 +1298,7 @@
                 settingsChatId.value = state.settings.telegramChatId || '';
                 settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
                 settingsAutoSend.checked = state.settings.autoSendTelegram !== false;
+                applyModeConfig();
                 renderAll();
                 setupPWA();
                 addLog('🚀 تم بدء تشغيل التطبيق بنجاح.', 'success');
@@ -1174,12 +1311,18 @@
                 btnExportHistory.addEventListener('click', exportHistory);
                 btnClearHistory.addEventListener('click', clearHistory);
                 btnBtcFilter.addEventListener('click', toggleBtcFilter);
+                btnModeToggle.addEventListener('click', toggleMode);
                 
                 settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
                 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSettings(); });
+
+                // تفعيل أدوات البقاء في الخلفية
+                await requestWakeLock();
+                startSilentAudioLoop();
+
                 startUpdateTimer();
                 await updateAllData(true);
-                document.addEventListener('visibilitychange', () => { if (!document.hidden && (now() - (state.lastUpdate || 0) > 60000)) updateAllData(false); });
+                
                 window.addEventListener('online', () => { showToast('🌐 تم استعادة الاتصال', 'success'); updateAllData(false); });
                 window.addEventListener('offline', () => { showToast('📡 انقطع الاتصال', 'error'); });
             }
@@ -1187,8 +1330,8 @@
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
             else init();
 
-            window.__cryptoSignal = { state, updateAllData, renderAll, sendTelegramMessage, generateSignal, CONFIG };
+            window.__cryptoSignal = { state, updateAllData, renderAll, sendTelegramMessage, generateSignal, CONFIG, currentMode, MODES };
         })();
     </script>
 </body>
-                </html>
+                    </html>
