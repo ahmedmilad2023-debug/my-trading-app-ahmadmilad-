@@ -300,12 +300,12 @@
                 STOCH_D_SMOOTH: 3,
                 ADX_PERIOD: 14,
                 EMA_PERIOD: 200,
-                ADX_THRESHOLD: 25,
-                STOCH_OVERBOUGHT: 80,
-                STOCH_OVERSOLD: 20,
+                ADX_THRESHOLD: 20,           // تم تخفيض العتبة لزيادة الحساسية
+                STOCH_OVERBOUGHT: 75,         // تم تعديلها من 80 إلى 75
+                STOCH_OVERSOLD: 25,           // تم تعديلها من 20 إلى 25
                 TARGET_PERCENT: 0.02,
                 STOP_PERCENT_MAX: 0.008,
-                UPDATE_INTERVAL_DEFAULT: 1, // تغيير الافتراضي إلى دقيقة واحدة
+                UPDATE_INTERVAL_DEFAULT: 1,
                 MAX_SIGNALS_PER_SYMBOL: 3,
                 RETRY_DELAY_MS: 5000,
                 TELEGRAM_API: 'https://api.telegram.org/bot',
@@ -366,7 +366,7 @@
             const toastContainer = $('toastContainer');
 
             // ============================================================
-            //  DEBUG LOG (وظيفة جديدة لعرض السجل)
+            //  DEBUG LOG
             // ============================================================
             function addLog(message, type = 'info') {
                 const div = document.createElement('div');
@@ -374,7 +374,6 @@
                 const time = new Date().toLocaleTimeString();
                 div.textContent = `[${time}] ${message}`;
                 debugLogContent.appendChild(div);
-                // إبقاء السجل محدوداً (آخر 50 سطراً)
                 while (debugLogContent.children.length > 50) {
                     debugLogContent.removeChild(debugLogContent.firstChild);
                 }
@@ -559,7 +558,7 @@
             }
 
             // ============================================================
-            //  SIGNAL GENERATION
+            //  SIGNAL GENERATION (MODIFIED FOR MORE SIGNALS)
             // ============================================================
             function generateSignal(symbol, klines) {
                 if (!klines || klines.length < 200) return null;
@@ -590,28 +589,31 @@
                 let confidence = 0;
                 let reasons = [];
 
+                // شروط أكثر مرونة
                 const isStochBuyCross = (kLast > dLast) && (kPrev <= dPrev) && (kLast < CONFIG.STOCH_OVERSOLD) && (dLast < CONFIG.STOCH_OVERSOLD);
+                const isStochSellCross = (kLast < dLast) && (kPrev >= dPrev) && (kLast > CONFIG.STOCH_OVERBOUGHT) && (dLast > CONFIG.STOCH_OVERBOUGHT);
                 const isAdxStrong = adxLast > CONFIG.ADX_THRESHOLD;
                 const isPriceAboveEma = lastClose > currentEMA;
+                const isPriceBelowEma = lastClose < currentEMA;
 
-                if (isStochBuyCross && isAdxStrong && isPriceAboveEma) {
-                    direction = 'buy';
-                    confidence = 95;
-                    reasons = [
-                        `ستوكاستيك: K و D تقاطع صاعد تحت ${CONFIG.STOCH_OVERSOLD} (K=${kLast.toFixed(1)}, D=${dLast.toFixed(1)})`,
-                        `ADX قوي: ${adxLast.toFixed(1)} > ${CONFIG.ADX_THRESHOLD}`,
-                        `السعر فوق EMA 200: ${fmtPrice(lastClose)} > ${fmtPrice(currentEMA)}`
-                    ];
-                } else {
-                    const isStochSellCross = (kLast < dLast) && (kPrev >= dPrev) && (kLast > CONFIG.STOCH_OVERBOUGHT) && (dLast > CONFIG.STOCH_OVERBOUGHT);
-                    const isPriceBelowEma = lastClose < currentEMA;
-
-                    if (isStochSellCross && isAdxStrong && isPriceBelowEma) {
+                // إشارة شراء: تقاطع صاعد + ADX قوي (أو بدون ADX إذا كان السعر فوق EMA)
+                if (isStochBuyCross) {
+                    if (isAdxStrong || isPriceAboveEma) {
+                        direction = 'buy';
+                        confidence = isAdxStrong ? 85 : 70;
+                        reasons = [
+                            `ستوكاستيك: K و D تقاطع صاعد تحت ${CONFIG.STOCH_OVERSOLD} (K=${kLast.toFixed(1)}, D=${dLast.toFixed(1)})`,
+                            isAdxStrong ? `ADX قوي: ${adxLast.toFixed(1)} > ${CONFIG.ADX_THRESHOLD}` : `ADX ضعيف لكن السعر فوق EMA 200`,
+                            `السعر فوق EMA 200: ${fmtPrice(lastClose)} > ${fmtPrice(currentEMA)}`
+                        ];
+                    }
+                } else if (isStochSellCross) {
+                    if (isAdxStrong || isPriceBelowEma) {
                         direction = 'sell';
-                        confidence = 95;
+                        confidence = isAdxStrong ? 85 : 70;
                         reasons = [
                             `ستوكاستيك: K و D تقاطع هابط فوق ${CONFIG.STOCH_OVERBOUGHT} (K=${kLast.toFixed(1)}, D=${dLast.toFixed(1)})`,
-                            `ADX قوي: ${adxLast.toFixed(1)} > ${CONFIG.ADX_THRESHOLD}`,
+                            isAdxStrong ? `ADX قوي: ${adxLast.toFixed(1)} > ${CONFIG.ADX_THRESHOLD}` : `ADX ضعيف لكن السعر تحت EMA 200`,
                             `السعر تحت EMA 200: ${fmtPrice(lastClose)} < ${fmtPrice(currentEMA)}`
                         ];
                     }
@@ -663,11 +665,12 @@
             }
 
             // ============================================================
-            //  FETCH WITH AUTO-RETRY
+            //  FETCH WITH AUTO-RETRY (تحسين الإخفاق)
             // ============================================================
-            async function fetchKlinesWithRetry(symbol, interval = CONFIG.INTERVAL, limit = CONFIG.KLINE_LIMIT, retries = 3) {
+            async function fetchKlinesWithRetry(symbol, interval = CONFIG.INTERVAL, limit = CONFIG.KLINE_LIMIT, retries = 4) {
                 for (let i = 0; i < retries; i++) {
                     try {
+                        // نستخدم proxy لتجنب مشاكل CORS (اختياري، لكن يمكن استخدام Binance مباشرة إذا كان يعمل)
                         const resp = await fetch(`${CONFIG.BINANCE_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
                         if (!resp.ok) {
                             if (resp.status === 429 || resp.status >= 500) {
@@ -682,7 +685,7 @@
                         const data = await resp.json();
                         return data.map(k => ({ time: k[0], open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5]) }));
                     } catch (e) {
-                        addLog(`⚠️ فشل جلب ${symbol} (محاولة ${i+1})`, 'error');
+                        addLog(`⚠️ فشل جلب ${symbol} (محاولة ${i+1}) - ${e.message}`, 'error');
                         if (i === retries - 1) throw e;
                         await sleep(CONFIG.RETRY_DELAY_MS);
                     }
@@ -690,7 +693,7 @@
                 return null;
             }
 
-            async function fetchTickerPriceWithRetry(symbol, retries = 2) {
+            async function fetchTickerPriceWithRetry(symbol, retries = 3) {
                 for (let i = 0; i < retries; i++) {
                     try {
                         const resp = await fetch(`${CONFIG.BINANCE_BASE}/ticker/price?symbol=${symbol}`);
@@ -705,10 +708,13 @@
             }
 
             // ============================================================
-            //  UPDATE ALL DATA
+            //  UPDATE ALL DATA (مع تحسينات)
             // ============================================================
             async function updateAllData(force = false) {
-                if (state.isUpdating && !force) return;
+                if (state.isUpdating && !force) {
+                    addLog('⏳ تحديث قيد التقدم، تخطي...', 'info');
+                    return;
+                }
                 state.isUpdating = true;
                 liveDot.style.background = '#f5a623';
                 liveDot.style.animation = 'none';
@@ -719,6 +725,7 @@
                     const allKlines = {};
                     const allPrices = {};
 
+                    // جلب البيانات بشكل متوازي مع معالجة الأخطاء
                     const fetchPromises = symbols.map(async sym => {
                         try {
                             const k = await fetchKlinesWithRetry(sym, CONFIG.INTERVAL, CONFIG.KLINE_LIMIT);
@@ -729,7 +736,8 @@
                             return { sym, ok: true };
                         } catch (e) {
                             addLog(`❌ فشل نهائي في جلب ${sym}`, 'error');
-                            try { const p = await fetchTickerPriceWithRetry(sym); allPrices[sym] = p; } catch (e2) {}
+                            // محاولة الحصول على السعر الحالي فقط
+                            try { const p = await fetchTickerPriceWithRetry(sym); allPrices[sym] = p; } catch (e2) { addLog(`❌ حتى السعر الحالي فشل لـ ${sym}`, 'error'); }
                             return { sym, ok: false };
                         }
                     });
@@ -780,31 +788,59 @@
                         }
                     }
 
-                    // --- 2. منطق الإشارات الجديدة ---
+                    // --- 2. توليد إشارات جديدة ---
                     const newSignals = [];
                     let btcDirection = 'neutral';
                     const btcKlines = allKlines['BTCUSDT'];
                     if (btcKlines && btcKlines.length >= 200) {
                         const btcSignal = generateSignal('BTCUSDT', btcKlines);
                         if (btcSignal) btcDirection = btcSignal.direction;
+                        addLog(`📊 اتجاه البيتكوين الحالي: ${btcDirection === 'buy' ? 'صاعد' : btcDirection === 'sell' ? 'هابط' : 'محايد'}`, 'info');
                     }
 
                     for (const sym of symbols) {
                         const k = allKlines[sym];
-                        if (!k || k.length < 200) continue;
+                        if (!k || k.length < 200) {
+                            addLog(`⚠️ بيانات غير كافية لـ ${sym} (${k ? k.length : 0})`, 'error');
+                            continue;
+                        }
                         const signal = generateSignal(sym, k);
-                        if (!signal) continue;
-
-                        if (state.btcFilterEnabled) {
-                            if (btcDirection === 'buy' && signal.direction === 'sell') continue;
-                            if (btcDirection === 'sell' && signal.direction === 'buy') continue;
+                        if (!signal) {
+                            addLog(`⏸️ لا توجد إشارة لـ ${sym} حالياً`, 'info');
+                            continue;
                         }
 
+                        // تطبيق فلتر BTC
+                        if (state.btcFilterEnabled) {
+                            if (btcDirection === 'buy' && signal.direction === 'sell') {
+                                addLog(`⛔ تم تصفية إشارة بيع لـ ${getSymbolDisplay(sym)} بسبب اتجاه BTC صاعد`, 'info');
+                                continue;
+                            }
+                            if (btcDirection === 'sell' && signal.direction === 'buy') {
+                                addLog(`⛔ تم تصفية إشارة شراء لـ ${getSymbolDisplay(sym)} بسبب اتجاه BTC هابط`, 'info');
+                                continue;
+                            }
+                        }
+
+                        // التحقق من وجود صفقة مفتوحة بنفس العملة
                         const existingOpen = state.signals.find(s => s.symbol === sym && !s.isClosed);
                         if (existingOpen) {
-                            if (existingOpen.isLocked) continue;
-                            if (existingOpen.direction === signal.direction) continue;
+                            if (existingOpen.isLocked) {
+                                addLog(`🔒 صفقة ${getSymbolDisplay(sym)} مقفولة، تجاهل الإشارة الجديدة`, 'info');
+                                continue;
+                            }
+                            if (existingOpen.direction === signal.direction) {
+                                addLog(`🔄 نفس الاتجاه لـ ${getSymbolDisplay(sym)}، تحديث السعر فقط`, 'info');
+                                // نحدّث سعر الدخول والهدف ووقف الخسارة؟
+                                existingOpen.entryPrice = signal.entryPrice;
+                                existingOpen.takeProfit = signal.takeProfit;
+                                existingOpen.stopLoss = signal.stopLoss;
+                                existingOpen.analysis = signal.analysis;
+                                existingOpen.timestamp = signal.timestamp;
+                                continue; // لا نضيف إشارة جديدة
+                            }
 
+                            // اتجاه معاكس: إغلاق الصفقة السابقة وفتح جديدة
                             const currentPrice = state.prices[sym];
                             let result = 'neutral';
                             if (currentPrice !== undefined) {
@@ -833,12 +869,14 @@
                             newSignals.push(signal);
                             addLog(`📈 تم توليد إشارة جديدة لـ ${getSymbolDisplay(sym)} (${signal.direction})`, 'success');
                         } else {
+                            // لا توجد صفقة مفتوحة
                             state.signals.push(signal);
                             newSignals.push(signal);
                             addLog(`📈 تم توليد إشارة جديدة لـ ${getSymbolDisplay(sym)} (${signal.direction})`, 'success');
                         }
                     }
 
+                    // إرسال الإشارات الجديدة للتليجرام
                     for (const sig of newSignals) {
                         const alreadySent = state.sentSignals.includes(sig.id);
                         if (!alreadySent) {
@@ -857,6 +895,7 @@
                         }
                     }
 
+                    // تنظيف الإشارات النشطة: الاحتفاظ بأحدث 3 لكل رمز
                     const activeSignals = state.signals.filter(s => !s.isClosed);
                     const closedSignals = state.signals.filter(s => s.isClosed);
                     const activeBySymbol = {};
@@ -884,7 +923,7 @@
                 } catch (e) {
                     console.error('❌ خطأ جسيم في دورة التحديث:', e);
                     state.failureCount++;
-                    addLog(`❌ خطأ في التحديث (المحاولة ${state.failureCount})`, 'error');
+                    addLog(`❌ خطأ في التحديث (المحاولة ${state.failureCount}) - ${e.message}`, 'error');
                     liveDot.style.background = '#ff4757';
                     liveDot.style.animation = 'pulse-dot 2s infinite';
                 } finally {
@@ -1145,4 +1184,4 @@
         })();
     </script>
 </body>
-                </html>
+    </html>
