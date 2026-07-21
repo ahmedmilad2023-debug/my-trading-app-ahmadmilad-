@@ -145,6 +145,8 @@
         .modal .status-msg { margin-top: 12px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 14px; display: none; }
         .modal .status-msg.success { display: block; background: rgba(0, 212, 170, 0.15); color: var(--accent-green); border: 1px solid rgba(0, 212, 170, 0.3); }
         .modal .status-msg.error { display: block; background: rgba(255, 71, 87, 0.15); color: var(--accent-red); border: 1px solid rgba(255, 71, 87, 0.3); }
+        /* زر نسخ الإعدادات */
+        .btn-copy-settings { background: var(--accent-blue) !important; color: #fff !important; border-color: var(--accent-blue) !important; }
 
         /* ===== Toast ===== */
         .toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; max-width: 90%; }
@@ -258,7 +260,7 @@
             </div>
             <div class="form-group">
                 <label>🆔 معرف الدردشة (Chat ID)</label>
-                <input type="text" id="telegramChatId" value="5711937659" placeholder="5711937659" />
+                <input type="text" id="telegramChatId" value="1003970108966" placeholder="1003970108966" />
                 <div class="hint">معرف القناة أو المجموعة، أو معرف المستخدم</div>
             </div>
             <div class="form-group">
@@ -277,6 +279,7 @@
                 <button class="btn-primary" id="settingsSave">💾 حفظ الإعدادات</button>
                 <button class="btn-secondary" id="settingsClose">إغلاق</button>
                 <button class="btn-secondary" id="settingsTest" style="flex:0.5;border-color:var(--accent-gold);color:var(--accent-gold);">🧪 اختبار</button>
+                <button class="btn-secondary btn-copy-settings" id="settingsCopy">📋 نسخ الإعدادات</button>
             </div>
         </div>
     </div>
@@ -292,21 +295,11 @@
             'use strict';
 
             // ============================================================
-            //  CONFIGURATION
+            //  CONFIGURATION (مع الإعدادات الجديدة)
             // ============================================================
             const MODES = {
-                FLEXIBLE: {
-                    label: 'مرن',
-                    ADX_THRESHOLD: 15,
-                    STOCH_OVERBOUGHT: 70,
-                    STOCH_OVERSOLD: 30,
-                },
-                STRICT: {
-                    label: 'صارم',
-                    ADX_THRESHOLD: 20,
-                    STOCH_OVERBOUGHT: 80,
-                    STOCH_OVERSOLD: 20,
-                }
+                FLEXIBLE: { label: 'مرن', ADX_THRESHOLD: 15, STOCH_OVERBOUGHT: 70, STOCH_OVERSOLD: 30 },
+                STRICT: { label: 'صارم', ADX_THRESHOLD: 20, STOCH_OVERBOUGHT: 80, STOCH_OVERSOLD: 20 }
             };
 
             let currentMode = 'FLEXIBLE';
@@ -320,7 +313,6 @@
                 STOCH_D_SMOOTH: 3,
                 ADX_PERIOD: 14,
                 EMA_PERIOD: 200,
-                // القيم التالية ديناميكية
                 ADX_THRESHOLD: MODES.FLEXIBLE.ADX_THRESHOLD,
                 STOCH_OVERBOUGHT: MODES.FLEXIBLE.STOCH_OVERBOUGHT,
                 STOCH_OVERSOLD: MODES.FLEXIBLE.STOCH_OVERSOLD,
@@ -345,14 +337,13 @@
                 signals: [], closedTrades: [], prices: {}, 
                 settings: { 
                     telegramToken: '8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ', 
-                    telegramChatId: '5711937659', 
+                    telegramChatId: '1003970108966', 
                     updateInterval: CONFIG.UPDATE_INTERVAL_DEFAULT, 
                     autoSendTelegram: true 
                 },
                 sentSignals: [], isUpdating: false, lastUpdate: null, installPrompt: null, updateTimer: null,
                 btcFilterEnabled: true,
                 failureCount: 0,
-                // متغيرات لمحاربة وضع السكون
                 wakeLock: null,
                 audioCtx: null
             };
@@ -387,6 +378,7 @@
             const btnSettingsClose = $('settingsClose');
             const btnSettingsSave = $('settingsSave');
             const btnSettingsTest = $('settingsTest');
+            const btnSettingsCopy = $('settingsCopy'); // زر نسخ الإعدادات
             const btnExportHistory = $('btnExportHistory');
             const btnClearHistory = $('btnClearHistory');
             const liveDot = $('liveDot');
@@ -406,9 +398,7 @@
             }
 
             function saveMode() {
-                try {
-                    localStorage.setItem(CONFIG.MODE_KEY, currentMode);
-                } catch (e) {}
+                try { localStorage.setItem(CONFIG.MODE_KEY, currentMode); } catch (e) {}
             }
 
             function applyModeConfig() {
@@ -777,7 +767,7 @@
             }
 
             // ============================================================
-            //  BACKGROUND KEEP-ALIVE (مهم جداً للعمل في الخلفية)
+            //  BACKGROUND KEEP-ALIVE
             // ============================================================
             async function requestWakeLock() {
                 try {
@@ -786,7 +776,6 @@
                         addLog('💤 تم تفعيل WakeLock (الحفاظ على نشاط الشاشة)', 'info');
                         state.wakeLock.addEventListener('release', () => {
                             addLog('💤 تم تحرير WakeLock، سيتم إعادة طلبه', 'info');
-                            // إعادة الطلب إذا تم تحريره تلقائياً
                             setTimeout(requestWakeLock, 1000);
                         });
                     } else {
@@ -797,16 +786,12 @@
                 }
             }
 
-            // خدعة Web Audio للحفاظ على نشاط الخلفية
             function startSilentAudioLoop() {
                 try {
-                    // إذا لم يكن مدعوماً أو تم إنشاؤه مسبقاً، تجاهل
                     if (state.audioCtx) return;
-                    // إنشاء سياق صوتي
                     const AudioContext = window.AudioContext || window.webkitAudioContext;
                     if (!AudioContext) return;
                     state.audioCtx = new AudioContext();
-                    // إنشاء مذبذب بتردد 0 هرتز (صامت تماماً)
                     const oscillator = state.audioCtx.createOscillator();
                     const gainNode = state.audioCtx.createGain();
                     oscillator.frequency.value = 0;
@@ -814,7 +799,6 @@
                     oscillator.connect(gainNode);
                     gainNode.connect(state.audioCtx.destination);
                     oscillator.start();
-                    // حلقة لا نهائية للحفاظ على نشاط السياق
                     function keepAlive() {
                         if (state.audioCtx && state.audioCtx.state === 'suspended') {
                             state.audioCtx.resume();
@@ -829,7 +813,7 @@
             }
 
             // ============================================================
-            //  UPDATE ALL DATA (محسّن للعمل في الخلفية)
+            //  UPDATE ALL DATA
             // ============================================================
             async function updateAllData(force = false) {
                 if (state.isUpdating && !force) {
@@ -994,7 +978,7 @@
                         }
                     }
 
-                    // إرسال الإشارات الجديدة للتليجرام بشكل فوري
+                    // إرسال الإشارات الجديدة للتليجرام
                     for (const sig of newSignals) {
                         const alreadySent = state.sentSignals.includes(sig.id);
                         if (!alreadySent) {
@@ -1003,7 +987,6 @@
                                     await sendTelegramMessage(formatSignalMessage(sig));
                                     state.sentSignals.push(sig.id);
                                     if (state.sentSignals.length > 200) state.sentSignals = state.sentSignals.slice(-100);
-                                    // لا تظهر توست هنا لأن المتصفح قد يكون في الخلفية، نعتمد على التليجرام
                                     addLog(`📨 تم إرسال إشارة ${getSymbolDisplay(sig.symbol)} إلى التليجرام`, 'success');
                                 } catch (e) {
                                     addLog(`⚠️ فشل إرسال إشارة ${getSymbolDisplay(sig.symbol)}`, 'error');
@@ -1222,19 +1205,31 @@
                 }
             }
 
+            // زر نسخ الإعدادات
+            async function copySettings() {
+                const token = settingsToken.value.trim();
+                const chatId = settingsChatId.value.trim();
+                const text = `توكن التليجرام: ${token}\nمعرف الدردشة: ${chatId}`;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showToast('📋 تم نسخ الإعدادات إلى الحافظة', 'success');
+                } catch (e) {
+                    showToast('⚠️ فشل النسخ: ' + e.message, 'error');
+                }
+            }
+
             // ============================================================
-            //  TIMER & BACKGROUND (استخدام setTimeout بدلاً من setInterval)
+            //  TIMER & BACKGROUND (باستخدام setTimeout)
             // ============================================================
             let nextUpdateTimeout = null;
 
             function scheduleNextUpdate() {
                 if (nextUpdateTimeout) clearTimeout(nextUpdateTimeout);
                 const interval = (state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT) * 60 * 1000;
-                // تحديث متكرر كل 15 ثانية بدلاً من دقيقة لإبقاء الخلفية نشطة جداً
                 const effectiveInterval = Math.max(15000, interval); 
                 nextUpdateTimeout = setTimeout(() => {
                     updateAllData(false);
-                    scheduleNextUpdate(); // إعادة الجدولة
+                    scheduleNextUpdate();
                 }, effectiveInterval);
             }
 
@@ -1243,14 +1238,11 @@
                 if (nextUpdateTimeout) { clearTimeout(nextUpdateTimeout); nextUpdateTimeout = null; }
                 
                 addLog(`⏰ بدء تحديث تلقائي في الخلفية.`, 'info');
-                // نستخدم حلقة setTimeout بدلاً من setInterval
                 scheduleNextUpdate();
                 
                 document.addEventListener('visibilitychange', () => { 
                     if (!document.hidden) {
-                        // عند العودة للتطبيق، تحديث فوري
                         updateAllData(false);
-                        // إعادة جدولة الدورة
                         if (nextUpdateTimeout) clearTimeout(nextUpdateTimeout);
                         scheduleNextUpdate();
                     }
@@ -1307,6 +1299,7 @@
                 btnSettingsClose.addEventListener('click', closeSettings);
                 btnSettingsSave.addEventListener('click', saveSettings);
                 btnSettingsTest.addEventListener('click', testTelegram);
+                btnSettingsCopy.addEventListener('click', copySettings); // ربط زر نسخ الإعدادات
                 btnRefresh.addEventListener('click', () => updateAllData(true));
                 btnExportHistory.addEventListener('click', exportHistory);
                 btnClearHistory.addEventListener('click', clearHistory);
@@ -1316,7 +1309,6 @@
                 settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
                 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSettings(); });
 
-                // تفعيل أدوات البقاء في الخلفية
                 await requestWakeLock();
                 startSilentAudioLoop();
 
@@ -1334,4 +1326,4 @@
         })();
     </script>
 </body>
-                    </html>
+    </html>
