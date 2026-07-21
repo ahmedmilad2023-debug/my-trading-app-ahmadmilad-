@@ -289,7 +289,7 @@
             'use strict';
 
             // ============================================================
-            //  CONFIGURATION
+            //  CONFIGURATION (تم تعديل القيم لزيادة الحساسية)
             // ============================================================
             const CONFIG = {
                 SYMBOLS: ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT'],
@@ -300,9 +300,9 @@
                 STOCH_D_SMOOTH: 3,
                 ADX_PERIOD: 14,
                 EMA_PERIOD: 200,
-                ADX_THRESHOLD: 20,           // تم تخفيض العتبة لزيادة الحساسية
-                STOCH_OVERBOUGHT: 75,         // تم تعديلها من 80 إلى 75
-                STOCH_OVERSOLD: 25,           // تم تعديلها من 20 إلى 25
+                ADX_THRESHOLD: 15,           // تم التخفيض من 20 إلى 15
+                STOCH_OVERBOUGHT: 70,         // تم التخفيض من 80 إلى 70
+                STOCH_OVERSOLD: 30,           // تم الرفع من 20 إلى 30
                 TARGET_PERCENT: 0.02,
                 STOP_PERCENT_MAX: 0.008,
                 UPDATE_INTERVAL_DEFAULT: 1,
@@ -558,7 +558,7 @@
             }
 
             // ============================================================
-            //  SIGNAL GENERATION (MODIFIED FOR MORE SIGNALS)
+            //  SIGNAL GENERATION (تم تعديل المنطق لقبول إشارات متوسطة وقوية)
             // ============================================================
             function generateSignal(symbol, klines) {
                 if (!klines || klines.length < 200) return null;
@@ -589,32 +589,46 @@
                 let confidence = 0;
                 let reasons = [];
 
-                // شروط أكثر مرونة
+                // شروط مرنة
                 const isStochBuyCross = (kLast > dLast) && (kPrev <= dPrev) && (kLast < CONFIG.STOCH_OVERSOLD) && (dLast < CONFIG.STOCH_OVERSOLD);
                 const isStochSellCross = (kLast < dLast) && (kPrev >= dPrev) && (kLast > CONFIG.STOCH_OVERBOUGHT) && (dLast > CONFIG.STOCH_OVERBOUGHT);
                 const isAdxStrong = adxLast > CONFIG.ADX_THRESHOLD;
                 const isPriceAboveEma = lastClose > currentEMA;
                 const isPriceBelowEma = lastClose < currentEMA;
 
-                // إشارة شراء: تقاطع صاعد + ADX قوي (أو بدون ADX إذا كان السعر فوق EMA)
+                // منطق الإشارة الجديد (يقبل الإشارات القوية والمتوسطة)
                 if (isStochBuyCross) {
-                    if (isAdxStrong || isPriceAboveEma) {
+                    if (isAdxStrong && isPriceAboveEma) { // قوية
                         direction = 'buy';
-                        confidence = isAdxStrong ? 85 : 70;
+                        confidence = 90;
                         reasons = [
-                            `ستوكاستيك: K و D تقاطع صاعد تحت ${CONFIG.STOCH_OVERSOLD} (K=${kLast.toFixed(1)}, D=${dLast.toFixed(1)})`,
-                            isAdxStrong ? `ADX قوي: ${adxLast.toFixed(1)} > ${CONFIG.ADX_THRESHOLD}` : `ADX ضعيف لكن السعر فوق EMA 200`,
-                            `السعر فوق EMA 200: ${fmtPrice(lastClose)} > ${fmtPrice(currentEMA)}`
+                            `ستوكاستيك تقاطع صاعد تحت ${CONFIG.STOCH_OVERSOLD} (K=${kLast.toFixed(1)}, D=${dLast.toFixed(1)})`,
+                            `ADX قوي: ${adxLast.toFixed(1)}`,
+                            `السعر فوق EMA 200`
+                        ];
+                    } else if (isAdxStrong || isPriceAboveEma) { // متوسطة
+                        direction = 'buy';
+                        confidence = 70;
+                        reasons = [
+                            `ستوكاستيك تقاطع صاعد تحت ${CONFIG.STOCH_OVERSOLD}`,
+                            isAdxStrong ? `ADX قوي` : `السعر فوق EMA 200`
                         ];
                     }
                 } else if (isStochSellCross) {
-                    if (isAdxStrong || isPriceBelowEma) {
+                    if (isAdxStrong && isPriceBelowEma) { // قوية
                         direction = 'sell';
-                        confidence = isAdxStrong ? 85 : 70;
+                        confidence = 90;
                         reasons = [
-                            `ستوكاستيك: K و D تقاطع هابط فوق ${CONFIG.STOCH_OVERBOUGHT} (K=${kLast.toFixed(1)}, D=${dLast.toFixed(1)})`,
-                            isAdxStrong ? `ADX قوي: ${adxLast.toFixed(1)} > ${CONFIG.ADX_THRESHOLD}` : `ADX ضعيف لكن السعر تحت EMA 200`,
-                            `السعر تحت EMA 200: ${fmtPrice(lastClose)} < ${fmtPrice(currentEMA)}`
+                            `ستوكاستيك تقاطع هابط فوق ${CONFIG.STOCH_OVERBOUGHT} (K=${kLast.toFixed(1)}, D=${dLast.toFixed(1)})`,
+                            `ADX قوي: ${adxLast.toFixed(1)}`,
+                            `السعر تحت EMA 200`
+                        ];
+                    } else if (isAdxStrong || isPriceBelowEma) { // متوسطة
+                        direction = 'sell';
+                        confidence = 70;
+                        reasons = [
+                            `ستوكاستيك تقاطع هابط فوق ${CONFIG.STOCH_OVERBOUGHT}`,
+                            isAdxStrong ? `ADX قوي` : `السعر تحت EMA 200`
                         ];
                     }
                 }
@@ -644,15 +658,15 @@
                 if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) return null;
 
                 const analysisText = `
-        📈 <strong>تحليل فني دقيق لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة)</strong>
+        📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة)</strong>
         ───────────────
         ✅ <strong>القرار:</strong> ${direction === 'buy' ? 'شراء' : 'بيع'} (ثقة ${confidence.toFixed(0)}%)
         📉 <strong>الستوكاستيك:</strong> ${reasons[0]}
-        📊 <strong>ADX:</strong> ${reasons[1]}
-        📈 <strong>EMA 200:</strong> ${reasons[2]}
+        📊 <strong>ADX:</strong> ${reasons[1] || '—'}
+        📈 <strong>EMA 200:</strong> ${reasons[2] || '—'}
         🕯️ <strong>نمط الشموع:</strong> ${pattern || 'غير واضح'}
         🎯 <strong>الهدف:</strong> 2% (${fmtPrice(takeProfit)})
-        🛑 <strong>وقف الخسارة:</strong> 0.8% كحد أقصى (${fmtPrice(stopLoss)})
+        🛑 <strong>وقف الخسارة:</strong> 0.8% (${fmtPrice(stopLoss)})
                 `.trim();
 
                 return {
@@ -665,12 +679,11 @@
             }
 
             // ============================================================
-            //  FETCH WITH AUTO-RETRY (تحسين الإخفاق)
+            //  FETCH WITH AUTO-RETRY
             // ============================================================
             async function fetchKlinesWithRetry(symbol, interval = CONFIG.INTERVAL, limit = CONFIG.KLINE_LIMIT, retries = 4) {
                 for (let i = 0; i < retries; i++) {
                     try {
-                        // نستخدم proxy لتجنب مشاكل CORS (اختياري، لكن يمكن استخدام Binance مباشرة إذا كان يعمل)
                         const resp = await fetch(`${CONFIG.BINANCE_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
                         if (!resp.ok) {
                             if (resp.status === 429 || resp.status >= 500) {
@@ -708,7 +721,7 @@
             }
 
             // ============================================================
-            //  UPDATE ALL DATA (مع تحسينات)
+            //  UPDATE ALL DATA
             // ============================================================
             async function updateAllData(force = false) {
                 if (state.isUpdating && !force) {
@@ -725,7 +738,6 @@
                     const allKlines = {};
                     const allPrices = {};
 
-                    // جلب البيانات بشكل متوازي مع معالجة الأخطاء
                     const fetchPromises = symbols.map(async sym => {
                         try {
                             const k = await fetchKlinesWithRetry(sym, CONFIG.INTERVAL, CONFIG.KLINE_LIMIT);
@@ -736,7 +748,6 @@
                             return { sym, ok: true };
                         } catch (e) {
                             addLog(`❌ فشل نهائي في جلب ${sym}`, 'error');
-                            // محاولة الحصول على السعر الحالي فقط
                             try { const p = await fetchTickerPriceWithRetry(sym); allPrices[sym] = p; } catch (e2) { addLog(`❌ حتى السعر الحالي فشل لـ ${sym}`, 'error'); }
                             return { sym, ok: false };
                         }
@@ -822,7 +833,6 @@
                             }
                         }
 
-                        // التحقق من وجود صفقة مفتوحة بنفس العملة
                         const existingOpen = state.signals.find(s => s.symbol === sym && !s.isClosed);
                         if (existingOpen) {
                             if (existingOpen.isLocked) {
@@ -831,16 +841,14 @@
                             }
                             if (existingOpen.direction === signal.direction) {
                                 addLog(`🔄 نفس الاتجاه لـ ${getSymbolDisplay(sym)}، تحديث السعر فقط`, 'info');
-                                // نحدّث سعر الدخول والهدف ووقف الخسارة؟
                                 existingOpen.entryPrice = signal.entryPrice;
                                 existingOpen.takeProfit = signal.takeProfit;
                                 existingOpen.stopLoss = signal.stopLoss;
                                 existingOpen.analysis = signal.analysis;
                                 existingOpen.timestamp = signal.timestamp;
-                                continue; // لا نضيف إشارة جديدة
+                                continue; 
                             }
 
-                            // اتجاه معاكس: إغلاق الصفقة السابقة وفتح جديدة
                             const currentPrice = state.prices[sym];
                             let result = 'neutral';
                             if (currentPrice !== undefined) {
@@ -869,7 +877,6 @@
                             newSignals.push(signal);
                             addLog(`📈 تم توليد إشارة جديدة لـ ${getSymbolDisplay(sym)} (${signal.direction})`, 'success');
                         } else {
-                            // لا توجد صفقة مفتوحة
                             state.signals.push(signal);
                             newSignals.push(signal);
                             addLog(`📈 تم توليد إشارة جديدة لـ ${getSymbolDisplay(sym)} (${signal.direction})`, 'success');
@@ -895,7 +902,7 @@
                         }
                     }
 
-                    // تنظيف الإشارات النشطة: الاحتفاظ بأحدث 3 لكل رمز
+                    // تنظيف الإشارات النشطة
                     const activeSignals = state.signals.filter(s => !s.isClosed);
                     const closedSignals = state.signals.filter(s => s.isClosed);
                     const activeBySymbol = {};
@@ -1184,4 +1191,4 @@
         })();
     </script>
 </body>
-    </html>
+                </html>
