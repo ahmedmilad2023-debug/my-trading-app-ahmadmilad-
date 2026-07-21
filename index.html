@@ -6,10 +6,13 @@
     <meta name="theme-color" content="#0b0e17">
     <meta name="description" content="CryptoSignal Pro - منصة توليد إشارات تداول العملات الرقمية">
     <title>CryptoSignal Pro | إشارات التداول</title>
-    <link rel="manifest" href="data:application/json,{}" id="manifest-placeholder">
+
+    <!-- PWA Manifest (سيتم إنشاؤه ديناميكياً) -->
+    <link rel="manifest" href="#" id="manifest-link">
+
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+
     <style>
-        /* ===== CSS Reset & Base ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --bg-primary: #0b0e17; --bg-secondary: #131a2b; --bg-card: #1a2336; --bg-card-hover: #1f2a42;
@@ -136,14 +139,7 @@
         .modal .form-group { margin-bottom: 16px; }
         .modal .form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
         .modal .form-group .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-        
-        /* إصلاح عكس النص في حقول الإدخال (حل المشكلة الرئيسية) */
-        .modal .form-group input[dir="ltr"] {
-            direction: ltr;
-            text-align: left;
-            unicode-bidi: plaintext;
-        }
-        
+        .modal .form-group input.ltr-fix { direction: ltr !important; text-align: left !important; unicode-bidi: plaintext !important; font-family: monospace !important; }
         .modal .form-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
         .modal .form-actions button { padding: 10px 24px; border-radius: 30px; font-weight: 600; transition: var(--transition); flex: 1; min-width: 100px; }
         .modal .form-actions .btn-primary { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: #fff; }
@@ -153,7 +149,6 @@
         .modal .status-msg { margin-top: 12px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 14px; display: none; }
         .modal .status-msg.success { display: block; background: rgba(0, 212, 170, 0.15); color: var(--accent-green); border: 1px solid rgba(0, 212, 170, 0.3); }
         .modal .status-msg.error { display: block; background: rgba(255, 71, 87, 0.15); color: var(--accent-red); border: 1px solid rgba(255, 71, 87, 0.3); }
-        /* زر نسخ الإعدادات */
         .btn-copy-settings { background: var(--accent-blue) !important; color: #fff !important; border-color: var(--accent-blue) !important; }
 
         /* ===== Toast ===== */
@@ -257,20 +252,18 @@
         </div>
     </main>
 
-    <!-- ===== SETTINGS MODAL (تم إصلاح اتجاه النص) ===== -->
+    <!-- ===== SETTINGS MODAL ===== -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <div class="title">⚙️ إعدادات التطبيق</div>
             <div class="form-group">
                 <label>🤖 توكن بوت التليجرام (Bot Token)</label>
-                <!-- تم إضافة dir="ltr" لمنع عكس النص -->
-                <input type="text" id="telegramToken" dir="ltr" value="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" placeholder="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" />
+                <input type="text" id="telegramToken" class="ltr-fix" value="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" placeholder="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" />
                 <div class="hint">احصل عليه من @BotFather على تليجرام</div>
             </div>
             <div class="form-group">
                 <label>🆔 معرف الدردشة (Chat ID)</label>
-                <!-- تم إضافة dir="ltr" لمنع عكس الأرقام -->
-                <input type="text" id="telegramChatId" dir="ltr" value="1003970108966" placeholder="1003970108966" />
+                <input type="text" id="telegramChatId" class="ltr-fix" value="1003970108966" placeholder="1003970108966" />
                 <div class="hint">معرف القناة أو المجموعة، أو معرف المستخدم</div>
             </div>
             <div class="form-group">
@@ -297,15 +290,12 @@
     <!-- ===== TOAST CONTAINER ===== -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- ============================================================ -->
-    <!-- ===== JAVASCRIPT ===== -->
-    <!-- ============================================================ -->
     <script>
         (function() {
             'use strict';
 
             // ============================================================
-            //  CONFIGURATION (مع الإعدادات الجديدة)
+            //  CONFIGURATION 
             // ============================================================
             const MODES = {
                 FLEXIBLE: { label: 'مرن', ADX_THRESHOLD: 15, STOCH_OVERBOUGHT: 70, STOCH_OVERSOLD: 30 },
@@ -346,7 +336,6 @@
             let state = {
                 signals: [], closedTrades: [], prices: {}, 
                 settings: { 
-                    // تم التأكد من التوكن الصحيح والمعرف الصحيح
                     telegramToken: '8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ', 
                     telegramChatId: '1003970108966', 
                     updateInterval: CONFIG.UPDATE_INTERVAL_DEFAULT, 
@@ -399,18 +388,11 @@
             //  MODE MANAGEMENT
             // ============================================================
             function loadMode() {
-                try {
-                    const saved = localStorage.getItem(CONFIG.MODE_KEY);
-                    if (saved === 'STRICT' || saved === 'FLEXIBLE') {
-                        currentMode = saved;
-                    }
-                } catch (e) {}
+                try { const saved = localStorage.getItem(CONFIG.MODE_KEY); if (saved === 'STRICT' || saved === 'FLEXIBLE') currentMode = saved; } catch (e) {}
                 applyModeConfig();
             }
 
-            function saveMode() {
-                try { localStorage.setItem(CONFIG.MODE_KEY, currentMode); } catch (e) {}
-            }
+            function saveMode() { try { localStorage.setItem(CONFIG.MODE_KEY, currentMode); } catch (e) {} }
 
             function applyModeConfig() {
                 const mode = MODES[currentMode];
@@ -1260,26 +1242,119 @@
             }
 
             // ============================================================
-            //  PWA
+            //  PWA (تقديم مانيفست حقيقي وخدمة عاملة)
             // ============================================================
             function setupPWA() {
-                window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); state.installPrompt = e; btnInstall.style.display = 'flex'; btnInstall.textContent = '📲 تثبيت التطبيق'; });
+                // إنشاء ملف مانيفست ديناميكياً
+                const manifestData = {
+                    "name": "CryptoSignal Pro",
+                    "short_name": "CryptoSignal",
+                    "description": "منصة توليد إشارات تداول العملات الرقمية",
+                    "start_url": "/",
+                    "display": "standalone",
+                    "background_color": "#0b0e17",
+                    "theme_color": "#0b0e17",
+                    "icons": [
+                        {
+                            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>",
+                            "sizes": "512x512",
+                            "type": "image/svg+xml",
+                            "purpose": "any"
+                        }
+                    ]
+                };
+                const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+                const manifestURL = URL.createObjectURL(manifestBlob);
+                const manifestLink = document.getElementById('manifest-link');
+                manifestLink.href = manifestURL;
+
+                // تسجيل Service Worker
+                registerServiceWorker();
+
+                // إدارة زر التثبيت
+                window.addEventListener('beforeinstallprompt', (e) => { 
+                    e.preventDefault(); 
+                    state.installPrompt = e; 
+                    btnInstall.style.display = 'flex'; 
+                    btnInstall.innerHTML = '📲 <span>تثبيت التطبيق</span>';
+                });
+
                 btnInstall.addEventListener('click', async () => {
                     if (state.installPrompt) {
-                        try { const result = await state.installPrompt.prompt(); if (result.outcome === 'accepted') { showToast('✅ تم التثبيت!', 'success'); btnInstall.style.display = 'none'; } state.installPrompt = null; } catch (e) { showToast('⚠️ تعذر التثبيت', 'error'); }
-                    } else { showToast('📱 أضف إلى الشاشة الرئيسية', 'info'); }
+                        try { 
+                            const result = await state.installPrompt.prompt(); 
+                            if (result.outcome === 'accepted') { 
+                                showToast('✅ تم التثبيت!', 'success'); 
+                                btnInstall.style.display = 'none'; 
+                            } 
+                            state.installPrompt = null; 
+                        } catch (e) { 
+                            showToast('⚠️ تعذر التثبيت', 'error'); 
+                        }
+                    } else {
+                        // إذا لم يكن المدعوم، نعرض تعليمات التثبيت اليدوي
+                        showToast('📱 أضف إلى الشاشة الرئيسية من قائمة المتصفح', 'info');
+                    }
                 });
-                if (!('beforeinstallprompt' in window)) btnInstall.style.display = 'none';
-                registerServiceWorker();
-            }
-            function registerServiceWorker() {
-                const swCode = `self.addEventListener('install',e=>{e.waitUntil(self.skipWaiting());});self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim());});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;
-                try {
-                    const blob = new Blob([swCode], { type: 'application/javascript' });
-                    navigator.serviceWorker.register(URL.createObjectURL(blob), { scope: '/' }).then(() => console.log('SW registered')).catch(() => {});
-                } catch (e) { console.warn('SW error', e); }
+
+                // إخفاء الزر إذا لم يكن مدعوماً
+                if (!('beforeinstallprompt' in window)) {
+                    btnInstall.style.display = 'flex';
+                    btnInstall.innerHTML = '📲 <span>تثبيت</span>';
+                    btnInstall.addEventListener('click', () => {
+                        showToast('📱 أضف هذا التطبيق إلى شاشتك الرئيسية عبر قائمة المتصفح', 'info');
+                    });
+                }
             }
 
+            function registerServiceWorker() {
+                // إنشاء Service Worker متقدم
+                const swCode = `
+                    self.addEventListener('install', e => {
+                        e.waitUntil(
+                            caches.open('cryptosignal-v1').then(cache => {
+                                return cache.addAll(['/']);
+                            })
+                        );
+                        self.skipWaiting();
+                    });
+                    self.addEventListener('activate', e => {
+                        e.waitUntil(self.clients.claim());
+                    });
+                    self.addEventListener('fetch', e => {
+                        e.respondWith(
+                            caches.match(e.request).then(response => {
+                                return response || fetch(e.request);
+                            })
+                        );
+                    });
+                `;
+                try {
+                    const blob = new Blob([swCode], { type: 'application/javascript' });
+                    const swURL = URL.createObjectURL(blob);
+                    navigator.serviceWorker.register(swURL, { scope: '/' })
+                        .then(reg => {
+                            addLog('✅ Service Worker مسجل بنجاح', 'success');
+                            // محاولة تفعيل التحديث الدوري (Background Sync)
+                            if ('periodicSync' in navigator) {
+                                navigator.periodicSync.register('update-signals', {
+                                    minInterval: 60 * 1000 // دقيقة واحدة
+                                }).then(() => {
+                                    addLog('📡 تم تفعيل التزامن الدوري (Periodic Sync)', 'info');
+                                }).catch(() => {});
+                            }
+                        })
+                        .catch(err => {
+                            addLog('⚠️ فشل تسجيل Service Worker: ' + err.message, 'error');
+                        });
+                } catch (e) {
+                    addLog('⚠️ خطأ في إنشاء Service Worker: ' + e.message, 'error');
+                }
+            }
+
+            // ============================================================
+            //  EXPORT / CLEAR HISTORY
+            // ============================================================
             function exportHistory() {
                 const data = { exportedAt: new Date().toISOString(), signals: state.signals, closedTrades: state.signals.filter(s => s.isClosed) };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1327,6 +1402,15 @@
                 
                 window.addEventListener('online', () => { showToast('🌐 تم استعادة الاتصال', 'success'); updateAllData(false); });
                 window.addEventListener('offline', () => { showToast('📡 انقطع الاتصال', 'error'); });
+
+                // إعادة محاولة التحديث إذا فشل أكثر من 3 مرات
+                setInterval(() => {
+                    if (state.failureCount >= 3) {
+                        addLog('🔁 محاولة استعادة التحديث بعد فشل متكرر', 'info');
+                        updateAllData(true);
+                        state.failureCount = 0;
+                    }
+                }, 30000);
             }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
