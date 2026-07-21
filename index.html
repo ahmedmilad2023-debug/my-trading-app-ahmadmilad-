@@ -843,6 +843,10 @@
             <span>📈</span> CryptoSignal <span style="font-weight:300;color:var(--text-secondary);font-size:0.7em;">Pro</span>
         </div>
         <div class="actions">
+            <!-- زر تبديل فلتر البيتكوين الجديد -->
+            <button id="btnBtcFilter" title="تفعيل/إيقاف فلتر اتجاه البيتكوين" style="border-color:var(--accent-blue);">
+                ⚡ <span id="btcFilterLabel">BTC ON</span>
+            </button>
             <button class="btn-install" id="btnInstall" title="تثبيت التطبيق على جهازك">
                 📲 <span>تثبيت</span>
             </button>
@@ -973,7 +977,7 @@
          *  Data Source: Binance API (public)
          *  Telegram Bot integration
          *  PWA with install button & background sync
-         *  NEW: Trade with BTC Trend (لا تعطي صفقات متعارضة مع اتجاه البتكوين)
+         *  NEW: Toggle-able BTC Trend Filter (ON/OFF) and MATIC Removed
          * ============================================================
          */
 
@@ -981,12 +985,12 @@
             'use strict';
 
             // ============================================================
-            //  CONFIGURATION
+            //  CONFIGURATION (MATIC Removed)
             // ============================================================
             const CONFIG = {
                 SYMBOLS: [
                     'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
-                    'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT', 'MATICUSDT'
+                    'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT' // Removed MATICUSDT
                 ],
                 INTERVAL: '30m',
                 KLINE_LIMIT: 220,
@@ -1011,7 +1015,7 @@
             };
 
             // ============================================================
-            //  STATE
+            //  STATE (Added btcFilterEnabled)
             // ============================================================
             let state = {
                 signals: [], 
@@ -1027,7 +1031,8 @@
                 isUpdating: false,
                 lastUpdate: null,
                 installPrompt: null,
-                updateTimer: null
+                updateTimer: null,
+                btcFilterEnabled: true // Default: ON
             };
 
             // ============================================================
@@ -1053,6 +1058,8 @@
             const btnInstall = $('btnInstall');
             const btnSettings = $('btnSettings');
             const btnRefresh = $('btnRefresh');
+            const btnBtcFilter = $('btnBtcFilter');
+            const btcFilterLabel = $('btcFilterLabel');
             const btnSettingsClose = $('settingsClose');
             const btnSettingsSave = $('settingsSave');
             const btnSettingsTest = $('settingsTest');
@@ -1104,7 +1111,7 @@
             }
 
             // ============================================================
-            //  LOCAL STORAGE
+            //  LOCAL STORAGE (Added btcFilterEnabled to save state)
             // ============================================================
             function loadState() {
                 try {
@@ -1116,6 +1123,7 @@
                         if (data.prices) state.prices = data.prices;
                         if (data.sentSignals) state.sentSignals = data.sentSignals;
                         if (data.lastUpdate) state.lastUpdate = data.lastUpdate;
+                        if (data.btcFilterEnabled !== undefined) state.btcFilterEnabled = data.btcFilterEnabled;
                     }
                 } catch (e) { /* ignore */ }
                 try {
@@ -1141,7 +1149,8 @@
                         closedTrades: state.closedTrades,
                         prices: state.prices,
                         sentSignals: state.sentSignals,
-                        lastUpdate: state.lastUpdate
+                        lastUpdate: state.lastUpdate,
+                        btcFilterEnabled: state.btcFilterEnabled
                     };
                     localStorage.setItem(CONFIG.CACHE_KEY, JSON.stringify(data));
                     localStorage.setItem(CONFIG.HISTORY_KEY, JSON.stringify(state.closedTrades));
@@ -1477,7 +1486,7 @@
             }
 
             // ============================================================
-            //  UPDATE ALL DATA (مع التداول مع اتجاه البيتكوين و الإغلاق التلقائي عند انعكاس الاتجاه)
+            //  UPDATE ALL DATA (With Toggle-able BTC Trend Filter)
             // ============================================================
             async function updateAllData(force = false) {
                 if (state.isUpdating && !force) return;
@@ -1509,7 +1518,7 @@
                     await Promise.all(fetchPromises);
                     state.prices = allPrices;
 
-                    // 2. Generate signals and apply BTC trend filter
+                    // 2. Generate signals and apply BTC trend filter (if enabled)
                     const newSignals = [];
                     
                     // 2.1 Get BTC direction first (determine market trend)
@@ -1529,18 +1538,18 @@
                         const signal = generateSignal(sym, k);
                         if (!signal) continue;
 
-                        // FILTER: Trade with BTC Trend
-                        // إذا كان البيتكوين في اتجاه شراء، نرفض أي إشارة بيع
-                        // إذا كان البيتكوين في اتجاه بيع، نرفض أي إشارة شراء
-                        if (btcDirection === 'buy' && signal.direction === 'sell') {
-                            console.log(`⛔ تم تجاهل إشارة بيع لـ ${sym} لأن اتجاه البيتكوين الحالي هو شراء.`);
-                            continue; // تجاهل الإشارة
+                        // FILTER: Trade with BTC Trend (Only if Filter is ENABLED)
+                        if (state.btcFilterEnabled) {
+                            if (btcDirection === 'buy' && signal.direction === 'sell') {
+                                console.log(`⛔ تم تجاهل إشارة بيع لـ ${sym} لأن فلتر البيتكوين مفعل (اتجاه BTC: شراء).`);
+                                continue; // تجاهل الإشارة
+                            }
+                            if (btcDirection === 'sell' && signal.direction === 'buy') {
+                                console.log(`⛔ تم تجاهل إشارة شراء لـ ${sym} لأن فلتر البيتكوين مفعل (اتجاه BTC: بيع).`);
+                                continue; // تجاهل الإشارة
+                            }
                         }
-                        if (btcDirection === 'sell' && signal.direction === 'buy') {
-                            console.log(`⛔ تم تجاهل إشارة شراء لـ ${sym} لأن اتجاه البيتكوين الحالي هو بيع.`);
-                            continue; // تجاهل الإشارة
-                        }
-                        // إذا كان البيتكوين محايداً، أو كانت الإشارة لنفس اتجاه البيتكوين، نقبلها.
+                        // If filter is OFF, or signal matches BTC direction, proceed.
 
                         // Check for existing open trade for reversal logic
                         const existingOpen = state.signals.find(s => s.symbol === sym && !s.isClosed);
@@ -1744,7 +1753,31 @@
                 statLosses.textContent = losses.length;
             }
 
-            function renderAll() { renderTicker(); renderSignals(); renderClosed(); renderStats(); }
+            function renderAll() { renderTicker(); renderSignals(); renderClosed(); renderStats(); updateBtcFilterButtonUI(); }
+
+            // ============================================================
+            //  BTC FILTER BUTTON UI
+            // ============================================================
+            function updateBtcFilterButtonUI() {
+                if (state.btcFilterEnabled) {
+                    btcFilterLabel.textContent = 'BTC ON';
+                    btnBtcFilter.style.borderColor = 'var(--accent-green)';
+                    btnBtcFilter.style.color = 'var(--accent-green)';
+                } else {
+                    btcFilterLabel.textContent = 'BTC OFF';
+                    btnBtcFilter.style.borderColor = 'var(--accent-red)';
+                    btnBtcFilter.style.color = 'var(--accent-red)';
+                }
+            }
+
+            function toggleBtcFilter() {
+                state.btcFilterEnabled = !state.btcFilterEnabled;
+                persistState();
+                updateBtcFilterButtonUI();
+                showToast(state.btcFilterEnabled ? '⚡ تم تفعيل فلتر اتجاه البيتكوين' : '⚡ تم إيقاف فلتر اتجاه البيتكوين', 'info');
+                // Re-run analysis to reflect changes immediately
+                updateAllData(true);
+            }
 
             // ============================================================
             //  ACTIONS & HELPERS
@@ -1891,6 +1924,8 @@
                 settingsAutoSend.checked = state.settings.autoSendTelegram !== false;
                 renderAll();
                 setupPWA();
+                
+                // Event Listeners
                 btnSettings.addEventListener('click', openSettings);
                 btnSettingsClose.addEventListener('click', closeSettings);
                 btnSettingsSave.addEventListener('click', saveSettings);
@@ -1898,6 +1933,8 @@
                 btnRefresh.addEventListener('click', () => updateAllData(true));
                 btnExportHistory.addEventListener('click', exportHistory);
                 btnClearHistory.addEventListener('click', clearHistory);
+                btnBtcFilter.addEventListener('click', toggleBtcFilter);
+                
                 settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
                 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSettings(); });
                 startUpdateTimer();
@@ -1905,7 +1942,7 @@
                 document.addEventListener('visibilitychange', () => { if (!document.hidden && (now() - (state.lastUpdate || 0) > 60000)) updateAllData(false); });
                 window.addEventListener('online', () => { showToast('🌐 تم استعادة الاتصال', 'success'); updateAllData(false); });
                 window.addEventListener('offline', () => { showToast('📡 انقطع الاتصال', 'error'); });
-                console.log('🚀 CryptoSignal Pro initialized (BTC Trend Filter Active)');
+                console.log('🚀 CryptoSignal Pro initialized (BTC Filter Toggle Added / MATIC Removed)');
             }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
@@ -1916,4 +1953,4 @@
     </script>
 
 </body>
-    </html>
+            </html>
