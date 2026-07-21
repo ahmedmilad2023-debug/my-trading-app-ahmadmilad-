@@ -351,7 +351,7 @@
             <div class="title">⚙️ إعدادات التطبيق</div>
             <div class="form-group">
                 <label>🤖 توكن بوت التليجرام (Bot Token)</label>
-                <!-- التوكن مع النقطتين (:) -->
+                <!-- تم وضع التوكن مع النقطتين (:) -->
                 <input type="text" id="telegramToken" value="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" placeholder="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" />
                 <div class="hint">احصل عليه من @BotFather على تليجرام</div>
             </div>
@@ -754,7 +754,7 @@
             }
 
             // ============================================================
-            //  UPDATE ALL DATA
+            //  UPDATE ALL DATA (مع إضافة مراقبة ضرب الهدف ووقف الخسارة)
             // ============================================================
             async function updateAllData(force = false) {
                 if (state.isUpdating && !force) return;
@@ -782,6 +782,70 @@
                     await Promise.all(fetchPromises);
                     state.prices = allPrices;
 
+                    // --- 1. فحص الصفقات المفتوحة لإغلاقها عند ضرب الهدف أو وقف الخسارة ---
+                    for (const sym of symbols) {
+                        const currentPrice = state.prices[sym];
+                        if (currentPrice === undefined) continue;
+
+                        // الحصول على جميع الصفقات المفتوحة لهذه العملة
+                        const activeTrades = state.signals.filter(s => s.symbol === sym && !s.isClosed);
+                        
+                        for (const trade of activeTrades) {
+                            let shouldClose = false;
+                            let closeReason = '';
+                            let result = 'neutral';
+
+                            if (trade.direction === 'buy') {
+                                // تحقق من الهدف للشراء
+                                if (currentPrice >= trade.takeProfit) {
+                                    shouldClose = true;
+                                    result = 'win';
+                                    closeReason = `🎯 <strong>إغلاق تلقائي:</strong> تم تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
+                                } 
+                                // تحقق من وقف الخسارة للشراء
+                                else if (currentPrice <= trade.stopLoss) {
+                                    shouldClose = true;
+                                    result = 'loss';
+                                    closeReason = `🛑 <strong>إغلاق تلقائي:</strong> تم ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
+                                }
+                            } else { // Sell
+                                // تحقق من الهدف للبيع
+                                if (currentPrice <= trade.takeProfit) {
+                                    shouldClose = true;
+                                    result = 'win';
+                                    closeReason = `🎯 <strong>إغلاق تلقائي:</strong> تم تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
+                                } 
+                                // تحقق من وقف الخسارة للبيع
+                                else if (currentPrice >= trade.stopLoss) {
+                                    shouldClose = true;
+                                    result = 'loss';
+                                    closeReason = `🛑 <strong>إغلاق تلقائي:</strong> تم ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
+                                }
+                            }
+
+                            if (shouldClose) {
+                                trade.isClosed = true;
+                                trade.closedAt = now();
+                                trade.closedResult = result;
+                                trade.analysis += `\n\n${closeReason}`;
+
+                                // إرسال إشعار تليجرام لإغلاق الصفقة
+                                if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
+                                    try {
+                                        let closeMsg = `🔔 <b>إغلاق صفقة تلقائي</b>\n`;
+                                        closeMsg += `💰 العملة: ${getSymbolDisplay(sym)}\n`;
+                                        closeMsg += `📉 الصفقة: ${trade.direction === 'buy' ? 'شراء' : 'بيع'}\n`;
+                                        closeMsg += `📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}\n`;
+                                        closeMsg += `💵 سعر الإغلاق: ${fmtPrice(currentPrice)}\n`;
+                                        closeMsg += `🕐 الوقت: ${fmtDateFull(now())}`;
+                                        await sendTelegramMessage(closeMsg);
+                                    } catch (e) { /* ignore */ }
+                                }
+                            }
+                        }
+                    }
+
+                    // --- 2. منطق الإشارات الجديدة (ابقاء منطق البيتكوين كما هو) ---
                     const newSignals = [];
                     let btcDirection = 'neutral';
                     const btcKlines = allKlines['BTCUSDT'];
@@ -806,6 +870,7 @@
                             if (existingOpen.isLocked) continue;
                             if (existingOpen.direction === signal.direction) continue;
 
+                            // إغلاق الصفقة السابقة بسبب انعكاس الاتجاه
                             const currentPrice = state.prices[sym];
                             let result = 'neutral';
                             if (currentPrice !== undefined) {
@@ -820,11 +885,11 @@
                             existingOpen.isClosed = true;
                             existingOpen.closedAt = now();
                             existingOpen.closedResult = result;
-                            existingOpen.analysis += `\n\n🔄 <strong>إغلاق تلقائي:</strong> انعكاس الاتجاه.`;
+                            existingOpen.analysis += `\n\n🔄 <strong>إغلاق تلقائي (انعكاس اتجاه):</strong> ظهرت إشارة جديدة معاكسة.`;
 
                             if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
                                 try {
-                                    let closeMsg = `🔔 <b>إغلاق صفقة تلقائي</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة السابقة: ${existingOpen.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}`;
+                                    let closeMsg = `🔔 <b>إغلاق صفقة تلقائي (انعكاس)</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة السابقة: ${existingOpen.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}`;
                                     await sendTelegramMessage(closeMsg);
                                 } catch (e) { /* ignore */ }
                             }
@@ -837,6 +902,7 @@
                         }
                     }
 
+                    // إرسال إشعارات الإشارات الجديدة
                     for (const sig of newSignals) {
                         const alreadySent = state.sentSignals.includes(sig.id);
                         if (!alreadySent) {
@@ -855,6 +921,7 @@
                         }
                     }
 
+                    // تنظيف الإشارات
                     const activeSignals = state.signals.filter(s => !s.isClosed);
                     const closedSignals = state.signals.filter(s => s.isClosed);
                     const activeBySymbol = {};
@@ -1143,7 +1210,7 @@
                 document.addEventListener('visibilitychange', () => { if (!document.hidden && (now() - (state.lastUpdate || 0) > 60000)) updateAllData(false); });
                 window.addEventListener('online', () => { showToast('🌐 تم استعادة الاتصال', 'success'); updateAllData(false); });
                 window.addEventListener('offline', () => { showToast('📡 انقطع الاتصال', 'error'); });
-                console.log('🚀 CryptoSignal Pro initialized (Strict Stochastic Rules Applied & Telegram Token Fixed)');
+                console.log('🚀 CryptoSignal Pro initialized (Auto Close on TP/SL Added)');
             }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
@@ -1153,4 +1220,4 @@
         })();
     </script>
 </body>
-    </html>
+        </html>
