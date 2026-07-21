@@ -136,6 +136,14 @@
         .modal .form-group { margin-bottom: 16px; }
         .modal .form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
         .modal .form-group .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        
+        /* إصلاح عكس النص في حقول الإدخال (حل المشكلة الرئيسية) */
+        .modal .form-group input[dir="ltr"] {
+            direction: ltr;
+            text-align: left;
+            unicode-bidi: plaintext;
+        }
+        
         .modal .form-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
         .modal .form-actions button { padding: 10px 24px; border-radius: 30px; font-weight: 600; transition: var(--transition); flex: 1; min-width: 100px; }
         .modal .form-actions .btn-primary { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: #fff; }
@@ -249,18 +257,20 @@
         </div>
     </main>
 
-    <!-- ===== SETTINGS MODAL ===== -->
+    <!-- ===== SETTINGS MODAL (تم إصلاح اتجاه النص) ===== -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <div class="title">⚙️ إعدادات التطبيق</div>
             <div class="form-group">
                 <label>🤖 توكن بوت التليجرام (Bot Token)</label>
-                <input type="text" id="telegramToken" value="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" placeholder="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" />
+                <!-- تم إضافة dir="ltr" لمنع عكس النص -->
+                <input type="text" id="telegramToken" dir="ltr" value="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" placeholder="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" />
                 <div class="hint">احصل عليه من @BotFather على تليجرام</div>
             </div>
             <div class="form-group">
                 <label>🆔 معرف الدردشة (Chat ID)</label>
-                <input type="text" id="telegramChatId" value="1003970108966" placeholder="1003970108966" />
+                <!-- تم إضافة dir="ltr" لمنع عكس الأرقام -->
+                <input type="text" id="telegramChatId" dir="ltr" value="1003970108966" placeholder="1003970108966" />
                 <div class="hint">معرف القناة أو المجموعة، أو معرف المستخدم</div>
             </div>
             <div class="form-group">
@@ -336,6 +346,7 @@
             let state = {
                 signals: [], closedTrades: [], prices: {}, 
                 settings: { 
+                    // تم التأكد من التوكن الصحيح والمعرف الصحيح
                     telegramToken: '8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ', 
                     telegramChatId: '1003970108966', 
                     updateInterval: CONFIG.UPDATE_INTERVAL_DEFAULT, 
@@ -378,7 +389,7 @@
             const btnSettingsClose = $('settingsClose');
             const btnSettingsSave = $('settingsSave');
             const btnSettingsTest = $('settingsTest');
-            const btnSettingsCopy = $('settingsCopy'); // زر نسخ الإعدادات
+            const btnSettingsCopy = $('settingsCopy');
             const btnExportHistory = $('btnExportHistory');
             const btnClearHistory = $('btnClearHistory');
             const liveDot = $('liveDot');
@@ -1205,7 +1216,6 @@
                 }
             }
 
-            // زر نسخ الإعدادات
             async function copySettings() {
                 const token = settingsToken.value.trim();
                 const chatId = settingsChatId.value.trim();
@@ -1219,7 +1229,7 @@
             }
 
             // ============================================================
-            //  TIMER & BACKGROUND (باستخدام setTimeout)
+            //  TIMER & BACKGROUND
             // ============================================================
             let nextUpdateTimeout = null;
 
@@ -1299,7 +1309,7 @@
                 btnSettingsClose.addEventListener('click', closeSettings);
                 btnSettingsSave.addEventListener('click', saveSettings);
                 btnSettingsTest.addEventListener('click', testTelegram);
-                btnSettingsCopy.addEventListener('click', copySettings); // ربط زر نسخ الإعدادات
+                btnSettingsCopy.addEventListener('click', copySettings);
                 btnRefresh.addEventListener('click', () => updateAllData(true));
                 btnExportHistory.addEventListener('click', exportHistory);
                 btnClearHistory.addEventListener('click', clearHistory);
@@ -1326,4 +1336,4 @@
         })();
     </script>
 </body>
-    </html>
+</html>
