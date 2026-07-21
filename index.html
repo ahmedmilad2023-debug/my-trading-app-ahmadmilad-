@@ -35,9 +35,7 @@
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
-        html {
-            scroll-behavior: smooth;
-        }
+        html { scroll-behavior: smooth; }
         body {
             font-family: var(--font);
             background: var(--bg-primary);
@@ -47,17 +45,9 @@
             overflow-x: hidden;
             line-height: 1.6;
         }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--accent-blue);
-            border-radius: 10px;
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-blue); border-radius: 10px; }
         a { color: var(--accent-blue); text-decoration: none; }
         button { cursor: pointer; font-family: inherit; border: none; outline: none; background: none; color: inherit; }
         input, select, textarea {
@@ -80,114 +70,62 @@
 
         /* ===== App Bar ===== */
         .app-bar {
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            position: sticky; top: 0; z-index: 100;
             background: rgba(11, 14, 23, 0.92);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border-color);
             padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
         }
         .app-bar .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 22px;
-            font-weight: 700;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 22px; font-weight: 700;
             background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
         .app-bar .logo span { font-size: 26px; -webkit-text-fill-color: initial; }
-        .app-bar .actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+        .app-bar .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .app-bar .actions button {
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 13px;
-            font-weight: 600;
-            transition: var(--transition);
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600;
+            transition: var(--transition); background: var(--bg-card); border: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 6px;
         }
         .app-bar .actions button:hover { background: var(--bg-card-hover); transform: translateY(-1px); }
         .app-bar .actions .btn-install {
             background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-color: transparent;
-            color: #fff;
+            border-color: transparent; color: #fff;
         }
         .app-bar .actions .btn-install:hover { opacity: 0.9; transform: scale(1.03); }
         .badge-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--accent-green);
-            animation: pulse-dot 2s infinite;
+            display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+            background: var(--accent-green); animation: pulse-dot 2s infinite;
         }
         @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
 
         /* ===== Container ===== */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 16px 16px 0;
-        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 16px 16px 0; }
 
         /* ===== Ticker Strip ===== */
         .ticker-strip {
-            background: var(--bg-secondary);
-            border-radius: var(--radius);
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            position: relative;
+            background: var(--bg-secondary); border-radius: var(--radius);
+            padding: 12px 16px; margin-bottom: 20px; border: 1px solid var(--border-color);
+            overflow: hidden; position: relative;
         }
         .ticker-strip .scroll-wrap {
-            display: flex;
-            gap: 24px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-            scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
+            display: flex; gap: 24px; overflow-x: auto; padding-bottom: 4px;
+            scrollbar-width: none; -webkit-overflow-scrolling: touch;
         }
         .ticker-strip .scroll-wrap::-webkit-scrollbar { display: none; }
         .ticker-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-            font-size: 14px;
-            font-weight: 500;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            flex-shrink: 0;
+            display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 14px; font-weight: 500;
+            padding: 4px 10px; border-radius: 20px; background: var(--bg-card);
+            border: 1px solid var(--border-color); flex-shrink: 0;
         }
         .ticker-item .sym { color: var(--text-secondary); font-weight: 600; }
         .ticker-item .price { font-weight: 700; }
         .ticker-item .signal-badge {
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-weight: 700;
-            background: var(--bg-secondary);
+            font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 700; background: var(--bg-secondary);
         }
         .ticker-item .signal-badge.buy { color: var(--accent-green); background: rgba(0, 212, 170, 0.2); }
         .ticker-item .signal-badge.sell { color: var(--accent-red); background: rgba(255, 71, 87, 0.2); }
@@ -195,17 +133,11 @@
 
         /* ===== Stats Row ===== */
         .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;
         }
         .stat-card {
-            background: var(--bg-card);
-            border-radius: var(--radius-sm);
-            padding: 14px 16px;
-            text-align: center;
-            border: 1px solid var(--border-color);
+            background: var(--bg-card); border-radius: var(--radius-sm);
+            padding: 14px 16px; text-align: center; border: 1px solid var(--border-color);
         }
         .stat-card .label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
         .stat-card .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
@@ -215,89 +147,43 @@
 
         /* ===== Section Header ===== */
         .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 24px 0 14px;
-            flex-wrap: wrap;
-            gap: 8px;
+            display: flex; align-items: center; justify-content: space-between; margin: 24px 0 14px; flex-wrap: wrap; gap: 8px;
         }
-        .section-header h2 {
-            font-size: 20px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .section-header h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         .section-header h2 .badge-count {
-            font-size: 13px;
-            font-weight: 600;
-            background: var(--bg-card);
-            padding: 2px 12px;
-            border-radius: 20px;
-            color: var(--text-secondary);
+            font-size: 13px; font-weight: 600; background: var(--bg-card); padding: 2px 12px; border-radius: 20px; color: var(--text-secondary);
         }
         .section-header .actions button {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            transition: var(--transition);
+            padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+            background: var(--bg-card); border: 1px solid var(--border-color); transition: var(--transition);
         }
         .section-header .actions button:hover { background: var(--bg-card-hover); }
 
         /* ===== Signal Cards ===== */
         .signals-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 18px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px;
         }
         .signal-card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            border: 1px solid var(--border-color);
-            padding: 18px 20px 20px;
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
+            background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border-color);
+            padding: 18px 20px 20px; transition: var(--transition); position: relative; overflow: hidden;
         }
         .signal-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: var(--text-muted);
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--text-muted);
         }
         .signal-card.buy::before { background: linear-gradient(90deg, var(--accent-green), #00e6b8); }
         .signal-card.sell::before { background: linear-gradient(90deg, var(--accent-red), #ff6b7a); }
         .signal-card:hover { border-color: var(--accent-blue); transform: translateY(-2px); box-shadow: var(--shadow); }
-        .signal-card .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
-        }
+        .signal-card .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
         .signal-card .header .symbol { font-size: 20px; font-weight: 700; }
         .signal-card .header .symbol small { font-weight: 400; font-size: 14px; color: var(--text-secondary); }
         .signal-card .header .direction {
-            font-size: 14px;
-            font-weight: 700;
-            padding: 4px 16px;
-            border-radius: 20px;
-            background: var(--bg-secondary);
+            font-size: 14px; font-weight: 700; padding: 4px 16px; border-radius: 20px; background: var(--bg-secondary);
         }
         .signal-card .header .direction.buy { color: var(--accent-green); background: rgba(0, 212, 170, 0.15); }
         .signal-card .header .direction.sell { color: var(--accent-red); background: rgba(255, 71, 87, 0.15); }
         .signal-card .price-info {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin: 12px 0;
-            padding: 12px 0;
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; padding: 12px 0;
+            border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
         }
         .signal-card .price-info .item { text-align: center; }
         .signal-card .price-info .item .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; }
@@ -305,36 +191,17 @@
         .signal-card .price-info .item .val.green { color: var(--accent-green); }
         .signal-card .price-info .item .val.red { color: var(--accent-red); }
         .signal-card .analysis {
-            font-size: 13px;
-            color: var(--text-secondary);
-            background: var(--bg-secondary);
-            padding: 10px 14px;
-            border-radius: var(--radius-sm);
-            margin: 12px 0;
-            border-right: 3px solid var(--accent-blue);
-            line-height: 1.7;
-            max-height: 80px;
-            overflow-y: auto;
+            font-size: 13px; color: var(--text-secondary); background: var(--bg-secondary);
+            padding: 10px 14px; border-radius: var(--radius-sm); margin: 12px 0;
+            border-right: 3px solid var(--accent-blue); line-height: 1.7; max-height: 80px; overflow-y: auto;
         }
         .signal-card .analysis strong { color: var(--text-primary); }
-        .signal-card .footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
+        .signal-card .footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
         .signal-card .footer .timestamp { font-size: 12px; color: var(--text-muted); }
         .signal-card .footer .actions { display: flex; gap: 6px; }
         .signal-card .footer .actions button {
-            padding: 5px 12px;
-            border-radius: 16px;
-            font-size: 12px;
-            font-weight: 600;
-            transition: var(--transition);
-            border: 1px solid var(--border-color);
-            background: var(--bg-secondary);
+            padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 600;
+            transition: var(--transition); border: 1px solid var(--border-color); background: var(--bg-secondary);
         }
         .signal-card .footer .actions button:hover { background: var(--bg-card-hover); }
         .signal-card .footer .actions .btn-share { color: var(--accent-blue); }
@@ -343,18 +210,10 @@
         .signal-card .footer .actions .btn-lock.locked { background: var(--accent-gold); color: #fff; border-color: var(--accent-gold); }
 
         /* ===== Closed Trades ===== */
-        .closed-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 14px;
-        }
+        .closed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
         .closed-card {
-            background: var(--bg-card);
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border-color);
-            padding: 14px 16px;
-            opacity: 0.7;
-            transition: var(--transition);
+            background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-color);
+            padding: 14px 16px; opacity: 0.7; transition: var(--transition);
         }
         .closed-card:hover { opacity: 1; border-color: var(--text-muted); }
         .closed-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
@@ -368,29 +227,14 @@
 
         /* ===== Modal / Settings ===== */
         .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 200;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
         }
         .modal-overlay.active { display: flex; }
         .modal {
-            background: var(--bg-secondary);
-            border-radius: var(--radius);
-            border: 1px solid var(--border-color);
-            padding: 28px 24px;
-            max-width: 500px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: var(--shadow);
-            animation: modalIn 0.3s ease;
+            background: var(--bg-secondary); border-radius: var(--radius); border: 1px solid var(--border-color);
+            padding: 28px 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;
+            box-shadow: var(--shadow); animation: modalIn 0.3s ease;
         }
         @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         .modal .title { font-size: 22px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
@@ -399,12 +243,7 @@
         .modal .form-group .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
         .modal .form-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
         .modal .form-actions button {
-            padding: 10px 24px;
-            border-radius: 30px;
-            font-weight: 600;
-            transition: var(--transition);
-            flex: 1;
-            min-width: 100px;
+            padding: 10px 24px; border-radius: 30px; font-weight: 600; transition: var(--transition); flex: 1; min-width: 100px;
         }
         .modal .form-actions .btn-primary { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: #fff; }
         .modal .form-actions .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
@@ -416,31 +255,14 @@
 
         /* ===== Toast ===== */
         .toast-container {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 300;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
-            pointer-events: none;
-            max-width: 90%;
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 300;
+            display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; max-width: 90%;
         }
         .toast {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 12px 20px;
-            border-radius: var(--radius-sm);
-            font-size: 14px;
-            font-weight: 500;
-            box-shadow: var(--shadow);
-            animation: toastIn 0.3s ease;
-            pointer-events: auto;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            text-align: center;
+            background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px 20px;
+            border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; box-shadow: var(--shadow);
+            animation: toastIn 0.3s ease; pointer-events: auto; backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px); text-align: center;
         }
         .toast.success { border-color: var(--accent-green); color: var(--accent-green); }
         .toast.error { border-color: var(--accent-red); color: var(--accent-red); }
@@ -529,12 +351,13 @@
             <div class="title">⚙️ إعدادات التطبيق</div>
             <div class="form-group">
                 <label>🤖 توكن بوت التليجرام (Bot Token)</label>
-                <input type="text" id="telegramToken" placeholder="مثال: 1234567890:ABCdefGHIjkl..." />
+                <!-- التوكن مع النقطتين (:) -->
+                <input type="text" id="telegramToken" value="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" placeholder="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" />
                 <div class="hint">احصل عليه من @BotFather على تليجرام</div>
             </div>
             <div class="form-group">
                 <label>🆔 معرف الدردشة (Chat ID)</label>
-                <input type="text" id="telegramChatId" placeholder="مثال: -1001234567890" />
+                <input type="text" id="telegramChatId" value="5711937659" placeholder="5711937659" />
                 <div class="hint">معرف القناة أو المجموعة، أو معرف المستخدم</div>
             </div>
             <div class="form-group">
@@ -595,11 +418,16 @@
             };
 
             // ============================================================
-            //  STATE
+            //  STATE (تم وضع التوكن مع النقطتين(:) مباشرة لضمان الصحة)
             // ============================================================
             let state = {
                 signals: [], closedTrades: [], prices: {}, 
-                settings: { telegramToken: '', telegramChatId: '', updateInterval: CONFIG.UPDATE_INTERVAL_DEFAULT, autoSendTelegram: true },
+                settings: { 
+                    telegramToken: '8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ', 
+                    telegramChatId: '5711937659', 
+                    updateInterval: CONFIG.UPDATE_INTERVAL_DEFAULT, 
+                    autoSendTelegram: true 
+                },
                 sentSignals: [], isUpdating: false, lastUpdate: null, installPrompt: null, updateTimer: null,
                 btcFilterEnabled: true // Default: ON
             };
@@ -666,7 +494,14 @@
                 } catch (e) { /* ignore */ }
                 try {
                     const raw = localStorage.getItem(CONFIG.SETTINGS_KEY);
-                    if (raw) { const s = JSON.parse(raw); Object.assign(state.settings, s); }
+                    if (raw) { 
+                        const s = JSON.parse(raw); 
+                        // إذا كان المستخدم قد حفظ إعدادات سابقة، نستخدمها، وإلا نستخدم الافتراضية المحددة أعلاه
+                        if (s.telegramToken) state.settings.telegramToken = s.telegramToken;
+                        if (s.telegramChatId) state.settings.telegramChatId = s.telegramChatId;
+                        if (s.updateInterval) state.settings.updateInterval = s.updateInterval;
+                        if (s.autoSendTelegram !== undefined) state.settings.autoSendTelegram = s.autoSendTelegram;
+                    }
                 } catch (e) { /* ignore */ }
                 try {
                     const raw = localStorage.getItem(CONFIG.HISTORY_KEY);
@@ -696,7 +531,11 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chat_id: telegramChatId, text: text, parse_mode: 'HTML', disable_web_page_preview: true })
                 });
-                if (!resp.ok) { const err = await resp.json(); throw new Error(err.description || 'فشل إرسال الرسالة'); }
+                if (!resp.ok) { 
+                    let errorMsg = `فشل الإرسال (HTTP ${resp.status})`;
+                    try { const err = await resp.json(); errorMsg = err.description || errorMsg; } catch (e) {}
+                    throw new Error(errorMsg); 
+                }
                 return await resp.json();
             }
 
@@ -1187,6 +1026,7 @@
             //  SETTINGS & PWA
             // ============================================================
             function openSettings() {
+                // تحديث الحقول بما هو موجود في الـ state
                 settingsToken.value = state.settings.telegramToken || '';
                 settingsChatId.value = state.settings.telegramChatId || '';
                 settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
@@ -1214,7 +1054,11 @@
                     await sendTelegramMessage('🧪 <b>اختبار اتصال</b>\nتم استلام الإعدادات بنجاح! 🚀');
                     settingsStatus.className = 'status-msg success'; settingsStatus.textContent = '✅ تم إرسال رسالة الاختبار!';
                     showToast('✅ رسالة اختبار أرسلت للتليجرام', 'success');
-                } catch (e) { settingsStatus.className = 'status-msg error'; settingsStatus.textContent = '❌ فشل الإرسال: ' + e.message; showToast('❌ فشل الاختبار', 'error'); }
+                } catch (e) {
+                    settingsStatus.className = 'status-msg error'; 
+                    settingsStatus.textContent = '❌ فشل الإرسال: ' + e.message; 
+                    showToast('❌ فشل الاختبار: ' + e.message, 'error');
+                }
             }
 
             function startUpdateTimer() {
@@ -1273,10 +1117,13 @@
             // ============================================================
             async function init() {
                 loadState();
+                
+                // نقوم بتحديث حقل الإدخال ليكون مطابقاً لما في الـ state (أو القيم الافتراضية التي وضعناها)
                 settingsToken.value = state.settings.telegramToken || '';
                 settingsChatId.value = state.settings.telegramChatId || '';
                 settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
                 settingsAutoSend.checked = state.settings.autoSendTelegram !== false;
+                
                 renderAll();
                 setupPWA();
                 
@@ -1296,7 +1143,7 @@
                 document.addEventListener('visibilitychange', () => { if (!document.hidden && (now() - (state.lastUpdate || 0) > 60000)) updateAllData(false); });
                 window.addEventListener('online', () => { showToast('🌐 تم استعادة الاتصال', 'success'); updateAllData(false); });
                 window.addEventListener('offline', () => { showToast('📡 انقطع الاتصال', 'error'); });
-                console.log('🚀 CryptoSignal Pro initialized (Strict Stochastic Rules Applied)');
+                console.log('🚀 CryptoSignal Pro initialized (Strict Stochastic Rules Applied & Telegram Token Fixed)');
             }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
