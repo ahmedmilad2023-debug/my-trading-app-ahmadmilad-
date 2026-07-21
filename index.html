@@ -973,6 +973,7 @@
          *  Data Source: Binance API (public)
          *  Telegram Bot integration
          *  PWA with install button & background sync
+         *  NEW: Trade with BTC Trend (لا تعطي صفقات متعارضة مع اتجاه البتكوين)
          * ============================================================
          */
 
@@ -987,8 +988,8 @@
                     'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
                     'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT', 'MATICUSDT'
                 ],
-                INTERVAL: '30m', // تم تغيير الفريم إلى نصف ساعة
-                KLINE_LIMIT: 220, // نحتاج 200 شمعة ل EMA
+                INTERVAL: '30m',
+                KLINE_LIMIT: 220,
                 STOCH_RSI_PERIOD: 14,
                 STOCH_K_SMOOTH: 3,
                 STOCH_D_SMOOTH: 3,
@@ -997,11 +998,10 @@
                 ADX_THRESHOLD: 25,
                 STOCH_OVERBOUGHT: 80,
                 STOCH_OVERSOLD: 20,
-                // أهداف وقف الخسارة الجديدة
                 TARGET_PERCENT: 0.02, // 2% هدف
                 STOP_PERCENT_MAX: 0.008, // 0.8% أقصى وقف خسارة
                 UPDATE_INTERVAL_DEFAULT: 2, // minutes
-                MAX_SIGNALS_PER_SYMBOL: 3, // keep last N signals per symbol
+                MAX_SIGNALS_PER_SYMBOL: 3, 
                 TELEGRAM_API: 'https://api.telegram.org/bot',
                 BINANCE_BASE: 'https://api.binance.com/api/v3',
                 CACHE_KEY: 'cryptosignal_data',
@@ -1014,16 +1014,16 @@
             //  STATE
             // ============================================================
             let state = {
-                signals: [], // active signals
-                closedTrades: [], // history
-                prices: {}, // latest prices
+                signals: [], 
+                closedTrades: [], 
+                prices: {}, 
                 settings: {
                     telegramToken: '',
                     telegramChatId: '',
                     updateInterval: CONFIG.UPDATE_INTERVAL_DEFAULT,
                     autoSendTelegram: true
                 },
-                sentSignals: [], // IDs of signals already sent to Telegram
+                sentSignals: [], 
                 isUpdating: false,
                 lastUpdate: null,
                 installPrompt: null,
@@ -1081,14 +1081,12 @@
 
             function fmtDate(ts) {
                 const d = new Date(ts);
-                return d.toLocaleString('ar-EG', { hour12: false, day: '2-digit', month: '2-digit', hour: '2-digit',
-                    minute: '2-digit' });
+                return d.toLocaleString('ar-EG', { hour12: false, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
             }
 
             function fmtDateFull(ts) {
                 const d = new Date(ts);
-                return d.toLocaleString('ar-EG', { hour12: false, day: '2-digit', month: '2-digit', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                return d.toLocaleString('ar-EG', { hour12: false, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
             }
 
             function now() { return Date.now(); }
@@ -1100,10 +1098,6 @@
             }
 
             function id() { return Math.random().toString(36).substring(2) + Date.now().toString(36); }
-
-            function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
-            function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
             function getSymbolDisplay(sym) {
                 return sym.replace('USDT', '');
@@ -1215,8 +1209,7 @@
             //  BINANCE API
             // ============================================================
             async function fetchKlines(symbol, interval = CONFIG.INTERVAL, limit = CONFIG.KLINE_LIMIT) {
-                const url =
-                    `${CONFIG.BINANCE_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+                const url = `${CONFIG.BINANCE_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
                 const resp = await fetch(url);
                 if (!resp.ok) throw new Error(`Binance API error: ${resp.status}`);
                 const data = await resp.json();
@@ -1241,8 +1234,6 @@
             // ============================================================
             //  TECHNICAL INDICATORS
             // ============================================================
-
-            // EMA
             function calcEMA(data, period) {
                 const result = [];
                 if (data.length < period) return result;
@@ -1256,7 +1247,6 @@
                 return result;
             }
 
-            // Stochastic
             function calcStochastic(high, low, close, kPeriod = 14, kSmooth = 3, dSmooth = 3) {
                 const len = high.length;
                 if (len < kPeriod + kSmooth + dSmooth) return { k: [], d: [] };
@@ -1271,25 +1261,21 @@
                         kValues.push(((c - ll) / (hh - ll)) * 100);
                     }
                 }
-                // smooth %K
                 const kSmoothValues = [];
                 for (let i = kSmooth - 1; i < kValues.length; i++) {
                     const sum = kValues.slice(i - kSmooth + 1, i + 1).reduce((a, b) => a + b, 0);
                     kSmoothValues.push(sum / kSmooth);
                 }
-                // %D
                 const dValues = [];
                 for (let i = dSmooth - 1; i < kSmoothValues.length; i++) {
                     const sum = kSmoothValues.slice(i - dSmooth + 1, i + 1).reduce((a, b) => a + b, 0);
                     dValues.push(sum / dSmooth);
                 }
-                // align lengths
                 const kFinal = kSmoothValues.slice(dSmooth - 1);
                 const dFinal = dValues;
                 return { k: kFinal, d: dFinal, offset: kPeriod - 1 + kSmooth - 1 + dSmooth - 1 };
             }
 
-            // ADX
             function calcADX(high, low, close, period = 14) {
                 const len = high.length;
                 if (len < period + 1) return { adx: [], plusDI: [], minusDI: [] };
@@ -1297,9 +1283,7 @@
                 const plusDM = [];
                 const minusDM = [];
                 for (let i = 1; i < len; i++) {
-                    const h = high[i],
-                        l = low[i],
-                        c = close[i - 1];
+                    const h = high[i], l = low[i], c = close[i - 1];
                     tr.push(Math.max(h - l, Math.abs(h - c), Math.abs(l - c)));
                     const up = high[i] - high[i - 1];
                     const down = low[i - 1] - low[i];
@@ -1331,8 +1315,7 @@
                 const dx = [];
                 const minLen = Math.min(plusDI14.length, minusDI14.length);
                 for (let i = 0; i < minLen; i++) {
-                    const p = plusDI14[i],
-                        m = minusDI14[i];
+                    const p = plusDI14[i], m = minusDI14[i];
                     const sum = p + m;
                     if (sum === 0) dx.push(0);
                     else dx.push((Math.abs(p - m) / sum) * 100);
@@ -1346,16 +1329,9 @@
                         adx.push(adxVal);
                     }
                 }
-                return {
-                    adx: adx,
-                    plusDI: plusDI14.slice(0, adx.length),
-                    minusDI: minusDI14.slice(0, adx.length)
-                };
+                return { adx: adx, plusDI: plusDI14.slice(0, adx.length), minusDI: minusDI14.slice(0, adx.length) };
             }
 
-            // ============================================================
-            //  CANDLESTICK PATTERNS
-            // ============================================================
             function detectPattern(klines, idx) {
                 if (idx < 2 || idx >= klines.length) return null;
                 const c = klines[idx];
@@ -1370,55 +1346,29 @@
                 const isGreen = c.close > c.open;
                 const isRed = c.close < c.open;
 
-                // Hammer / Hanging Man
-                if (bodyRatio < 0.3 && lower > body * 2 && upper < body * 0.5) {
-                    return isGreen ? 'hammer' : 'hanging_man';
-                }
-                // Shooting Star
-                if (bodyRatio < 0.3 && upper > body * 2 && lower < body * 0.5) {
-                    return isRed ? 'shooting_star' : 'inverted_hammer';
-                }
-                // Bullish Engulfing
-                if (isGreen && p.close < p.open && c.close > p.open && c.open < p.close) {
-                    return 'bullish_engulfing';
-                }
-                // Bearish Engulfing
-                if (isRed && p.close > p.open && c.close < p.open && c.open > p.close) {
-                    return 'bearish_engulfing';
-                }
-                // Morning Star (simplified)
+                if (bodyRatio < 0.3 && lower > body * 2 && upper < body * 0.5) return isGreen ? 'hammer' : 'hanging_man';
+                if (bodyRatio < 0.3 && upper > body * 2 && lower < body * 0.5) return isRed ? 'shooting_star' : 'inverted_hammer';
+                if (isGreen && p.close < p.open && c.close > p.open && c.open < p.close) return 'bullish_engulfing';
+                if (isRed && p.close > p.open && c.close < p.open && c.open > p.close) return 'bearish_engulfing';
                 if (idx >= 2 && p.close < p.open && isGreen && c.close > (p.open + p.close) / 2) {
                     const body1 = Math.abs(pp.close - pp.open);
                     const body2 = Math.abs(p.close - p.open);
-                    if (pp.close < pp.open && body2 > body1 * 0.5) {
-                        return 'morning_star';
-                    }
+                    if (pp.close < pp.open && body2 > body1 * 0.5) return 'morning_star';
                 }
-                // Evening Star
                 if (idx >= 2 && p.close > p.open && isRed && c.close < (p.open + p.close) / 2) {
                     const body1 = Math.abs(pp.close - pp.open);
                     const body2 = Math.abs(p.close - p.open);
-                    if (pp.close > pp.open && body2 > body1 * 0.5) {
-                        return 'evening_star';
-                    }
+                    if (pp.close > pp.open && body2 > body1 * 0.5) return 'evening_star';
                 }
-                // Doji
-                if (bodyRatio < 0.1) {
-                    return 'doji';
-                }
+                if (bodyRatio < 0.1) return 'doji';
                 return null;
             }
 
-            // ============================================================
-            //  ATR (لحساب وقف الخسارة)
-            // ============================================================
             function calcATR(klines, period = 14) {
                 if (klines.length < period + 1) return [];
                 const tr = [];
                 for (let i = 1; i < klines.length; i++) {
-                    const h = klines[i].high,
-                        l = klines[i].low,
-                        c = klines[i - 1].close;
+                    const h = klines[i].high, l = klines[i].low, c = klines[i - 1].close;
                     tr.push(Math.max(h - l, Math.abs(h - c), Math.abs(l - c)));
                 }
                 const atr = [];
@@ -1432,7 +1382,7 @@
             }
 
             // ============================================================
-            //  SIGNAL GENERATION (مع الإطار الزمني 30 دقيقة وهدف 2% ووقف 0.8%)
+            //  SIGNAL GENERATION
             // ============================================================
             function generateSignal(symbol, klines) {
                 if (!klines || klines.length < 200) return null;
@@ -1441,132 +1391,58 @@
                 const highs = klines.map(k => k.high);
                 const lows = klines.map(k => k.low);
 
-                // EMA 200
                 const emaValues = calcEMA(closes, CONFIG.EMA_PERIOD);
                 if (emaValues.length === 0) return null;
                 const currentEMA = emaValues[emaValues.length - 1];
                 const lastClose = closes[closes.length - 1];
-                const prevClose = closes[closes.length - 2];
 
-                // Stochastic (30m)
-                const stoch = calcStochastic(highs, lows, closes, CONFIG.STOCH_RSI_PERIOD, CONFIG.STOCH_K_SMOOTH,
-                    CONFIG.STOCH_D_SMOOTH);
+                const stoch = calcStochastic(highs, lows, closes, CONFIG.STOCH_RSI_PERIOD, CONFIG.STOCH_K_SMOOTH, CONFIG.STOCH_D_SMOOTH);
                 if (stoch.k.length < 2 || stoch.d.length < 2) return null;
                 const kLast = stoch.k[stoch.k.length - 1];
                 const dLast = stoch.d[stoch.d.length - 1];
                 const kPrev = stoch.k[stoch.k.length - 2];
                 const dPrev = stoch.d[stoch.d.length - 2];
 
-                // ADX
                 const adxResult = calcADX(highs, lows, closes, CONFIG.ADX_PERIOD);
                 if (adxResult.adx.length === 0) return null;
                 const adxLast = adxResult.adx[adxResult.adx.length - 1];
 
-                // Pattern
                 const pattern = detectPattern(klines, klines.length - 1);
 
-                // ---- BUY CONDITIONS ----
-                let buyScore = 0;
-                let buyReasons = [];
-                // 1. Price above EMA 200
-                if (lastClose > currentEMA) {
-                    buyScore += 25;
-                    buyReasons.push('السعر فوق EMA 200');
-                }
-                // 2. Stochastic oversold + cross
-                if (kLast < CONFIG.STOCH_OVERSOLD && kPrev < CONFIG.STOCH_OVERSOLD) {
-                    buyScore += 15;
-                    buyReasons.push('ستوكاستيك في تشبع بيعي');
-                }
-                if (kLast > dLast && kPrev <= dPrev && kLast < CONFIG.STOCH_OVERSOLD + 10) {
-                    buyScore += 20;
-                    buyReasons.push('تقاطع صاعد للستوكاستيك');
-                }
-                // 3. ADX > threshold
-                if (adxLast > CONFIG.ADX_THRESHOLD) {
-                    buyScore += 20;
-                    buyReasons.push(`ADX قوي (${adxLast.toFixed(1)})`);
-                }
-                // 4. Bullish pattern
-                if (pattern === 'hammer' || pattern === 'bullish_engulfing' || pattern === 'morning_star' ||
-                    pattern === 'inverted_hammer') {
-                    buyScore += 20;
-                    buyReasons.push(`نمط شموع إيجابي: ${pattern}`);
-                }
-                // 5. Price action: higher low
-                if (closes.length >= 3 && closes[closes.length - 1] > closes[closes.length - 3]) {
-                    buyScore += 10;
-                    buyReasons.push('اتجاه صاعد قصير');
-                }
+                let buyScore = 0, buyReasons = [];
+                if (lastClose > currentEMA) { buyScore += 25; buyReasons.push('السعر فوق EMA 200'); }
+                if (kLast < CONFIG.STOCH_OVERSOLD && kPrev < CONFIG.STOCH_OVERSOLD) { buyScore += 15; buyReasons.push('ستوكاستيك في تشبع بيعي'); }
+                if (kLast > dLast && kPrev <= dPrev && kLast < CONFIG.STOCH_OVERSOLD + 10) { buyScore += 20; buyReasons.push('تقاطع صاعد للستوكاستيك'); }
+                if (adxLast > CONFIG.ADX_THRESHOLD) { buyScore += 20; buyReasons.push(`ADX قوي (${adxLast.toFixed(1)})`); }
+                if (pattern === 'hammer' || pattern === 'bullish_engulfing' || pattern === 'morning_star' || pattern === 'inverted_hammer') { buyScore += 20; buyReasons.push(`نمط شموع إيجابي: ${pattern}`); }
+                if (closes.length >= 3 && closes[closes.length - 1] > closes[closes.length - 3]) { buyScore += 10; buyReasons.push('اتجاه صاعد قصير'); }
 
-                // ---- SELL CONDITIONS ----
-                let sellScore = 0;
-                let sellReasons = [];
-                if (lastClose < currentEMA) {
-                    sellScore += 25;
-                    sellReasons.push('السعر تحت EMA 200');
-                }
-                if (kLast > CONFIG.STOCH_OVERBOUGHT && kPrev > CONFIG.STOCH_OVERBOUGHT) {
-                    sellScore += 15;
-                    sellReasons.push('ستوكاستيك في تشبع شرائي');
-                }
-                if (kLast < dLast && kPrev >= dPrev && kLast > CONFIG.STOCH_OVERBOUGHT - 10) {
-                    sellScore += 20;
-                    sellReasons.push('تقاطع هابط للستوكاستيك');
-                }
-                if (adxLast > CONFIG.ADX_THRESHOLD) {
-                    sellScore += 20;
-                    sellReasons.push(`ADX قوي (${adxLast.toFixed(1)})`);
-                }
-                if (pattern === 'shooting_star' || pattern === 'bearish_engulfing' || pattern === 'evening_star' ||
-                    pattern === 'hanging_man') {
-                    sellScore += 20;
-                    sellReasons.push(`نمط شموع سلبي: ${pattern}`);
-                }
-                if (closes.length >= 3 && closes[closes.length - 1] < closes[closes.length - 3]) {
-                    sellScore += 10;
-                    sellReasons.push('اتجاه هابط قصير');
-                }
+                let sellScore = 0, sellReasons = [];
+                if (lastClose < currentEMA) { sellScore += 25; sellReasons.push('السعر تحت EMA 200'); }
+                if (kLast > CONFIG.STOCH_OVERBOUGHT && kPrev > CONFIG.STOCH_OVERBOUGHT) { sellScore += 15; sellReasons.push('ستوكاستيك في تشبع شرائي'); }
+                if (kLast < dLast && kPrev >= dPrev && kLast > CONFIG.STOCH_OVERBOUGHT - 10) { sellScore += 20; sellReasons.push('تقاطع هابط للستوكاستيك'); }
+                if (adxLast > CONFIG.ADX_THRESHOLD) { sellScore += 20; sellReasons.push(`ADX قوي (${adxLast.toFixed(1)})`); }
+                if (pattern === 'shooting_star' || pattern === 'bearish_engulfing' || pattern === 'evening_star' || pattern === 'hanging_man') { sellScore += 20; sellReasons.push(`نمط شموع سلبي: ${pattern}`); }
+                if (closes.length >= 3 && closes[closes.length - 1] < closes[closes.length - 3]) { sellScore += 10; sellReasons.push('اتجاه هابط قصير'); }
 
-                // Determine direction
-                let direction = 'neutral';
-                let confidence = 0;
-                let reasons = [];
-                if (buyScore >= 60 && buyScore > sellScore + 10) {
-                    direction = 'buy';
-                    confidence = Math.min(100, buyScore);
-                    reasons = buyReasons;
-                } else if (sellScore >= 60 && sellScore > buyScore + 10) {
-                    direction = 'sell';
-                    confidence = Math.min(100, sellScore);
-                    reasons = sellReasons;
-                } else {
-                    direction = 'neutral';
-                    confidence = Math.max(buyScore, sellScore);
-                    reasons = buyScore >= sellScore ? buyReasons : sellReasons;
-                }
+                let direction = 'neutral', confidence = 0, reasons = [];
+                if (buyScore >= 60 && buyScore > sellScore + 10) { direction = 'buy'; confidence = Math.min(100, buyScore); reasons = buyReasons; }
+                else if (sellScore >= 60 && sellScore > buyScore + 10) { direction = 'sell'; confidence = Math.min(100, sellScore); reasons = sellReasons; }
+                else { direction = 'neutral'; confidence = Math.max(buyScore, sellScore); reasons = buyScore >= sellScore ? buyReasons : sellReasons; }
 
-                if (direction === 'neutral' || confidence < 55) {
-                    return null; // no clear signal
-                }
+                if (direction === 'neutral' || confidence < 55) return null;
 
-                // ---- حساب الهدف ووقف الخسارة ----
                 const entryPrice = lastClose;
-                // ATR
                 const atrValues = calcATR(klines, 14);
                 const atrVal = atrValues.length > 0 ? atrValues[atrValues.length - 1] : (entryPrice * 0.02);
-
-                // الهدف: 2% من سعر الدخول
-                let takeProfit, stopLoss;
-                // وقف الخسارة: نأخذ الأصغر بين ATR*1.2 و 0.8% من السعر
-                const stopPct = CONFIG.STOP_PERCENT_MAX; // 0.008
+                const stopPct = CONFIG.STOP_PERCENT_MAX;
                 const stopAmount = entryPrice * stopPct;
-                const atrStop = atrVal * 1.2; // يمكن تعديل المضاعف
+                const atrStop = atrVal * 1.2;
                 const finalStop = Math.min(atrStop, stopAmount);
 
-                // إذا كان وقف الخسارة الناتج صفراً أو صغيراً جداً، نرفض الصفقة
                 if (finalStop < entryPrice * 0.001) return null;
 
+                let takeProfit, stopLoss;
                 if (direction === 'buy') {
                     takeProfit = entryPrice * (1 + CONFIG.TARGET_PERCENT);
                     stopLoss = entryPrice - finalStop;
@@ -1575,14 +1451,9 @@
                     stopLoss = entryPrice + finalStop;
                 }
 
-                // تحقق من أن وقف الخسارة لا يتجاوز 0.8% (تم التحقق)
-                // وللتأكد، نتأكد أن المسافة من الدخول إلى وقف الخسارة <= 0.8%
                 const stopDist = Math.abs(entryPrice - stopLoss);
-                if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) {
-                    return null; // رفض إذا تجاوز
-                }
+                if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) return null;
 
-                // بناء التحليل
                 const analysisText = `
         📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة)</strong>
         ───────────────
@@ -1597,29 +1468,16 @@
                 `.trim();
 
                 return {
-                    id: id(),
-                    symbol: symbol,
-                    direction: direction,
-                    entryPrice: entryPrice,
-                    takeProfit: takeProfit,
-                    stopLoss: stopLoss,
-                    confidence: confidence,
-                    analysis: analysisText,
-                    timestamp: now(),
-                    pattern: pattern || 'none',
-                    ema: currentEMA,
-                    stochasticK: kLast,
-                    stochasticD: dLast,
-                    adx: adxLast,
-                    isLocked: false,
-                    isClosed: false,
-                    closedAt: null,
-                    closedResult: null
+                    id: id(), symbol: symbol, direction: direction, entryPrice: entryPrice, 
+                    takeProfit: takeProfit, stopLoss: stopLoss, confidence: confidence, 
+                    analysis: analysisText, timestamp: now(), pattern: pattern || 'none', 
+                    ema: currentEMA, stochasticK: kLast, stochasticD: dLast, adx: adxLast, 
+                    isLocked: false, isClosed: false, closedAt: null, closedResult: null
                 };
             }
 
             // ============================================================
-            //  UPDATE ALL DATA (مع الإغلاق التلقائي عند انعكاس الاتجاه)
+            //  UPDATE ALL DATA (مع التداول مع اتجاه البيتكوين و الإغلاق التلقائي عند انعكاس الاتجاه)
             // ============================================================
             async function updateAllData(force = false) {
                 if (state.isUpdating && !force) return;
@@ -1632,14 +1490,12 @@
                     const allKlines = {};
                     const allPrices = {};
 
-                    // Fetch klines for all symbols
+                    // 1. Fetch all data
                     const fetchPromises = symbols.map(async sym => {
                         try {
                             const k = await fetchKlines(sym, CONFIG.INTERVAL, CONFIG.KLINE_LIMIT);
                             allKlines[sym] = k;
-                            if (k.length > 0) {
-                                allPrices[sym] = k[k.length - 1].close;
-                            }
+                            if (k.length > 0) allPrices[sym] = k[k.length - 1].close;
                             return { sym, ok: true };
                         } catch (e) {
                             console.warn(`Failed to fetch ${sym}:`, e);
@@ -1650,34 +1506,50 @@
                             return { sym, ok: false };
                         }
                     });
-
                     await Promise.all(fetchPromises);
                     state.prices = allPrices;
 
-                    // Generate signals
+                    // 2. Generate signals and apply BTC trend filter
                     const newSignals = [];
+                    
+                    // 2.1 Get BTC direction first (determine market trend)
+                    let btcDirection = 'neutral';
+                    const btcKlines = allKlines['BTCUSDT'];
+                    if (btcKlines && btcKlines.length >= 200) {
+                        const btcSignal = generateSignal('BTCUSDT', btcKlines);
+                        if (btcSignal) {
+                            btcDirection = btcSignal.direction; // 'buy', 'sell', or 'neutral'
+                        }
+                    }
+
+                    // 2.2 Process all symbols
                     for (const sym of symbols) {
                         const k = allKlines[sym];
                         if (!k || k.length < 200) continue;
                         const signal = generateSignal(sym, k);
                         if (!signal) continue;
 
-                        // البحث عن صفقة مفتوحة حالية لهذه العملة (غير مقفولة)
+                        // FILTER: Trade with BTC Trend
+                        // إذا كان البيتكوين في اتجاه شراء، نرفض أي إشارة بيع
+                        // إذا كان البيتكوين في اتجاه بيع، نرفض أي إشارة شراء
+                        if (btcDirection === 'buy' && signal.direction === 'sell') {
+                            console.log(`⛔ تم تجاهل إشارة بيع لـ ${sym} لأن اتجاه البيتكوين الحالي هو شراء.`);
+                            continue; // تجاهل الإشارة
+                        }
+                        if (btcDirection === 'sell' && signal.direction === 'buy') {
+                            console.log(`⛔ تم تجاهل إشارة شراء لـ ${sym} لأن اتجاه البيتكوين الحالي هو بيع.`);
+                            continue; // تجاهل الإشارة
+                        }
+                        // إذا كان البيتكوين محايداً، أو كانت الإشارة لنفس اتجاه البيتكوين، نقبلها.
+
+                        // Check for existing open trade for reversal logic
                         const existingOpen = state.signals.find(s => s.symbol === sym && !s.isClosed);
 
                         if (existingOpen) {
-                            // إذا كانت الصفقة مقفولة يدوياً، لا نغلقها تلقائياً ونتجاهل الإشارة الجديدة
-                            if (existingOpen.isLocked) {
-                                continue;
-                            }
+                            if (existingOpen.isLocked) continue;
+                            if (existingOpen.direction === signal.direction) continue;
 
-                            // إذا كانت الإشارة الجديدة بنفس اتجاه الصفقة المفتوحة، نتجاهلها (منع التكرار)
-                            if (existingOpen.direction === signal.direction) {
-                                continue;
-                            }
-
-                            // --- هنا: تغير الاتجاه (إشارة معاكسة) ---
-                            // 1. حساب نتيجة الصفقة الحالية
+                            // Close previous trade (Reversal)
                             const currentPrice = state.prices[sym];
                             let result = 'neutral';
                             if (currentPrice !== undefined) {
@@ -1691,57 +1563,45 @@
                                     else result = 'neutral';
                                 }
                             }
-
-                            // 2. إغلاق الصفقة الحالية
                             existingOpen.isClosed = true;
                             existingOpen.closedAt = now();
                             existingOpen.closedResult = result;
-                            const closeReason = `🔄 <strong>إغلاق تلقائي:</strong> تغير الاتجاه إلى ${signal.direction === 'buy' ? 'شراء' : 'بيع'}. السعر الحالي عند الإغلاق: ${fmtPrice(currentPrice)}.`;
-                            existingOpen.analysis += `\n\n${closeReason}`;
+                            existingOpen.analysis += `\n\n🔄 <strong>إغلاق تلقائي:</strong> تغير الاتجاه.`;
 
-                            // 3. إرسال إشعار إغلاق للتليجرام
+                            // Send close notification to Telegram
                             if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
                                 try {
-                                    let closeMsg = `🔔 <b>إغلاق صفقة تلقائي</b>\n`;
+                                    let closeMsg = `🔔 <b>إغلاق صفقة تلقائي (انعكاس)</b>\n`;
                                     closeMsg += `💰 العملة: ${getSymbolDisplay(sym)}\n`;
                                     closeMsg += `📉 الصفقة السابقة: ${existingOpen.direction === 'buy' ? 'شراء' : 'بيع'}\n`;
                                     closeMsg += `📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}\n`;
-                                    closeMsg += `📈 الاتجاه الجديد: ${signal.direction === 'buy' ? 'شراء' : 'بيع'}\n`;
-                                    closeMsg += `🕐 وقت الإغلاق: ${fmtDateFull(now())}`;
                                     await sendTelegramMessage(closeMsg);
-                                } catch (e) {
-                                    console.warn('Telegram close notification failed:', e);
-                                }
+                                } catch (e) { /* ignore */ }
                             }
 
-                            // 4. فتح الصفقة الجديدة
+                            // Add new signal
                             state.signals.push(signal);
-                            newSignals.push(signal); // لتتبعها للإرسال
-
+                            newSignals.push(signal);
                         } else {
-                            // لا توجد صفقة مفتوحة، أضف الإشارة الجديدة مباشرة
+                            // No open trade, just add
                             state.signals.push(signal);
                             newSignals.push(signal);
                         }
                     }
 
-                    // إرسال إشعارات الصفقات الجديدة للتليجرام (إن وجدت)
+                    // Send new signals to Telegram
                     for (const sig of newSignals) {
                         const alreadySent = state.sentSignals.includes(sig.id);
                         if (!alreadySent) {
-                            if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings
-                                .telegramChatId) {
+                            if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
                                 try {
                                     const msg = formatSignalMessage(sig);
                                     await sendTelegramMessage(msg);
                                     state.sentSignals.push(sig.id);
-                                    if (state.sentSignals.length > 200) {
-                                        state.sentSignals = state.sentSignals.slice(-100);
-                                    }
+                                    if (state.sentSignals.length > 200) state.sentSignals = state.sentSignals.slice(-100);
                                     showToast(`📨 إشارة ${getSymbolDisplay(sig.symbol)} أرسلت للتليجرام`, 'success');
                                 } catch (e) {
-                                    console.warn('Telegram send failed for new signal:', e);
-                                    showToast(`⚠️ فشل إرسال إشارة ${getSymbolDisplay(sig.symbol)} للتليجرام`, 'error');
+                                    showToast(`⚠️ فشل إرسال إشارة ${getSymbolDisplay(sig.symbol)}`, 'error');
                                 }
                             } else {
                                 state.sentSignals.push(sig.id);
@@ -1749,7 +1609,7 @@
                         }
                     }
 
-                    // Prune signals: remove old closed, keep max per symbol
+                    // Prune signals
                     const activeSignals = state.signals.filter(s => !s.isClosed);
                     const closedSignals = state.signals.filter(s => s.isClosed);
                     const activeBySymbol = {};
@@ -1783,10 +1643,8 @@
             }
 
             // ============================================================
-            //  RENDER
+            //  RENDER & ACTIONS
             // ============================================================
-
-            // Ticker
             function renderTicker() {
                 const symbols = CONFIG.SYMBOLS;
                 let html = '';
@@ -1794,44 +1652,24 @@
                     const price = state.prices[sym];
                     const display = getSymbolDisplay(sym);
                     const activeSig = state.signals.find(s => s.symbol === sym && !s.isClosed);
-                    let badge = '';
-                    if (activeSig) {
-                        badge =
-                            `<span class="signal-badge ${activeSig.direction}">${activeSig.direction === 'buy' ? '🟢 شراء' : '🔴 بيع'}</span>`;
-                    } else {
-                        badge = `<span class="signal-badge neutral">● محايد</span>`;
-                    }
+                    let badge = activeSig ? `<span class="signal-badge ${activeSig.direction}">${activeSig.direction === 'buy' ? '🟢 شراء' : '🔴 بيع'}</span>` : `<span class="signal-badge neutral">● محايد</span>`;
                     const priceStr = price !== undefined ? fmtPrice(price) : '—';
-                    html += `
-                <div class="ticker-item">
-                    <span class="sym">${display}</span>
-                    <span class="price">${priceStr}</span>
-                    ${badge}
-                </div>
-              `;
+                    html += `<div class="ticker-item"><span class="sym">${display}</span><span class="price">${priceStr}</span>${badge}</div>`;
                 }
                 tickerStrip.innerHTML = html;
             }
 
-            // Signals
             function renderSignals() {
                 const active = state.signals.filter(s => !s.isClosed);
                 const container = signalsContainer;
                 signalCount.textContent = active.length;
 
                 if (active.length === 0) {
-                    container.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">📊</div>
-                    <h3>لا توجد إشارات نشطة حالياً</h3>
-                    <p>جاري مراقبة الأسواق (فريم 30 دقيقة)... سيتم عرض الإشارات عند توفرها</p>
-                </div>
-              `;
+                    container.innerHTML = `<div class="empty-state"><div class="icon">📊</div><h3>لا توجد إشارات نشطة حالياً</h3><p>جاري مراقبة الأسواق (فريم 30 دقيقة)...</p></div>`;
                     return;
                 }
 
                 active.sort((a, b) => b.timestamp - a.timestamp);
-
                 let html = '<div class="signals-grid">';
                 for (const sig of active) {
                     const dirClass = sig.direction === 'buy' ? 'buy' : 'sell';
@@ -1842,137 +1680,81 @@
                     const lockClass = sig.isLocked ? 'locked' : '';
                     html += `
                 <div class="signal-card ${dirClass}">
-                    <div class="header">
-                        <div class="symbol">${sym} <small>${sig.symbol}</small></div>
-                        <div class="direction ${dirClass}">${dirLabel}</div>
-                    </div>
+                    <div class="header"><div class="symbol">${sym} <small>${sig.symbol}</small></div><div class="direction ${dirClass}">${dirLabel}</div></div>
                     <div class="price-info">
-                        <div class="item">
-                            <div class="label">دخول</div>
-                            <div class="val">${fmtPrice(sig.entryPrice)}</div>
-                        </div>
-                        <div class="item">
-                            <div class="label">🎯 الهدف (2%)</div>
-                            <div class="val green">${fmtPrice(sig.takeProfit)}</div>
-                        </div>
-                        <div class="item">
-                            <div class="label">🛑 وقف (0.8%)</div>
-                            <div class="val red">${fmtPrice(sig.stopLoss)}</div>
-                        </div>
+                        <div class="item"><div class="label">دخول</div><div class="val">${fmtPrice(sig.entryPrice)}</div></div>
+                        <div class="item"><div class="label">🎯 الهدف (2%)</div><div class="val green">${fmtPrice(sig.takeProfit)}</div></div>
+                        <div class="item"><div class="label">🛑 وقف (0.8%)</div><div class="val red">${fmtPrice(sig.stopLoss)}</div></div>
                     </div>
                     <div class="analysis">${sig.analysis}</div>
                     <div class="footer">
                         <div class="timestamp">🕐 ${time} • ثقة ${sig.confidence.toFixed(0)}%</div>
                         <div class="actions">
-                            <button class="btn-share" data-id="${sig.id}" title="مشاركة الإشارة">📤 مشاركة</button>
-                            <button class="btn-lock ${lockClass}" data-id="${sig.id}" title="قفل/فتح الصفقة">${lockLabel}</button>
-                            <button class="btn-close" data-id="${sig.id}" title="إغلاق الصفقة">✖️ إغلاق</button>
+                            <button class="btn-share" data-id="${sig.id}">📤 مشاركة</button>
+                            <button class="btn-lock ${lockClass}" data-id="${sig.id}">${lockLabel}</button>
+                            <button class="btn-close" data-id="${sig.id}">✖️ إغلاق</button>
                         </div>
                     </div>
-                </div>
-              `;
+                </div>`;
                 }
                 html += '</div>';
                 container.innerHTML = html;
 
-                // Attach event listeners
-                container.querySelectorAll('.btn-share').forEach(btn => {
-                    btn.addEventListener('click', () => shareSignal(btn.dataset.id));
-                });
-                container.querySelectorAll('.btn-lock').forEach(btn => {
-                    btn.addEventListener('click', () => toggleLock(btn.dataset.id));
-                });
-                container.querySelectorAll('.btn-close').forEach(btn => {
-                    btn.addEventListener('click', () => closeTrade(btn.dataset.id));
-                });
+                container.querySelectorAll('.btn-share').forEach(btn => btn.addEventListener('click', () => shareSignal(btn.dataset.id)));
+                container.querySelectorAll('.btn-lock').forEach(btn => btn.addEventListener('click', () => toggleLock(btn.dataset.id)));
+                container.querySelectorAll('.btn-close').forEach(btn => btn.addEventListener('click', () => closeTrade(btn.dataset.id)));
             }
 
-            // Closed Trades
             function renderClosed() {
                 const closed = state.signals.filter(s => s.isClosed);
                 closedCount.textContent = closed.length;
-
                 const container = closedContainer;
                 if (closed.length === 0) {
-                    container.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">📂</div>
-                    <h3>لا توجد صفقات مغلقة بعد</h3>
-                    <p>سيظهر هنا سجل الصفقات التي تم إغلاقها يدوياً أو تلقائياً</p>
-                </div>
-              `;
+                    container.innerHTML = `<div class="empty-state"><div class="icon">📂</div><h3>لا توجد صفقات مغلقة بعد</h3></div>`;
                     return;
                 }
-
                 closed.sort((a, b) => (b.closedAt || 0) - (a.closedAt || 0));
-
                 let html = '<div class="closed-grid">';
                 for (const sig of closed) {
                     const sym = getSymbolDisplay(sig.symbol);
-                    const result = sig.closedResult || 'neutral';
-                    const resultLabel = result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد';
-                    const time = fmtDate(sig.closedAt || sig.timestamp);
+                    const resultLabel = sig.closedResult === 'win' ? '✅ ربح' : sig.closedResult === 'loss' ? '❌ خسارة' : '⚪ محايد';
                     html += `
                 <div class="closed-card">
-                    <div class="header">
-                        <div class="symbol">${sym} <small style="color:var(--text-muted);">${sig.symbol}</small></div>
-                        <div class="result ${result}">${resultLabel}</div>
-                    </div>
+                    <div class="header"><div class="symbol">${sym}</div><div class="result ${sig.closedResult || 'neutral'}">${resultLabel}</div></div>
                     <div class="details">
                         <span>📌 ${sig.direction === 'buy' ? 'شراء' : 'بيع'}</span>
                         <span>💰 دخول: ${fmtPrice(sig.entryPrice)}</span>
-                        <span>🎯 هدف: ${fmtPrice(sig.takeProfit)}</span>
-                        <span>🛑 وقف: ${fmtPrice(sig.stopLoss)}</span>
-                        <span>🕐 ${time}</span>
+                        <span>🕐 ${fmtDate(sig.closedAt || sig.timestamp)}</span>
                     </div>
-                </div>
-              `;
+                </div>`;
                 }
                 html += '</div>';
                 container.innerHTML = html;
             }
 
-            // Stats
             function renderStats() {
                 const active = state.signals.filter(s => !s.isClosed);
                 const closed = state.signals.filter(s => s.isClosed);
                 const wins = closed.filter(s => s.closedResult === 'win');
                 const losses = closed.filter(s => s.closedResult === 'loss');
                 const today = state.signals.filter(s => isToday(s.timestamp));
-
                 statActive.textContent = active.length;
                 statToday.textContent = today.length;
                 statWins.textContent = wins.length;
                 statLosses.textContent = losses.length;
             }
 
-            function renderAll() {
-                renderTicker();
-                renderSignals();
-                renderClosed();
-                renderStats();
-            }
+            function renderAll() { renderTicker(); renderSignals(); renderClosed(); renderStats(); }
 
             // ============================================================
-            //  ACTIONS
+            //  ACTIONS & HELPERS
             // ============================================================
-
             function shareSignal(id) {
                 const sig = state.signals.find(s => s.id === id);
                 if (!sig) return;
-                const sym = getSymbolDisplay(sig.symbol);
-                const dir = sig.direction === 'buy' ? 'شراء' : 'بيع';
-                const text =
-                    `📈 إشارة تداول: ${sym} - ${dir}\n💰 الدخول: ${fmtPrice(sig.entryPrice)}\n🎯 الهدف (2%): ${fmtPrice(sig.takeProfit)}\n🛑 وقف الخسارة (0.8%): ${fmtPrice(sig.stopLoss)}\n⏱️ ${fmtDateFull(sig.timestamp)}\n\n#CryptoSignal #${sym}`;
-                if (navigator.share) {
-                    navigator.share({ title: `إشارة ${sym}`, text: text }).catch(() => {});
-                } else {
-                    navigator.clipboard.writeText(text).then(() => {
-                        showToast('📋 تم نسخ الإشارة للحافظة', 'success');
-                    }).catch(() => {
-                        showToast('⚠️ تعذر النسخ، يمكنك نسخ النص يدوياً', 'error');
-                    });
-                }
+                const text = `📈 إشارة تداول: ${getSymbolDisplay(sig.symbol)} - ${sig.direction === 'buy' ? 'شراء' : 'بيع'}\n💰 الدخول: ${fmtPrice(sig.entryPrice)}\n🎯 الهدف: ${fmtPrice(sig.takeProfit)}\n🛑 وقف: ${fmtPrice(sig.stopLoss)}\n⏱️ ${fmtDateFull(sig.timestamp)}`;
+                if (navigator.share) navigator.share({ title: `إشارة ${getSymbolDisplay(sig.symbol)}`, text: text }).catch(() => {});
+                else navigator.clipboard.writeText(text).then(() => showToast('📋 تم نسخ الإشارة', 'success')).catch(() => showToast('⚠️ تعذر النسخ', 'error'));
             }
 
             function toggleLock(id) {
@@ -1987,21 +1769,16 @@
             function closeTrade(id) {
                 const sig = state.signals.find(s => s.id === id);
                 if (!sig || sig.isClosed) return;
-                if (sig.isLocked) {
-                    showToast('🔒 الصفقة مقفولة، يجب فتحها أولاً', 'error');
-                    return;
-                }
+                if (sig.isLocked) { showToast('🔒 الصفقة مقفولة', 'error'); return; }
                 const currentPrice = state.prices[sig.symbol];
                 let result = 'neutral';
                 if (currentPrice !== undefined) {
                     if (sig.direction === 'buy') {
                         if (currentPrice >= sig.takeProfit) result = 'win';
                         else if (currentPrice <= sig.stopLoss) result = 'loss';
-                        else result = 'neutral';
                     } else {
                         if (currentPrice <= sig.takeProfit) result = 'win';
                         else if (currentPrice >= sig.stopLoss) result = 'loss';
-                        else result = 'neutral';
                     }
                 }
                 sig.isClosed = true;
@@ -2009,223 +1786,92 @@
                 sig.closedResult = result;
                 persistState();
                 renderAll();
-                showToast(`✖️ تم إغلاق الصفقة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}`,
-                    result === 'win' ? 'success' : result === 'loss' ? 'error' : 'info');
+                showToast(`✖️ تم إغلاق الصفقة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}`, result === 'win' ? 'success' : result === 'loss' ? 'error' : 'info');
+            }
+
+            function showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                toastContainer.appendChild(toast);
+                setTimeout(() => { if (toast.parentNode) { toast.style.opacity = '0'; setTimeout(() => { if (toast.parentNode) toast.remove(); }, 300); } }, 3500);
             }
 
             // ============================================================
-            //  SETTINGS
+            //  SETTINGS, TIMER, PWA, INIT
             // ============================================================
             function openSettings() {
                 settingsToken.value = state.settings.telegramToken || '';
                 settingsChatId.value = state.settings.telegramChatId || '';
                 settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
                 settingsAutoSend.checked = state.settings.autoSendTelegram !== false;
-                settingsStatus.className = 'status-msg';
-                settingsStatus.textContent = '';
+                settingsStatus.className = 'status-msg'; settingsStatus.textContent = '';
                 settingsModal.classList.add('active');
             }
-
-            function closeSettings() {
-                settingsModal.classList.remove('active');
-            }
-
+            function closeSettings() { settingsModal.classList.remove('active'); }
             function saveSettings() {
-                const token = settingsToken.value.trim();
-                const chatId = settingsChatId.value.trim();
-                const interval = parseInt(settingsInterval.value) || CONFIG.UPDATE_INTERVAL_DEFAULT;
-                const autoSend = settingsAutoSend.checked;
-
-                state.settings.telegramToken = token;
-                state.settings.telegramChatId = chatId;
-                state.settings.updateInterval = Math.max(1, Math.min(60, interval));
-                state.settings.autoSendTelegram = autoSend;
-
+                state.settings.telegramToken = settingsToken.value.trim();
+                state.settings.telegramChatId = settingsChatId.value.trim();
+                state.settings.updateInterval = Math.max(1, Math.min(60, parseInt(settingsInterval.value) || CONFIG.UPDATE_INTERVAL_DEFAULT));
+                state.settings.autoSendTelegram = settingsAutoSend.checked;
                 persistSettings();
-
-                if (state.updateTimer) {
-                    clearInterval(state.updateTimer);
-                    state.updateTimer = null;
-                }
+                if (state.updateTimer) { clearInterval(state.updateTimer); state.updateTimer = null; }
                 startUpdateTimer();
-
                 settingsStatus.className = 'status-msg success';
                 settingsStatus.textContent = '✅ تم حفظ الإعدادات بنجاح';
                 showToast('✅ تم حفظ الإعدادات', 'success');
             }
-
             async function testTelegram() {
-                const token = settingsToken.value.trim();
-                const chatId = settingsChatId.value.trim();
-                if (!token || !chatId) {
-                    settingsStatus.className = 'status-msg error';
-                    settingsStatus.textContent = '⚠️ يرجى إدخال توكن التليجرام ومعرف الدردشة';
-                    return;
-                }
+                const token = settingsToken.value.trim(), chatId = settingsChatId.value.trim();
+                if (!token || !chatId) { settingsStatus.className = 'status-msg error'; settingsStatus.textContent = '⚠️ يرجى إدخال التوكن والمعرف'; return; }
                 try {
-                    settingsStatus.className = 'status-msg';
-                    settingsStatus.textContent = '⏳ جاري الاختبار...';
-                    await sendTelegramMessage('🧪 <b>اختبار اتصال</b>\nتم استلام إعدادات التليجرام بنجاح! 🚀');
-                    settingsStatus.className = 'status-msg success';
-                    settingsStatus.textContent = '✅ تم إرسال رسالة الاختبار بنجاح!';
+                    settingsStatus.className = 'status-msg'; settingsStatus.textContent = '⏳ جاري الاختبار...';
+                    await sendTelegramMessage('🧪 <b>اختبار اتصال</b>\nتم استلام الإعدادات بنجاح! 🚀');
+                    settingsStatus.className = 'status-msg success'; settingsStatus.textContent = '✅ تم إرسال رسالة الاختبار!';
                     showToast('✅ رسالة اختبار أرسلت للتليجرام', 'success');
-                } catch (e) {
-                    settingsStatus.className = 'status-msg error';
-                    settingsStatus.textContent = '❌ فشل الإرسال: ' + e.message;
-                    showToast('❌ فشل اختبار التليجرام: ' + e.message, 'error');
-                }
+                } catch (e) { settingsStatus.className = 'status-msg error'; settingsStatus.textContent = '❌ فشل الإرسال: ' + e.message; showToast('❌ فشل الاختبار', 'error'); }
             }
 
-            // ============================================================
-            //  TOAST
-            // ============================================================
-            function showToast(message, type = 'info') {
-                const toast = document.createElement('div');
-                toast.className = `toast ${type}`;
-                toast.textContent = message;
-                toastContainer.appendChild(toast);
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.style.opacity = '0';
-                        toast.style.transform = 'translateY(10px)';
-                        setTimeout(() => {
-                            if (toast.parentNode) toast.remove();
-                        }, 300);
-                    }
-                }, 3500);
-            }
-
-            // ============================================================
-            //  UPDATE TIMER
-            // ============================================================
             function startUpdateTimer() {
-                if (state.updateTimer) {
-                    clearInterval(state.updateTimer);
-                }
+                if (state.updateTimer) clearInterval(state.updateTimer);
                 const interval = (state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT) * 60 * 1000;
-                state.updateTimer = setInterval(() => {
-                    updateAllData(false);
-                }, interval);
-                document.addEventListener('visibilitychange', () => {
-                    if (!document.hidden) {
-                        updateAllData(false);
-                    }
-                });
+                state.updateTimer = setInterval(() => updateAllData(false), interval);
+                document.addEventListener('visibilitychange', () => { if (!document.hidden) updateAllData(false); });
             }
 
-            // ============================================================
-            //  PWA - INSTALL
-            // ============================================================
             function setupPWA() {
-                window.addEventListener('beforeinstallprompt', (e) => {
-                    e.preventDefault();
-                    state.installPrompt = e;
-                    btnInstall.style.display = 'flex';
-                    btnInstall.textContent = '📲 تثبيت التطبيق';
-                });
-
+                window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); state.installPrompt = e; btnInstall.style.display = 'flex'; btnInstall.textContent = '📲 تثبيت التطبيق'; });
                 btnInstall.addEventListener('click', async () => {
                     if (state.installPrompt) {
                         try {
                             const result = await state.installPrompt.prompt();
-                            if (result.outcome === 'accepted') {
-                                showToast('✅ تم تثبيت التطبيق بنجاح!', 'success');
-                                btnInstall.style.display = 'none';
-                            } else {
-                                showToast('تم إلغاء التثبيت', 'info');
-                            }
+                            if (result.outcome === 'accepted') { showToast('✅ تم التثبيت!', 'success'); btnInstall.style.display = 'none'; }
                             state.installPrompt = null;
-                        } catch (e) {
-                            console.warn('Install prompt error:', e);
-                            showToast('⚠️ تعذر التثبيت، حاول مرة أخرى', 'error');
-                        }
-                    } else {
-                        showToast('📱 يمكنك تثبيت هذا التطبيق من متصفحك عبر "إضافة إلى الشاشة الرئيسية"', 'info');
-                    }
+                        } catch (e) { showToast('⚠️ تعذر التثبيت', 'error'); }
+                    } else { showToast('📱 أضف إلى الشاشة الرئيسية', 'info'); }
                 });
-
-                if (!('beforeinstallprompt' in window)) {
-                    btnInstall.style.display = 'none';
-                }
-
+                if (!('beforeinstallprompt' in window)) btnInstall.style.display = 'none';
                 registerServiceWorker();
             }
 
             function registerServiceWorker() {
-                const swCode = `
-              self.addEventListener('install', e => {
-                e.waitUntil(self.skipWaiting());
-              });
-              self.addEventListener('activate', e => {
-                e.waitUntil(self.clients.claim());
-              });
-              self.addEventListener('fetch', e => {
-                e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-              });
-            `;
+                const swCode = `self.addEventListener('install',e=>{e.waitUntil(self.skipWaiting());});self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim());});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;
                 try {
                     const blob = new Blob([swCode], { type: 'application/javascript' });
-                    const swUrl = URL.createObjectURL(blob);
-                    navigator.serviceWorker.register(swUrl, { scope: '/' })
-                        .then(() => {
-                            console.log('SW registered (blob)');
-                        })
-                        .catch((err) => {
-                            console.warn('SW registration failed (blob):', err);
-                        });
-                } catch (e) {
-                    console.warn('SW setup error:', e);
-                }
-
-                try {
-                    const manifest = {
-                        name: 'CryptoSignal Pro',
-                        short_name: 'CryptoSignal',
-                        description: 'منصة توليد إشارات تداول العملات الرقمية',
-                        start_url: location.href.split('?')[0],
-                        display: 'standalone',
-                        background_color: '#0b0e17',
-                        theme_color: '#0b0e17',
-                        icons: [{
-                            src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📈</text></svg>',
-                            sizes: '512x512',
-                            type: 'image/svg+xml',
-                            purpose: 'any'
-                        }]
-                    };
-                    const mBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-                    const mUrl = URL.createObjectURL(mBlob);
-                    const link = document.querySelector('link[rel="manifest"]');
-                    if (link) {
-                        link.href = mUrl;
-                    }
-                } catch (e) { /* ignore */ }
+                    navigator.serviceWorker.register(URL.createObjectURL(blob), { scope: '/' }).then(() => console.log('SW registered')).catch(() => {});
+                } catch (e) { console.warn('SW error', e); }
             }
 
-            // ============================================================
-            //  EXPORT / CLEAR HISTORY
-            // ============================================================
             function exportHistory() {
-                const data = {
-                    exportedAt: new Date().toISOString(),
-                    signals: state.signals,
-                    closedTrades: state.signals.filter(s => s.isClosed),
-                    stats: {
-                        total: state.signals.length,
-                        closed: state.signals.filter(s => s.isClosed).length,
-                        wins: state.signals.filter(s => s.isClosed && s.closedResult === 'win').length,
-                        losses: state.signals.filter(s => s.isClosed && s.closedResult === 'loss').length,
-                    }
-                };
-                const json = JSON.stringify(data, null, 2);
-                const blob = new Blob([json], { type: 'application/json' });
+                const data = { exportedAt: new Date().toISOString(), signals: state.signals, closedTrades: state.signals.filter(s => s.isClosed) };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `cryptosignal_export_${new Date().toISOString().slice(0,10)}.json`;
                 a.click();
                 URL.revokeObjectURL(url);
-                showToast('📥 تم تصدير السجل بنجاح', 'success');
+                showToast('📥 تم التصدير', 'success');
             }
 
             function clearHistory() {
@@ -2234,24 +1880,17 @@
                 state.closedTrades = [];
                 persistState();
                 renderAll();
-                showToast('🗑️ تم مسح سجل الصفقات المغلقة', 'info');
+                showToast('🗑️ تم المسح', 'info');
             }
 
-            // ============================================================
-            //  INIT
-            // ============================================================
             async function init() {
                 loadState();
-
                 settingsToken.value = state.settings.telegramToken || '';
                 settingsChatId.value = state.settings.telegramChatId || '';
                 settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
                 settingsAutoSend.checked = state.settings.autoSendTelegram !== false;
-
                 renderAll();
-
                 setupPWA();
-
                 btnSettings.addEventListener('click', openSettings);
                 btnSettingsClose.addEventListener('click', closeSettings);
                 btnSettingsSave.addEventListener('click', saveSettings);
@@ -2259,55 +1898,20 @@
                 btnRefresh.addEventListener('click', () => updateAllData(true));
                 btnExportHistory.addEventListener('click', exportHistory);
                 btnClearHistory.addEventListener('click', clearHistory);
-
-                settingsModal.addEventListener('click', (e) => {
-                    if (e.target === settingsModal) closeSettings();
-                });
-
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') closeSettings();
-                });
-
+                settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
+                document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSettings(); });
                 startUpdateTimer();
-
                 await updateAllData(true);
-
-                document.addEventListener('visibilitychange', () => {
-                    if (!document.hidden) {
-                        const last = state.lastUpdate || 0;
-                        if (now() - last > 60000) {
-                            updateAllData(false);
-                        }
-                    }
-                });
-
-                window.addEventListener('online', () => {
-                    showToast('🌐 تم استعادة الاتصال بالإنترنت', 'success');
-                    updateAllData(false);
-                });
-                window.addEventListener('offline', () => {
-                    showToast('📡 انقطع الاتصال بالإنترنت، البيانات قد تكون قديمة', 'error');
-                });
-
-                console.log('🚀 CryptoSignal Pro initialized (فريم 30 دقيقة، هدف 2%، وقف 0.8%)');
-                console.log(`📊 ${state.signals.length} signals, ${state.signals.filter(s=>!s.isClosed).length} active`);
+                document.addEventListener('visibilitychange', () => { if (!document.hidden && (now() - (state.lastUpdate || 0) > 60000)) updateAllData(false); });
+                window.addEventListener('online', () => { showToast('🌐 تم استعادة الاتصال', 'success'); updateAllData(false); });
+                window.addEventListener('offline', () => { showToast('📡 انقطع الاتصال', 'error'); });
+                console.log('🚀 CryptoSignal Pro initialized (BTC Trend Filter Active)');
             }
 
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
-            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+            else init();
 
-            window.__cryptoSignal = {
-                state,
-                updateAllData,
-                renderAll,
-                sendTelegramMessage,
-                generateSignal,
-                CONFIG
-            };
-
+            window.__cryptoSignal = { state, updateAllData, renderAll, sendTelegramMessage, generateSignal, CONFIG };
         })();
     </script>
 
