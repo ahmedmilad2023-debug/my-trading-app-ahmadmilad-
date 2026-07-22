@@ -7,7 +7,7 @@
     <meta name="description" content="CryptoSignal Pro - منصة توليد إشارات تداول العملات الرقمية">
     <title>CryptoSignal Pro | إشارات التداول</title>
 
-    <!-- PWA Manifest (سيتم إنشاؤه ديناميكياً) -->
+    <!-- PWA Manifest (سيتم إنشاؤه ديناميكياً بواسطة JavaScript) -->
     <link rel="manifest" href="#" id="manifest-link">
 
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
@@ -760,7 +760,7 @@
             }
 
             // ============================================================
-            //  BACKGROUND KEEP-ALIVE
+            //  BACKGROUND KEEP-ALIVE (WakeLock + Silent Audio)
             // ============================================================
             async function requestWakeLock() {
                 try {
@@ -971,10 +971,11 @@
                         }
                     }
 
-                    // إرسال الإشارات الجديدة للتليجرام
+                    // --- إرسال الإشارات الجديدة للتليجرام والإشعارات المحلية ---
                     for (const sig of newSignals) {
                         const alreadySent = state.sentSignals.includes(sig.id);
                         if (!alreadySent) {
+                            // إرسال للتليجرام
                             if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
                                 try {
                                     await sendTelegramMessage(formatSignalMessage(sig));
@@ -987,6 +988,9 @@
                             } else {
                                 state.sentSignals.push(sig.id);
                             }
+
+                            // إرسال إشعار محلي (Notification API)
+                            sendLocalNotification(sig);
                         }
                     }
 
@@ -1022,6 +1026,36 @@
                     liveDot.style.animation = 'pulse-dot 2s infinite';
                 } finally {
                     state.isUpdating = false;
+                }
+            }
+
+            // ============================================================
+            //  LOCAL NOTIFICATIONS (جديد!)
+            // ============================================================
+            function requestNotificationPermission() {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission().then(perm => {
+                        if (perm === 'granted') addLog('✅ تم تفعيل الإشعارات المحلية', 'success');
+                        else addLog('⚠️ تم رفض الإشعارات المحلية', 'info');
+                    });
+                }
+            }
+
+            function sendLocalNotification(signal) {
+                if (!('Notification' in window) || Notification.permission !== 'granted') return;
+                
+                const sym = getSymbolDisplay(signal.symbol);
+                const dir = signal.direction === 'buy' ? 'شراء 🟢' : 'بيع 🔴';
+                try {
+                    const notification = new Notification('📈 إشارة تداول جديدة!', {
+                        body: `العملة: ${sym} | الاتجاه: ${dir} | السعر: ${fmtPrice(signal.entryPrice)}`,
+                        icon: 'data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'.9em\' font-size=\'90\'>📈</text></svg>',
+                        tag: signal.id,
+                        requireInteraction: true
+                    });
+                    setTimeout(() => notification.close(), 10000);
+                } catch (e) {
+                    // تجاهل أي خطأ في الإشعارات
                 }
             }
 
@@ -1161,7 +1195,7 @@
             }
 
             // ============================================================
-            //  SETTINGS & PWA
+            //  SETTINGS & PWA (مع Service Worker متقدم + Periodic Sync)
             // ============================================================
             function openSettings() {
                 settingsToken.value = state.settings.telegramToken || '';
@@ -1242,10 +1276,10 @@
             }
 
             // ============================================================
-            //  PWA (تقديم مانيفست حقيقي وخدمة عاملة)
+            //  PWA مع Service Worker مُحسَّن (جديد!)
             // ============================================================
             function setupPWA() {
-                // إنشاء ملف مانيفست ديناميكياً
+                // 1. إنشاء ملف Manifest ديناميكياً
                 const manifestData = {
                     "name": "CryptoSignal Pro",
                     "short_name": "CryptoSignal",
@@ -1268,10 +1302,10 @@
                 const manifestLink = document.getElementById('manifest-link');
                 manifestLink.href = manifestURL;
 
-                // تسجيل Service Worker
+                // 2. تسجيل Service Worker المتقدم
                 registerServiceWorker();
 
-                // إدارة زر التثبيت
+                // 3. إدارة زر التثبيت
                 window.addEventListener('beforeinstallprompt', (e) => { 
                     e.preventDefault(); 
                     state.installPrompt = e; 
@@ -1292,12 +1326,10 @@
                             showToast('⚠️ تعذر التثبيت', 'error'); 
                         }
                     } else {
-                        // إذا لم يكن المدعوم، نعرض تعليمات التثبيت اليدوي
                         showToast('📱 أضف إلى الشاشة الرئيسية من قائمة المتصفح', 'info');
                     }
                 });
 
-                // إخفاء الزر إذا لم يكن مدعوماً
                 if (!('beforeinstallprompt' in window)) {
                     btnInstall.style.display = 'flex';
                     btnInstall.innerHTML = '📲 <span>تثبيت</span>';
@@ -1307,8 +1339,11 @@
                 }
             }
 
+            // ============================================================
+            //  REGISTER SERVICE WORKER (مع معالجة الرسائل والـ Periodic Sync)
+            // ============================================================
             function registerServiceWorker() {
-                // إنشاء Service Worker متقدم
+                // كود Service Worker المُحسَّن (تمت إضافة periodic sync والاستماع للرسائل)
                 const swCode = `
                     self.addEventListener('install', e => {
                         e.waitUntil(
@@ -1321,6 +1356,29 @@
                     self.addEventListener('activate', e => {
                         e.waitUntil(self.clients.claim());
                     });
+                    
+                    // استقبال الرسائل من الصفحة لإجبار التحديث
+                    self.addEventListener('message', e => {
+                        if (e.data === 'update') {
+                            self.clients.matchAll().then(clients => {
+                                clients.forEach(client => client.postMessage('forceUpdate'));
+                            });
+                        }
+                    });
+
+                    // Periodic Sync (لمحاولة التحديث في الخلفية كل دقيقة)
+                    self.addEventListener('periodicsync', e => {
+                        if (e.tag === 'crypto-update') {
+                            e.waitUntil(
+                                self.clients.matchAll().then(clients => {
+                                    if (clients.length > 0) {
+                                        clients.forEach(client => client.postMessage('forceUpdate'));
+                                    }
+                                })
+                            );
+                        }
+                    });
+
                     self.addEventListener('fetch', e => {
                         e.respondWith(
                             caches.match(e.request).then(response => {
@@ -1335,21 +1393,37 @@
                     navigator.serviceWorker.register(swURL, { scope: '/' })
                         .then(reg => {
                             addLog('✅ Service Worker مسجل بنجاح', 'success');
-                            // محاولة تفعيل التحديث الدوري (Background Sync)
+                            
+                            // محاولة تفعيل التزامن الدوري (Periodic Sync)
                             if ('periodicSync' in navigator) {
-                                navigator.periodicSync.register('update-signals', {
+                                navigator.periodicSync.register('crypto-update', {
                                     minInterval: 60 * 1000 // دقيقة واحدة
                                 }).then(() => {
                                     addLog('📡 تم تفعيل التزامن الدوري (Periodic Sync)', 'info');
-                                }).catch(() => {});
+                                }).catch(err => {
+                                    addLog(`⚠️ فشل تفعيل التزامن الدوري: ${err.message}`, 'error');
+                                });
                             }
                         })
                         .catch(err => {
-                            addLog('⚠️ فشل تسجيل Service Worker: ' + err.message, 'error');
+                            addLog(`⚠️ فشل تسجيل Service Worker: ${err.message}`, 'error');
                         });
                 } catch (e) {
-                    addLog('⚠️ خطأ في إنشاء Service Worker: ' + e.message, 'error');
+                    addLog(`⚠️ خطأ في إنشاء Service Worker: ${e.message}`, 'error');
                 }
+            }
+
+            // ============================================================
+            //  الاستماع لرسائل Service Worker (لتفعيل التحديث في الخلفية)
+            // ============================================================
+            function listenToServiceWorkerMessages() {
+                if (!navigator.serviceWorker) return;
+                navigator.serviceWorker.addEventListener('message', event => {
+                    if (event.data === 'forceUpdate') {
+                        addLog('📩 استقبال إشارة تحديث من Service Worker (خلفية)', 'info');
+                        updateAllData(false);
+                    }
+                });
             }
 
             // ============================================================
@@ -1378,6 +1452,8 @@
                 applyModeConfig();
                 renderAll();
                 setupPWA();
+                listenToServiceWorkerMessages(); // تفعيل استقبال الرسائل من الخلفية
+                requestNotificationPermission(); // طلب إذن الإشعارات
                 addLog('🚀 تم بدء تشغيل التطبيق بنجاح.', 'success');
                 
                 btnSettings.addEventListener('click', openSettings);
@@ -1403,7 +1479,7 @@
                 window.addEventListener('online', () => { showToast('🌐 تم استعادة الاتصال', 'success'); updateAllData(false); });
                 window.addEventListener('offline', () => { showToast('📡 انقطع الاتصال', 'error'); });
 
-                // إعادة محاولة التحديث إذا فشل أكثر من 3 مرات
+                // إعادة محاولة التحديث إذا فشل أكثر من 3 مرات متتالية
                 setInterval(() => {
                     if (state.failureCount >= 3) {
                         addLog('🔁 محاولة استعادة التحديث بعد فشل متكرر', 'info');
@@ -1420,4 +1496,4 @@
         })();
     </script>
 </body>
-</html>
+                    </html>
