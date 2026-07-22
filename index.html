@@ -501,7 +501,7 @@
                     strategyLabel.textContent = 'افتراضي';
                     btnStrategy.classList.remove('active');
                 } else {
-                    strategyLabel.textContent = 'استراتيجية RSI+4H';
+                    strategyLabel.textContent = 'استراتيجية SuperTrend+4H';
                     btnStrategy.classList.add('active');
                 }
             }
@@ -517,8 +517,8 @@
                 state.currentStrategy = (state.currentStrategy === 'default') ? 'new' : 'default';
                 saveStrategy();
                 updateStrategyUI();
-                addLog(`🔄 تم التبديل إلى الاستراتيجية: ${state.currentStrategy === 'default' ? 'الافتراضية' : 'استراتيجية RSI+4H'}`, 'info');
-                showToast(`🔄 تم التبديل إلى ${state.currentStrategy === 'default' ? 'الاستراتيجية الافتراضية' : 'استراتيجية RSI+4H'}`, 'info');
+                addLog(`🔄 تم التبديل إلى الاستراتيجية: ${state.currentStrategy === 'default' ? 'الافتراضية' : 'استراتيجية SuperTrend+4H'}`, 'info');
+                showToast(`🔄 تم التبديل إلى ${state.currentStrategy === 'default' ? 'الاستراتيجية الافتراضية' : 'استراتيجية SuperTrend+4H'}`, 'info');
                 updateAllData(true);
             }
 
@@ -629,7 +629,7 @@
                 const dir = signal.direction === 'buy' ? '🟢 شراء' : '🔴 بيع';
                 const sym = getSymbolDisplay(signal.symbol);
                 const modeLabel = MODES[currentMode].label;
-                const strategyLabel = state.currentStrategy === 'default' ? 'الافتراضية' : 'RSI+4H';
+                const strategyLabel = state.currentStrategy === 'default' ? 'الافتراضية' : 'SuperTrend+4H';
                 return `
         🔔 <b>إشارة تداول جديدة</b> 🔔
         ───────────────
@@ -845,36 +845,82 @@
             }
 
             // ============================================================
-            //  SIGNAL GENERATION - NEW (RSI + 4H CONFIRMATION)
+            //  SIGNAL GENERATION - NEW (SuperTrend + 4H CONFIRMATION)
             // ============================================================
+            function calcSuperTrend(klines, period = 10, multiplier = 3.0) {
+                // حساب ATR (باستخدام SMA للـ True Range)
+                const tr = [];
+                for (let i = 1; i < klines.length; i++) {
+                    const h = klines[i].high, l = klines[i].low, c = klines[i-1].close;
+                    tr.push(Math.max(h - l, Math.abs(h - c), Math.abs(l - c)));
+                }
+                // حساب ATR كـ SMA لآخر period شمعات
+                const atr = [];
+                for (let i = 0; i < tr.length; i++) {
+                    if (i < period - 1) atr.push(NaN);
+                    else {
+                        let sum = 0;
+                        for (let j = 0; j < period; j++) sum += tr[i - j];
+                        atr.push(sum / period);
+                    }
+                }
+                // حساب up و dn
+                const up = new Array(klines.length).fill(0);
+                const dn = new Array(klines.length).fill(0);
+                const trend = new Array(klines.length).fill(0);
+                const src = klines.map(k => (k.high + k.low) / 2); // hl2
+                // أول شمعة نبدأ بـ trend = 1 (صاعد) و up, dn بناءً على السعر
+                if (klines.length < 2) return null;
+                const firstATR = atr[period-1] || 0;
+                up[0] = src[0] - multiplier * firstATR;
+                dn[0] = src[0] + multiplier * firstATR;
+                trend[0] = 1; // افتراضي صاعد
+                for (let i = 1; i < klines.length; i++) {
+                    const atrVal = atr[i - period + 1] || atr[atr.length - 1];
+                    const prevUp = up[i-1];
+                    const prevDn = dn[i-1];
+                    // حساب up
+                    const upBase = src[i] - multiplier * atrVal;
+                    up[i] = (klines[i].close > prevUp) ? Math.max(upBase, prevUp) : upBase;
+                    // حساب dn
+                    const dnBase = src[i] + multiplier * atrVal;
+                    dn[i] = (klines[i].close < prevDn) ? Math.min(dnBase, prevDn) : dnBase;
+                    // تحديد الاتجاه
+                    if (trend[i-1] === -1 && klines[i].close > dn[i-1]) {
+                        trend[i] = 1;
+                    } else if (trend[i-1] === 1 && klines[i].close < up[i-1]) {
+                        trend[i] = -1;
+                    } else {
+                        trend[i] = trend[i-1];
+                    }
+                }
+                return { up, dn, trend };
+            }
+
             function generateSignalNew(symbol, klines, direction4h) {
                 if (!klines || klines.length < 200) return null;
-                const closes = klines.map(k => k.close);
-                const rsiValues = calcRSI(closes, 14);
-                if (rsiValues.length < 20) return null;
-                const siglineValues = calcSMA(rsiValues, 14);
-                if (siglineValues.length < 2) return null;
-                const rsiLast = rsiValues[rsiValues.length - 1];
-                const sigLast = siglineValues[siglineValues.length - 1];
-                const rsiPrev = rsiValues[rsiValues.length - 2];
-                const sigPrev = siglineValues[siglineValues.length - 2];
+                const superTrendResult = calcSuperTrend(klines, 10, 3.0);
+                if (!superTrendResult) return null;
+                const { trend } = superTrendResult;
+                const lastTrend = trend[trend.length - 1];
+                const prevTrend = trend.length >= 2 ? trend[trend.length - 2] : null;
 
                 let direction = 'neutral';
                 let confidence = 0;
                 let reasons = [];
 
-                const isBuyCross = (rsiPrev <= sigPrev) && (rsiLast > sigLast);
-                const isSellCross = (rsiPrev >= sigPrev) && (rsiLast < sigLast);
+                // شرط التغيير: تحول من هابط إلى صاعد = شراء، من صاعد إلى هابط = بيع
+                const isBuySignal = (prevTrend === -1 && lastTrend === 1);
+                const isSellSignal = (prevTrend === 1 && lastTrend === -1);
 
-                // شروط RSI للشراء والبيع
-                if (rsiLast < 30 && isBuyCross) {
+                if (isBuySignal) {
                     direction = 'buy';
                     confidence = 85;
-                    reasons = [`RSI تحت 30 (${rsiLast.toFixed(1)}) مع تقاطع صاعد`];
-                } else if (rsiLast > 80 && isSellCross) {
+                    reasons = [`SuperTrend تحول من هابط إلى صاعد`];
+                } else if (isSellSignal) {
                     direction = 'sell';
                     confidence = 85;
-                    reasons = [`RSI فوق 80 (${rsiLast.toFixed(1)}) مع تقاطع هابط`];
+                    reasons = [`SuperTrend تحول من صاعد إلى هابط`];
                 }
 
                 if (direction === 'neutral') return null;
@@ -893,7 +939,7 @@
                     return null;
                 }
 
-                const lastClose = closes[closes.length - 1];
+                const lastClose = klines[klines.length - 1].close;
                 const entryPrice = lastClose;
                 const atrValues = calcATR(klines, 14);
                 const atrVal = atrValues.length > 0 ? atrValues[atrValues.length - 1] : (entryPrice * 0.02);
@@ -914,10 +960,10 @@
                 if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) return null;
                 const modeLabel = MODES[currentMode].label;
                 const analysisText = `
-        📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة) - استراتيجية RSI+4H</strong>
+        📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة) - استراتيجية SuperTrend+4H</strong>
         ───────────────
         ✅ <strong>القرار:</strong> ${direction === 'buy' ? 'شراء' : 'بيع'} (ثقة ${confidence.toFixed(0)}%)
-        📊 <strong>RSI:</strong> ${rsiLast.toFixed(1)} ${isBuyCross ? '(تقاطع صاعد)' : '(تقاطع هابط)'}
+        📊 <strong>SuperTrend:</strong> ${reasons[0] || '—'}
         📈 <strong>اتجاه 4H:</strong> ${direction4h === 'up' ? 'صاعد' : 'هابط'}
         🎯 <strong>الهدف:</strong> 2% (${fmtPrice(takeProfit)})
         🛑 <strong>وقف الخسارة:</strong> 0.8% (${fmtPrice(stopLoss)})
@@ -926,7 +972,7 @@
                 return {
                     id: id(), symbol: symbol, direction: direction, entryPrice: entryPrice, 
                     takeProfit: takeProfit, stopLoss: stopLoss, confidence: confidence, 
-                    analysis: analysisText, timestamp: now(), pattern: 'rsi_4h_confirmation', 
+                    analysis: analysisText, timestamp: now(), pattern: 'supertrend_4h', 
                     ema: 0, stochasticK: 0, stochasticD: 0, adx: 0, 
                     isLocked: false, isClosed: false, closedAt: null, closedResult: null
                 };
@@ -1824,4 +1870,4 @@
         })();
     </script>
 </body>
-    </html>
+                                                          </html>
