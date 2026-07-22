@@ -858,14 +858,12 @@
                 if (adxResult.adx.length === 0) return null;
                 const adxLast = adxResult.adx[adxResult.adx.length - 1];
 
-                // شرط ADX > 20
                 if (adxLast <= 20) return null;
 
                 let direction = 'neutral';
                 let confidence = 0;
                 let reasons = [];
 
-                // ✅ تم إزالة شرط rsiLast < 50 و rsiLast > 50
                 const isBuyCross = (rsiPrev <= sigPrev) && (rsiLast > sigLast);
                 const isSellCross = (rsiPrev >= sigPrev) && (rsiLast < sigLast);
 
@@ -1174,7 +1172,6 @@
                     }
 
                     // Generate new signals
-                    const newSignals = [];
                     let btcDirection = 'neutral';
                     const btcKlines = allKlines['BTCUSDT'];
                     if (btcKlines && btcKlines.length >= 200) {
@@ -1189,11 +1186,26 @@
                             addLog(`⚠️ بيانات غير كافية لـ ${sym} (${k ? k.length : 0})`, 'error');
                             continue;
                         }
-                        const signal = generateSignal(sym, k);
+
+                        // ✅ التعديل: إذا كان البيتكوين محايدًا والفلتر مفعل، لا تولد أي إشارة
+                        let generateNewSignal = true;
+                        if (state.btcFilterEnabled && btcDirection === 'neutral') {
+                            generateNewSignal = false;
+                            addLog(`⛔ البيتكوين محايد، تخطي توليد إشارة لـ ${getSymbolDisplay(sym)}`, 'info');
+                        }
+
+                        let signal = null;
+                        if (generateNewSignal) {
+                            signal = generateSignal(sym, k);
+                        }
+
                         if (!signal) {
-                            addLog(`⏸️ لا توجد إشارة لـ ${sym} حالياً`, 'info');
+                            if (generateNewSignal) {
+                                addLog(`⏸️ لا توجد إشارة لـ ${sym} حالياً`, 'info');
+                            }
                             continue;
                         }
+
                         if (state.btcFilterEnabled) {
                             if (btcDirection === 'buy' && signal.direction === 'sell') {
                                 addLog(`⛔ تم تصفية إشارة بيع لـ ${getSymbolDisplay(sym)} بسبب اتجاه BTC صاعد`, 'info');
@@ -1204,6 +1216,7 @@
                                 continue;
                             }
                         }
+
                         const existingOpen = state.signals.find(s => s.symbol === sym && !s.isClosed);
                         if (existingOpen) {
                             if (existingOpen.isLocked) {
@@ -1244,32 +1257,27 @@
                                 }
                             }
                             state.signals.push(signal);
-                            newSignals.push(signal);
                             addLog(`📈 تم توليد إشارة جديدة لـ ${getSymbolDisplay(sym)} (${signal.direction})`, 'success');
                         } else {
                             state.signals.push(signal);
-                            newSignals.push(signal);
                             addLog(`📈 تم توليد إشارة جديدة لـ ${getSymbolDisplay(sym)} (${signal.direction})`, 'success');
                         }
                     }
 
-                    for (const sig of newSignals) {
-                        const alreadySent = state.sentSignals.includes(sig.id);
-                        if (!alreadySent) {
-                            if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
-                                try {
-                                    await sendTelegramMessage(formatSignalMessage(sig));
-                                    state.sentSignals.push(sig.id);
-                                    if (state.sentSignals.length > 200) state.sentSignals = state.sentSignals.slice(-100);
-                                    addLog(`📨 تم إرسال إشارة ${getSymbolDisplay(sig.symbol)} إلى التليجرام`, 'success');
-                                } catch (e) {
-                                    addLog(`⚠️ فشل إرسال إشارة ${getSymbolDisplay(sig.symbol)}`, 'error');
-                                }
-                            } else {
+                    for (const sig of state.signals.filter(s => !s.isClosed && !state.sentSignals.includes(s.id))) {
+                        if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
+                            try {
+                                await sendTelegramMessage(formatSignalMessage(sig));
                                 state.sentSignals.push(sig.id);
+                                if (state.sentSignals.length > 200) state.sentSignals = state.sentSignals.slice(-100);
+                                addLog(`📨 تم إرسال إشارة ${getSymbolDisplay(sig.symbol)} إلى التليجرام`, 'success');
+                            } catch (e) {
+                                addLog(`⚠️ فشل إرسال إشارة ${getSymbolDisplay(sig.symbol)}`, 'error');
                             }
-                            sendLocalNotification(sig);
+                        } else {
+                            state.sentSignals.push(sig.id);
                         }
+                        sendLocalNotification(sig);
                     }
 
                     const activeSignals = state.signals.filter(s => !s.isClosed);
@@ -1746,4 +1754,4 @@
         })();
     </script>
 </body>
-</html>
+    </html>
