@@ -77,7 +77,7 @@
         .stat-card .value.red { color: var(--accent-red); }
         .stat-card .value.gold { color: var(--accent-gold); }
 
-        /* ===== Chart Section (جديد) ===== */
+        /* ===== Chart Section ===== */
         .chart-section {
             background: var(--bg-card);
             border-radius: var(--radius);
@@ -237,7 +237,6 @@
             <button id="btnBtcFilter" title="تفعيل/إيقاف فلتر اتجاه البيتكوين" style="border-color:var(--accent-blue);">
                 ⚡ <span id="btcFilterLabel">BTC ON</span>
             </button>
-            <!-- زر التبديل بين الاستراتيجيات -->
             <button id="btnStrategy" class="strategy-btn" title="التبديل بين الاستراتيجيات">🧠 <span id="strategyLabel">افتراضي</span></button>
             <button class="btn-install" id="btnInstall" title="تثبيت التطبيق على جهازك">📲 <span>تثبيت</span></button>
             <button id="btnSettings" title="إعدادات البوت والتطبيق">⚙️ <span>إعدادات</span></button>
@@ -257,7 +256,7 @@
             </div>
         </section>
 
-        <!-- ===== CHART SECTION (جديد) ===== -->
+        <!-- ===== CHART SECTION ===== -->
         <section class="chart-section" id="chartSection">
             <div class="chart-header">
                 <h3>📊 رسم بياني شموع يابانية (فريم 30 دقيقة)</h3>
@@ -385,7 +384,7 @@
                 SENT_SIGNALS_KEY: 'cryptosignal_sent',
                 MODE_KEY: 'cryptosignal_mode',
                 STRATEGY_KEY: 'cryptosignal_strategy',
-                KLINES_KEY: 'cryptosignal_klines' // جديد لتخزين بيانات الشموع
+                KLINES_KEY: 'cryptosignal_klines'
             };
 
             // ============================================================
@@ -393,7 +392,7 @@
             // ============================================================
             let state = {
                 signals: [], closedTrades: [], prices: {}, 
-                klines: {}, // تخزين بيانات الشموع لكل زوج (آخر 100 شمعة)
+                klines: {},
                 settings: { 
                     telegramToken: '8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ', 
                     telegramChatId: '1003970108966', 
@@ -405,7 +404,7 @@
                 failureCount: 0,
                 wakeLock: null,
                 audioCtx: null,
-                currentStrategy: 'default' // 'default' أو 'new'
+                currentStrategy: 'default'
             };
 
             // ============================================================
@@ -445,7 +444,6 @@
             const btnClearHistory = $('btnClearHistory');
             const liveDot = $('liveDot');
             const toastContainer = $('toastContainer');
-            // عناصر الرسم البياني
             const candleCanvas = $('candleCanvas');
             const chartSymbolSelect = $('chartSymbolSelect');
 
@@ -641,7 +639,7 @@
             }
 
             // ============================================================
-            //  INDICATORS (Calc Functions)
+            //  INDICATORS
             // ============================================================
             function calcSMA(data, period) {
                 if (data.length < period) return [];
@@ -839,6 +837,9 @@
                 };
             }
 
+            // ============================================================
+            //  SIGNAL GENERATION (NEW STRATEGY - FIXED)
+            // ============================================================
             function generateSignalNew(symbol, klines) {
                 if (!klines || klines.length < 200) return null;
                 const closes = klines.map(k => k.close);
@@ -856,22 +857,30 @@
                 const adxResult = calcADX(highs, lows, closes, CONFIG.ADX_PERIOD);
                 if (adxResult.adx.length === 0) return null;
                 const adxLast = adxResult.adx[adxResult.adx.length - 1];
+
+                // شرط ADX > 20
                 if (adxLast <= 20) return null;
+
                 let direction = 'neutral';
                 let confidence = 0;
                 let reasons = [];
+
+                // ✅ تم إزالة شرط rsiLast < 50 و rsiLast > 50
                 const isBuyCross = (rsiPrev <= sigPrev) && (rsiLast > sigLast);
                 const isSellCross = (rsiPrev >= sigPrev) && (rsiLast < sigLast);
-                if (isBuyCross && rsiLast < 50) {
+
+                if (isBuyCross) {
                     direction = 'buy';
                     confidence = 80;
                     reasons = [`RSI تقاطع صاعد فوق خط الإشارة (${rsiLast.toFixed(1)})`, `ADX قوي: ${adxLast.toFixed(1)} (>20)`];
-                } else if (isSellCross && rsiLast > 50) {
+                } else if (isSellCross) {
                     direction = 'sell';
                     confidence = 80;
                     reasons = [`RSI تقاطع هابط تحت خط الإشارة (${rsiLast.toFixed(1)})`, `ADX قوي: ${adxLast.toFixed(1)} (>20)`];
                 }
+
                 if (direction === 'neutral') return null;
+
                 const entryPrice = lastClose;
                 const atrValues = calcATR(klines, 14);
                 const atrVal = atrValues.length > 0 ? atrValues[atrValues.length - 1] : (entryPrice * 0.02);
@@ -1003,12 +1012,12 @@
             }
 
             // ============================================================
-            //  CHART DRAWING (جديد)
+            //  CHART DRAWING
             // ============================================================
             function drawCandles() {
                 const canvas = candleCanvas;
                 const rect = canvas.parentElement.getBoundingClientRect();
-                const width = rect.width - 32; // padding
+                const width = rect.width - 32;
                 const height = 240;
                 canvas.width = width * window.devicePixelRatio;
                 canvas.height = height * window.devicePixelRatio;
@@ -1027,11 +1036,9 @@
                     return;
                 }
 
-                // نأخذ آخر 50 شمعة
                 const data = klines.slice(-50);
                 const numCandles = data.length;
 
-                // حساب النطاق السعري
                 let maxPrice = -Infinity, minPrice = Infinity;
                 data.forEach(k => {
                     maxPrice = Math.max(maxPrice, k.high, k.close);
@@ -1047,12 +1054,9 @@
                 const xStep = width / numCandles;
 
                 ctx.clearRect(0, 0, width, height);
-
-                // رسم الخلفية
                 ctx.fillStyle = '#131a2b';
                 ctx.fillRect(0, 0, width, height);
 
-                // رسم الشموع
                 data.forEach((k, i) => {
                     const x = i * xStep + xStep/2;
                     const isBullish = k.close > k.open;
@@ -1075,7 +1079,6 @@
                     ctx.fillRect(x - halfCandle, topY, candleWidth, bottomY - topY);
                 });
 
-                // رسم خط السعر الحالي
                 const lastClose = data[data.length-1].close;
                 const lastY = height - ((lastClose - minPrice) / (maxPrice - minPrice)) * height;
                 ctx.beginPath();
@@ -1087,7 +1090,6 @@
                 ctx.stroke();
                 ctx.setLineDash([]);
 
-                // كتابة السعر الحالي
                 ctx.fillStyle = '#f5a623';
                 ctx.font = '12px sans-serif';
                 ctx.textAlign = 'left';
@@ -1129,9 +1131,9 @@
 
                     await Promise.all(fetchPromises);
                     state.prices = allPrices;
-                    state.klines = allKlines; // تخزين الشموع للرسم
+                    state.klines = allKlines;
 
-                    // فحص الصفقات المفتوحة
+                    // Close active trades
                     for (const sym of symbols) {
                         const currentPrice = state.prices[sym];
                         if (currentPrice === undefined) continue;
@@ -1171,7 +1173,7 @@
                         }
                     }
 
-                    // توليد إشارات جديدة
+                    // Generate new signals
                     const newSignals = [];
                     let btcDirection = 'neutral';
                     const btcKlines = allKlines['BTCUSDT'];
@@ -1251,7 +1253,6 @@
                         }
                     }
 
-                    // إرسال الإشارات
                     for (const sig of newSignals) {
                         const alreadySent = state.sentSignals.includes(sig.id);
                         if (!alreadySent) {
@@ -1271,7 +1272,6 @@
                         }
                     }
 
-                    // تنقية الإشارات
                     const activeSignals = state.signals.filter(s => !s.isClosed);
                     const closedSignals = state.signals.filter(s => s.isClosed);
                     const activeBySymbol = {};
@@ -1291,7 +1291,7 @@
                     state.failureCount = 0;
                     persistState();
                     renderAll();
-                    drawCandles(); // رسم الشموع
+                    drawCandles();
 
                     liveDot.style.background = '#00d4aa';
                     liveDot.style.animation = 'pulse-dot 2s infinite';
@@ -1715,8 +1715,8 @@
                 btnBtcFilter.addEventListener('click', toggleBtcFilter);
                 btnModeToggle.addEventListener('click', toggleMode);
                 btnStrategy.addEventListener('click', toggleStrategy);
-                chartSymbolSelect.addEventListener('change', drawCandles); // عند تغيير الزوج، يُعاد الرسم
-                window.addEventListener('resize', drawCandles); // إعادة رسم عند تغيير حجم الشاشة
+                chartSymbolSelect.addEventListener('change', drawCandles);
+                window.addEventListener('resize', drawCandles);
                 
                 settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
                 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSettings(); });
