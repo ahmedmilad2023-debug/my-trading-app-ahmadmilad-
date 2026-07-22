@@ -6,12 +6,8 @@
     <meta name="theme-color" content="#0b0e17">
     <meta name="description" content="CryptoSignal Pro - منصة توليد إشارات تداول العملات الرقمية">
     <title>CryptoSignal Pro | إشارات التداول</title>
-
-    <!-- PWA Manifest (سيتم إنشاؤه ديناميكياً بواسطة JavaScript) -->
     <link rel="manifest" href="#" id="manifest-link">
-
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
-
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -50,6 +46,8 @@
         .app-bar .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .app-bar .actions button { padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; transition: var(--transition); background: var(--bg-card); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px; }
         .app-bar .actions button:hover { background: var(--bg-card-hover); transform: translateY(-1px); }
+        .app-bar .actions button.strategy-btn { border-color: var(--accent-purple); color: var(--accent-purple); }
+        .app-bar .actions button.strategy-btn.active { background: var(--accent-purple); color: #fff; border-color: var(--accent-purple); }
         .app-bar .actions .btn-install { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); border-color: transparent; color: #fff; }
         .app-bar .actions .btn-install:hover { opacity: 0.9; transform: scale(1.03); }
         .badge-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); animation: pulse-dot 2s infinite; }
@@ -202,6 +200,8 @@
             <button id="btnBtcFilter" title="تفعيل/إيقاف فلتر اتجاه البيتكوين" style="border-color:var(--accent-blue);">
                 ⚡ <span id="btcFilterLabel">BTC ON</span>
             </button>
+            <!-- الزر الجديد للتبديل بين الاستراتيجيات -->
+            <button id="btnStrategy" class="strategy-btn" title="التبديل بين الاستراتيجيات">🧠 <span id="strategyLabel">افتراضي</span></button>
             <button class="btn-install" id="btnInstall" title="تثبيت التطبيق على جهازك">📲 <span>تثبيت</span></button>
             <button id="btnSettings" title="إعدادات البوت والتطبيق">⚙️ <span>إعدادات</span></button>
             <button id="btnRefresh" title="تحديث البيانات يدوياً">🔄</button>
@@ -238,7 +238,7 @@
             <div class="loading-spinner"><div class="spinner"></div><span>جاري تحليل الأسواق...</span></div>
         </div>
 
-        <!-- سجل الأحداث (مهم جداً للمتابعة) -->
+        <!-- سجل الأحداث -->
         <div class="debug-container" id="debugLogContainer">
             <div class="debug-label">📋 سجل الأحداث والمراقبة</div>
             <div id="debugLogContent"><div style="color:var(--text-muted);">بانتظار بدء التحديث...</div></div>
@@ -295,7 +295,7 @@
             'use strict';
 
             // ============================================================
-            //  CONFIGURATION 
+            //  CONFIGURATION
             // ============================================================
             const MODES = {
                 FLEXIBLE: { label: 'مرن', ADX_THRESHOLD: 15, STOCH_OVERBOUGHT: 70, STOCH_OVERSOLD: 30 },
@@ -327,7 +327,8 @@
                 SETTINGS_KEY: 'cryptosignal_settings',
                 HISTORY_KEY: 'cryptosignal_history',
                 SENT_SIGNALS_KEY: 'cryptosignal_sent',
-                MODE_KEY: 'cryptosignal_mode'
+                MODE_KEY: 'cryptosignal_mode',
+                STRATEGY_KEY: 'cryptosignal_strategy'
             };
 
             // ============================================================
@@ -345,7 +346,8 @@
                 btcFilterEnabled: true,
                 failureCount: 0,
                 wakeLock: null,
-                audioCtx: null
+                audioCtx: null,
+                currentStrategy: 'default' // 'default' أو 'new'
             };
 
             // ============================================================
@@ -375,6 +377,8 @@
             const btcFilterLabel = $('btcFilterLabel');
             const btnModeToggle = $('btnModeToggle');
             const modeLabel = $('modeLabel');
+            const btnStrategy = $('btnStrategy');
+            const strategyLabel = $('strategyLabel');
             const btnSettingsClose = $('settingsClose');
             const btnSettingsSave = $('settingsSave');
             const btnSettingsTest = $('settingsTest');
@@ -391,9 +395,7 @@
                 try { const saved = localStorage.getItem(CONFIG.MODE_KEY); if (saved === 'STRICT' || saved === 'FLEXIBLE') currentMode = saved; } catch (e) {}
                 applyModeConfig();
             }
-
             function saveMode() { try { localStorage.setItem(CONFIG.MODE_KEY, currentMode); } catch (e) {} }
-
             function applyModeConfig() {
                 const mode = MODES[currentMode];
                 if (!mode) return;
@@ -408,14 +410,57 @@
                     btnModeToggle.style.borderColor = 'var(--accent-green)';
                     btnModeToggle.style.color = 'var(--accent-green)';
                 }
-                addLog(`🔄 تم التبديل إلى النظام ${mode.label} (ADX=${mode.ADX_THRESHOLD}, OB=${mode.STOCH_OVERBOUGHT}, OS=${mode.STOCH_OVERSOLD})`, 'info');
+                addLog(`🔄 تم التبديل إلى النظام ${mode.label}`, 'info');
             }
-
             function toggleMode() {
                 currentMode = (currentMode === 'FLEXIBLE') ? 'STRICT' : 'FLEXIBLE';
                 saveMode();
                 applyModeConfig();
                 showToast(`✅ تم التبديل إلى النظام ${MODES[currentMode].label}`, 'info');
+                updateAllData(true);
+            }
+
+            // ============================================================
+            //  STRATEGY MANAGEMENT (جديد)
+            // ============================================================
+            function loadStrategy() {
+                try {
+                    const saved = localStorage.getItem(CONFIG.STRATEGY_KEY);
+                    if (saved === 'default' || saved === 'new') {
+                        state.currentStrategy = saved;
+                    }
+                } catch (e) {}
+                updateStrategyUI();
+            }
+            function saveStrategy() {
+                try { localStorage.setItem(CONFIG.STRATEGY_KEY, state.currentStrategy); } catch (e) {}
+            }
+            function updateStrategyUI() {
+                if (state.currentStrategy === 'default') {
+                    strategyLabel.textContent = 'افتراضي';
+                    btnStrategy.classList.remove('active');
+                } else {
+                    strategyLabel.textContent = 'جديد (RSI+ADX)';
+                    btnStrategy.classList.add('active');
+                }
+            }
+            function toggleStrategy() {
+                // إغلاق جميع الإشارات النشطة (لأن الاستراتيجيات قد تتعارض)
+                state.signals.forEach(sig => {
+                    if (!sig.isClosed) {
+                        sig.isClosed = true;
+                        sig.closedAt = now();
+                        sig.closedResult = 'neutral';
+                        sig.analysis += '\n\n🔄 تم إغلاق الصفقة بسبب تبديل الاستراتيجية.';
+                    }
+                });
+                // تبديل الاستراتيجية
+                state.currentStrategy = (state.currentStrategy === 'default') ? 'new' : 'default';
+                saveStrategy();
+                updateStrategyUI();
+                addLog(`🔄 تم التبديل إلى الاستراتيجية: ${state.currentStrategy === 'default' ? 'الافتراضية' : 'الجديدة'}`, 'info');
+                showToast(`🔄 تم التبديل إلى ${state.currentStrategy === 'default' ? 'الاستراتيجية الافتراضية' : 'الاستراتيجية الجديدة'}`, 'info');
+                // إعادة التحديث فورًا
                 updateAllData(true);
             }
 
@@ -479,6 +524,7 @@
                     if (raw) { const h = JSON.parse(raw); if (Array.isArray(h)) state.closedTrades = h; }
                 } catch (e) { /* ignore */ }
                 loadMode();
+                loadStrategy();
             }
 
             function persistState() {
@@ -515,6 +561,7 @@
                 const dir = signal.direction === 'buy' ? '🟢 شراء' : '🔴 بيع';
                 const sym = getSymbolDisplay(signal.symbol);
                 const modeLabel = MODES[currentMode].label;
+                const strategyLabel = state.currentStrategy === 'default' ? 'الافتراضية' : 'RSI Heatmap';
                 return `
         🔔 <b>إشارة تداول جديدة</b> 🔔
         ───────────────
@@ -523,7 +570,7 @@
         💵 سعر الدخول: ${fmtPrice(signal.entryPrice)}
         🎯 الهدف: ${fmtPrice(signal.takeProfit)} (2%)
         🛑 وقف الخسارة: ${fmtPrice(signal.stopLoss)} (0.8%)
-        📊 التحليل: ${signal.analysis.substring(0,200)}...
+        📊 الاستراتيجية: ${strategyLabel}
         🕐 الوقت: ${fmtDateFull(signal.timestamp)}
         📌 النظام: ${modeLabel}
         ───────────────
@@ -531,8 +578,54 @@
             }
 
             // ============================================================
-            //  INDICATORS
+            //  INDICATORS (Calc Functions)
             // ============================================================
+            function calcSMA(data, period) {
+                if (data.length < period) return [];
+                const result = [];
+                for (let i = period - 1; i < data.length; i++) {
+                    let sum = 0;
+                    for (let j = i - period + 1; j <= i; j++) {
+                        sum += data[j];
+                    }
+                    result.push(sum / period);
+                }
+                return result;
+            }
+
+            function calcRSI(closes, period) {
+                if (closes.length < period + 1) return [];
+                const changes = [];
+                for (let i = 1; i < closes.length; i++) {
+                    changes.push(closes[i] - closes[i - 1]);
+                }
+                const rsiValues = [];
+                let avgGain = 0, avgLoss = 0;
+                // أول قيمة للمتوسط
+                for (let i = 0; i < period; i++) {
+                    if (changes[i] > 0) avgGain += changes[i];
+                    else avgLoss += Math.abs(changes[i]);
+                }
+                avgGain /= period;
+                avgLoss /= period;
+                let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+                rsiValues.push(100 - (100 / (1 + rs)));
+
+                for (let i = period; i < changes.length; i++) {
+                    const change = changes[i];
+                    if (change > 0) {
+                        avgGain = (avgGain * (period - 1) + change) / period;
+                        avgLoss = (avgLoss * (period - 1) + 0) / period;
+                    } else {
+                        avgGain = (avgGain * (period - 1) + 0) / period;
+                        avgLoss = (avgLoss * (period - 1) + Math.abs(change)) / period;
+                    }
+                    rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+                    rsiValues.push(100 - (100 / (1 + rs)));
+                }
+                return rsiValues;
+            }
+
             function calcEMA(data, period) {
                 if (data.length < period) return [];
                 const multiplier = 2 / (period + 1);
@@ -589,22 +682,6 @@
                 return { adx: adx, plusDI: plusDI14.slice(0, adx.length), minusDI: minusDI14.slice(0, adx.length) };
             }
 
-            function detectPattern(klines, idx) {
-                if (idx < 2 || idx >= klines.length) return null;
-                const c = klines[idx], p = klines[idx - 1], pp = klines[idx - 2];
-                const body = Math.abs(c.close - c.open), upper = c.high - Math.max(c.close, c.open), lower = Math.min(c.close, c.open) - c.low, range = c.high - c.low;
-                if (range === 0) return null;
-                const bodyRatio = body / range, isGreen = c.close > c.open, isRed = c.close < c.open;
-                if (bodyRatio < 0.3 && lower > body * 2 && upper < body * 0.5) return isGreen ? 'hammer' : 'hanging_man';
-                if (bodyRatio < 0.3 && upper > body * 2 && lower < body * 0.5) return isRed ? 'shooting_star' : 'inverted_hammer';
-                if (isGreen && p.close < p.open && c.close > p.open && c.open < p.close) return 'bullish_engulfing';
-                if (isRed && p.close > p.open && c.close < p.open && c.open > p.close) return 'bearish_engulfing';
-                if (idx >= 2 && p.close < p.open && isGreen && c.close > (p.open + p.close) / 2) { const body1 = Math.abs(pp.close - pp.open), body2 = Math.abs(p.close - p.open); if (pp.close < pp.open && body2 > body1 * 0.5) return 'morning_star'; }
-                if (idx >= 2 && p.close > p.open && isRed && c.close < (p.open + p.close) / 2) { const body1 = Math.abs(pp.close - pp.open), body2 = Math.abs(p.close - p.open); if (pp.close > pp.open && body2 > body1 * 0.5) return 'evening_star'; }
-                if (bodyRatio < 0.1) return 'doji';
-                return null;
-            }
-
             function calcATR(klines, period = 14) {
                 if (klines.length < period + 1) return [];
                 const tr = [];
@@ -615,9 +692,9 @@
             }
 
             // ============================================================
-            //  SIGNAL GENERATION
+            //  SIGNAL GENERATION (Default Strategy)
             // ============================================================
-            function generateSignal(symbol, klines) {
+            function generateSignalDefault(symbol, klines) {
                 if (!klines || klines.length < 200) return null;
 
                 const closes = klines.map(k => k.close);
@@ -639,8 +716,6 @@
                 const adxResult = calcADX(highs, lows, closes, CONFIG.ADX_PERIOD);
                 if (adxResult.adx.length === 0) return null;
                 const adxLast = adxResult.adx[adxResult.adx.length - 1];
-
-                const pattern = detectPattern(klines, klines.length - 1);
 
                 let direction = 'neutral';
                 let confidence = 0;
@@ -679,7 +754,6 @@
                 const stopAmount = entryPrice * stopPct;
                 const atrStop = atrVal * 1.2;
                 const finalStop = Math.min(atrStop, stopAmount);
-
                 if (finalStop < entryPrice * 0.001) return null;
 
                 let takeProfit, stopLoss;
@@ -690,19 +764,17 @@
                     takeProfit = entryPrice * (1 - CONFIG.TARGET_PERCENT);
                     stopLoss = entryPrice + finalStop;
                 }
-
                 const stopDist = Math.abs(entryPrice - stopLoss);
                 if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) return null;
 
                 const modeLabel = MODES[currentMode].label;
                 const analysisText = `
-        📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة)</strong>
+        📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة) - افتراضي</strong>
         ───────────────
         ✅ <strong>القرار:</strong> ${direction === 'buy' ? 'شراء' : 'بيع'} (ثقة ${confidence.toFixed(0)}%)
         📉 <strong>الستوكاستيك:</strong> ${reasons[0] || '—'}
         📊 <strong>ADX:</strong> ${reasons[1] || '—'}
         📈 <strong>EMA 200:</strong> ${reasons[2] || '—'}
-        🕯️ <strong>نمط الشموع:</strong> ${pattern || 'غير واضح'}
         🎯 <strong>الهدف:</strong> 2% (${fmtPrice(takeProfit)})
         🛑 <strong>وقف الخسارة:</strong> 0.8% (${fmtPrice(stopLoss)})
         📌 <strong>النظام:</strong> ${modeLabel}
@@ -711,10 +783,115 @@
                 return {
                     id: id(), symbol: symbol, direction: direction, entryPrice: entryPrice, 
                     takeProfit: takeProfit, stopLoss: stopLoss, confidence: confidence, 
-                    analysis: analysisText, timestamp: now(), pattern: pattern || 'none', 
+                    analysis: analysisText, timestamp: now(), pattern: 'default', 
                     ema: currentEMA, stochasticK: kLast, stochasticD: dLast, adx: adxLast, 
                     isLocked: false, isClosed: false, closedAt: null, closedResult: null
                 };
+            }
+
+            // ============================================================
+            //  SIGNAL GENERATION (New Strategy: RSI Heatmap + ADX > 20)
+            // ============================================================
+            function generateSignalNew(symbol, klines) {
+                if (!klines || klines.length < 200) return null;
+
+                const closes = klines.map(k => k.close);
+                const highs = klines.map(k => k.high);
+                const lows = klines.map(k => k.low);
+                const lastClose = closes[closes.length - 1];
+
+                // 1. حساب RSI و Signal Line (SMA of RSI)
+                const rsiValues = calcRSI(closes, 14);
+                if (rsiValues.length < 20) return null;
+                const siglineValues = calcSMA(rsiValues, 14);
+                if (siglineValues.length < 2) return null;
+
+                const rsiLast = rsiValues[rsiValues.length - 1];
+                const sigLast = siglineValues[siglineValues.length - 1];
+                const rsiPrev = rsiValues[rsiValues.length - 2];
+                const sigPrev = siglineValues[siglineValues.length - 2];
+
+                // 2. حساب ADX
+                const adxResult = calcADX(highs, lows, closes, CONFIG.ADX_PERIOD);
+                if (adxResult.adx.length === 0) return null;
+                const adxLast = adxResult.adx[adxResult.adx.length - 1];
+
+                // 3. شرط ADX > 20
+                if (adxLast <= 20) return null;
+
+                // 4. شروط الدخول بناءً على المؤشر (RSI Heatmap)
+                let direction = 'neutral';
+                let confidence = 0;
+                let reasons = [];
+
+                // شرط الشراء: تقاطع فوق الإشارة (crossover) و RSI < 50
+                const isBuyCross = (rsiPrev <= sigPrev) && (rsiLast > sigLast);
+                // شرط البيع: تقاطع تحت الإشارة (crossunder) و RSI > 50
+                const isSellCross = (rsiPrev >= sigPrev) && (rsiLast < sigLast);
+
+                if (isBuyCross && rsiLast < 50) {
+                    direction = 'buy';
+                    confidence = 80;
+                    reasons = [`RSI تقاطع صاعد فوق خط الإشارة (${rsiLast.toFixed(1)})`, `ADX قوي: ${adxLast.toFixed(1)} (>20)`];
+                } else if (isSellCross && rsiLast > 50) {
+                    direction = 'sell';
+                    confidence = 80;
+                    reasons = [`RSI تقاطع هابط تحت خط الإشارة (${rsiLast.toFixed(1)})`, `ADX قوي: ${adxLast.toFixed(1)} (>20)`];
+                }
+
+                if (direction === 'neutral') return null;
+
+                // حساب الهدف ووقف الخسارة
+                const entryPrice = lastClose;
+                const atrValues = calcATR(klines, 14);
+                const atrVal = atrValues.length > 0 ? atrValues[atrValues.length - 1] : (entryPrice * 0.02);
+                const stopPct = CONFIG.STOP_PERCENT_MAX;
+                const stopAmount = entryPrice * stopPct;
+                const atrStop = atrVal * 1.2;
+                const finalStop = Math.min(atrStop, stopAmount);
+                if (finalStop < entryPrice * 0.001) return null;
+
+                let takeProfit, stopLoss;
+                if (direction === 'buy') {
+                    takeProfit = entryPrice * (1 + CONFIG.TARGET_PERCENT);
+                    stopLoss = entryPrice - finalStop;
+                } else {
+                    takeProfit = entryPrice * (1 - CONFIG.TARGET_PERCENT);
+                    stopLoss = entryPrice + finalStop;
+                }
+                const stopDist = Math.abs(entryPrice - stopLoss);
+                if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) return null;
+
+                const modeLabel = MODES[currentMode].label;
+                const analysisText = `
+        📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة) - استراتيجية RSI</strong>
+        ───────────────
+        ✅ <strong>القرار:</strong> ${direction === 'buy' ? 'شراء' : 'بيع'} (ثقة ${confidence.toFixed(0)}%)
+        📊 <strong>RSI:</strong> ${rsiLast.toFixed(1)} ${isBuyCross ? '(تقاطع صاعد)' : '(تقاطع هابط)'}
+        📊 <strong>ADX:</strong> ${adxLast.toFixed(1)} (>20)
+        🎯 <strong>الهدف:</strong> 2% (${fmtPrice(takeProfit)})
+        🛑 <strong>وقف الخسارة:</strong> 0.8% (${fmtPrice(stopLoss)})
+        📌 <strong>النظام:</strong> ${modeLabel}
+                `.trim();
+
+                return {
+                    id: id(), symbol: symbol, direction: direction, entryPrice: entryPrice, 
+                    takeProfit: takeProfit, stopLoss: stopLoss, confidence: confidence, 
+                    analysis: analysisText, timestamp: now(), pattern: 'rsi_heatmap', 
+                    ema: 0, stochasticK: 0, stochasticD: 0, adx: adxLast, 
+                    isLocked: false, isClosed: false, closedAt: null, closedResult: null
+                };
+            }
+
+            // ============================================================
+            //  SIGNAL DISPATCH
+            // ============================================================
+            function generateSignal(symbol, klines) {
+                if (state.currentStrategy === 'default') {
+                    return generateSignalDefault(symbol, klines);
+                } else {
+                    return generateSignalNew(symbol, klines);
+                }
             }
 
             // ============================================================
@@ -760,7 +937,7 @@
             }
 
             // ============================================================
-            //  BACKGROUND KEEP-ALIVE (WakeLock + Silent Audio)
+            //  BACKGROUND KEEP-ALIVE
             // ============================================================
             async function requestWakeLock() {
                 try {
@@ -971,11 +1148,10 @@
                         }
                     }
 
-                    // --- إرسال الإشارات الجديدة للتليجرام والإشعارات المحلية ---
+                    // إرسال الإشارات الجديدة للتليجرام والإشعارات المحلية
                     for (const sig of newSignals) {
                         const alreadySent = state.sentSignals.includes(sig.id);
                         if (!alreadySent) {
-                            // إرسال للتليجرام
                             if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
                                 try {
                                     await sendTelegramMessage(formatSignalMessage(sig));
@@ -988,8 +1164,6 @@
                             } else {
                                 state.sentSignals.push(sig.id);
                             }
-
-                            // إرسال إشعار محلي (Notification API)
                             sendLocalNotification(sig);
                         }
                     }
@@ -1030,7 +1204,7 @@
             }
 
             // ============================================================
-            //  LOCAL NOTIFICATIONS (جديد!)
+            //  LOCAL NOTIFICATIONS
             // ============================================================
             function requestNotificationPermission() {
                 if ('Notification' in window && Notification.permission === 'default') {
@@ -1054,9 +1228,7 @@
                         requireInteraction: true
                     });
                     setTimeout(() => notification.close(), 10000);
-                } catch (e) {
-                    // تجاهل أي خطأ في الإشعارات
-                }
+                } catch (e) {}
             }
 
             // ============================================================
@@ -1147,7 +1319,7 @@
                 statLosses.textContent = losses.length;
             }
 
-            function renderAll() { renderTicker(); renderSignals(); renderClosed(); renderStats(); updateBtcFilterButtonUI(); }
+            function renderAll() { renderTicker(); renderSignals(); renderClosed(); renderStats(); updateBtcFilterButtonUI(); updateStrategyUI(); }
 
             // ============================================================
             //  ACTIONS
@@ -1195,7 +1367,7 @@
             }
 
             // ============================================================
-            //  SETTINGS & PWA (مع Service Worker متقدم + Periodic Sync)
+            //  SETTINGS & PWA
             // ============================================================
             function openSettings() {
                 settingsToken.value = state.settings.telegramToken || '';
@@ -1276,10 +1448,9 @@
             }
 
             // ============================================================
-            //  PWA مع Service Worker مُحسَّن (جديد!)
+            //  PWA WITH SERVICE WORKER
             // ============================================================
             function setupPWA() {
-                // 1. إنشاء ملف Manifest ديناميكياً
                 const manifestData = {
                     "name": "CryptoSignal Pro",
                     "short_name": "CryptoSignal",
@@ -1288,24 +1459,19 @@
                     "display": "standalone",
                     "background_color": "#0b0e17",
                     "theme_color": "#0b0e17",
-                    "icons": [
-                        {
-                            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>",
-                            "sizes": "512x512",
-                            "type": "image/svg+xml",
-                            "purpose": "any"
-                        }
-                    ]
+                    "icons": [{
+                        "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>",
+                        "sizes": "512x512",
+                        "type": "image/svg+xml",
+                        "purpose": "any"
+                    }]
                 };
                 const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
                 const manifestURL = URL.createObjectURL(manifestBlob);
-                const manifestLink = document.getElementById('manifest-link');
-                manifestLink.href = manifestURL;
+                document.getElementById('manifest-link').href = manifestURL;
 
-                // 2. تسجيل Service Worker المتقدم
                 registerServiceWorker();
 
-                // 3. إدارة زر التثبيت
                 window.addEventListener('beforeinstallprompt', (e) => { 
                     e.preventDefault(); 
                     state.installPrompt = e; 
@@ -1339,11 +1505,7 @@
                 }
             }
 
-            // ============================================================
-            //  REGISTER SERVICE WORKER (مع معالجة الرسائل والـ Periodic Sync)
-            // ============================================================
             function registerServiceWorker() {
-                // كود Service Worker المُحسَّن (تمت إضافة periodic sync والاستماع للرسائل)
                 const swCode = `
                     self.addEventListener('install', e => {
                         e.waitUntil(
@@ -1356,8 +1518,6 @@
                     self.addEventListener('activate', e => {
                         e.waitUntil(self.clients.claim());
                     });
-                    
-                    // استقبال الرسائل من الصفحة لإجبار التحديث
                     self.addEventListener('message', e => {
                         if (e.data === 'update') {
                             self.clients.matchAll().then(clients => {
@@ -1365,8 +1525,6 @@
                             });
                         }
                     });
-
-                    // Periodic Sync (لمحاولة التحديث في الخلفية كل دقيقة)
                     self.addEventListener('periodicsync', e => {
                         if (e.tag === 'crypto-update') {
                             e.waitUntil(
@@ -1378,7 +1536,6 @@
                             );
                         }
                     });
-
                     self.addEventListener('fetch', e => {
                         e.respondWith(
                             caches.match(e.request).then(response => {
@@ -1393,29 +1550,18 @@
                     navigator.serviceWorker.register(swURL, { scope: '/' })
                         .then(reg => {
                             addLog('✅ Service Worker مسجل بنجاح', 'success');
-                            
-                            // محاولة تفعيل التزامن الدوري (Periodic Sync)
                             if ('periodicSync' in navigator) {
-                                navigator.periodicSync.register('crypto-update', {
-                                    minInterval: 60 * 1000 // دقيقة واحدة
-                                }).then(() => {
-                                    addLog('📡 تم تفعيل التزامن الدوري (Periodic Sync)', 'info');
-                                }).catch(err => {
-                                    addLog(`⚠️ فشل تفعيل التزامن الدوري: ${err.message}`, 'error');
-                                });
+                                navigator.periodicSync.register('crypto-update', { minInterval: 60 * 1000 })
+                                    .then(() => addLog('📡 تم تفعيل التزامن الدوري (Periodic Sync)', 'info'))
+                                    .catch(err => addLog(`⚠️ فشل تفعيل التزامن الدوري: ${err.message}`, 'error'));
                             }
                         })
-                        .catch(err => {
-                            addLog(`⚠️ فشل تسجيل Service Worker: ${err.message}`, 'error');
-                        });
+                        .catch(err => addLog(`⚠️ فشل تسجيل Service Worker: ${err.message}`, 'error'));
                 } catch (e) {
                     addLog(`⚠️ خطأ في إنشاء Service Worker: ${e.message}`, 'error');
                 }
             }
 
-            // ============================================================
-            //  الاستماع لرسائل Service Worker (لتفعيل التحديث في الخلفية)
-            // ============================================================
             function listenToServiceWorkerMessages() {
                 if (!navigator.serviceWorker) return;
                 navigator.serviceWorker.addEventListener('message', event => {
@@ -1452,8 +1598,8 @@
                 applyModeConfig();
                 renderAll();
                 setupPWA();
-                listenToServiceWorkerMessages(); // تفعيل استقبال الرسائل من الخلفية
-                requestNotificationPermission(); // طلب إذن الإشعارات
+                listenToServiceWorkerMessages();
+                requestNotificationPermission();
                 addLog('🚀 تم بدء تشغيل التطبيق بنجاح.', 'success');
                 
                 btnSettings.addEventListener('click', openSettings);
@@ -1466,6 +1612,7 @@
                 btnClearHistory.addEventListener('click', clearHistory);
                 btnBtcFilter.addEventListener('click', toggleBtcFilter);
                 btnModeToggle.addEventListener('click', toggleMode);
+                btnStrategy.addEventListener('click', toggleStrategy); // ربط زر الاستراتيجية
                 
                 settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
                 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSettings(); });
@@ -1479,7 +1626,6 @@
                 window.addEventListener('online', () => { showToast('🌐 تم استعادة الاتصال', 'success'); updateAllData(false); });
                 window.addEventListener('offline', () => { showToast('📡 انقطع الاتصال', 'error'); });
 
-                // إعادة محاولة التحديث إذا فشل أكثر من 3 مرات متتالية
                 setInterval(() => {
                     if (state.failureCount >= 3) {
                         addLog('🔁 محاولة استعادة التحديث بعد فشل متكرر', 'info');
@@ -1496,4 +1642,4 @@
         })();
     </script>
 </body>
-                    </html>
+                                                                           </html>
