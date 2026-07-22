@@ -361,7 +361,8 @@
 
             const CONFIG = {
                 SYMBOLS: ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT'],
-                INTERVAL: '30m',
+                INTERVAL_30M: '30m',
+                INTERVAL_4H: '4h',
                 KLINE_LIMIT: 220,
                 STOCH_RSI_PERIOD: 14,
                 STOCH_K_SMOOTH: 3,
@@ -384,7 +385,8 @@
                 SENT_SIGNALS_KEY: 'cryptosignal_sent',
                 MODE_KEY: 'cryptosignal_mode',
                 STRATEGY_KEY: 'cryptosignal_strategy',
-                KLINES_KEY: 'cryptosignal_klines'
+                KLINES_KEY: 'cryptosignal_klines',
+                KLINES_4H_KEY: 'cryptosignal_klines4h'
             };
 
             // ============================================================
@@ -392,7 +394,7 @@
             // ============================================================
             let state = {
                 signals: [], closedTrades: [], prices: {}, 
-                klines: {},
+                klines: {}, klines4h: {},
                 settings: { 
                     telegramToken: '8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ', 
                     telegramChatId: '1003970108966', 
@@ -499,7 +501,7 @@
                     strategyLabel.textContent = 'افتراضي';
                     btnStrategy.classList.remove('active');
                 } else {
-                    strategyLabel.textContent = 'جديد (RSI+ADX)';
+                    strategyLabel.textContent = 'استراتيجية RSI+4H';
                     btnStrategy.classList.add('active');
                 }
             }
@@ -515,8 +517,8 @@
                 state.currentStrategy = (state.currentStrategy === 'default') ? 'new' : 'default';
                 saveStrategy();
                 updateStrategyUI();
-                addLog(`🔄 تم التبديل إلى الاستراتيجية: ${state.currentStrategy === 'default' ? 'الافتراضية' : 'الجديدة'}`, 'info');
-                showToast(`🔄 تم التبديل إلى ${state.currentStrategy === 'default' ? 'الاستراتيجية الافتراضية' : 'الاستراتيجية الجديدة'}`, 'info');
+                addLog(`🔄 تم التبديل إلى الاستراتيجية: ${state.currentStrategy === 'default' ? 'الافتراضية' : 'استراتيجية RSI+4H'}`, 'info');
+                showToast(`🔄 تم التبديل إلى ${state.currentStrategy === 'default' ? 'الاستراتيجية الافتراضية' : 'استراتيجية RSI+4H'}`, 'info');
                 updateAllData(true);
             }
 
@@ -583,6 +585,10 @@
                     const raw = localStorage.getItem(CONFIG.KLINES_KEY);
                     if (raw) { const k = JSON.parse(raw); if (k) state.klines = k; }
                 } catch (e) { /* ignore */ }
+                try {
+                    const raw = localStorage.getItem(CONFIG.KLINES_4H_KEY);
+                    if (raw) { const k = JSON.parse(raw); if (k) state.klines4h = k; }
+                } catch (e) { /* ignore */ }
                 loadMode();
                 loadStrategy();
             }
@@ -593,6 +599,7 @@
                     localStorage.setItem(CONFIG.CACHE_KEY, JSON.stringify(data));
                     localStorage.setItem(CONFIG.HISTORY_KEY, JSON.stringify(state.closedTrades));
                     localStorage.setItem(CONFIG.KLINES_KEY, JSON.stringify(state.klines));
+                    localStorage.setItem(CONFIG.KLINES_4H_KEY, JSON.stringify(state.klines4h));
                 } catch (e) { /* ignore */ }
             }
             function persistSettings() {
@@ -622,7 +629,7 @@
                 const dir = signal.direction === 'buy' ? '🟢 شراء' : '🔴 بيع';
                 const sym = getSymbolDisplay(signal.symbol);
                 const modeLabel = MODES[currentMode].label;
-                const strategyLabel = state.currentStrategy === 'default' ? 'الافتراضية' : 'RSI Heatmap';
+                const strategyLabel = state.currentStrategy === 'default' ? 'الافتراضية' : 'RSI+4H';
                 return `
         🔔 <b>إشارة تداول جديدة</b> 🔔
         ───────────────
@@ -752,7 +759,7 @@
             }
 
             // ============================================================
-            //  SIGNAL GENERATION
+            //  SIGNAL GENERATION - DEFAULT
             // ============================================================
             function generateSignalDefault(symbol, klines) {
                 if (!klines || klines.length < 200) return null;
@@ -838,14 +845,11 @@
             }
 
             // ============================================================
-            //  SIGNAL GENERATION (NEW STRATEGY - FIXED)
+            //  SIGNAL GENERATION - NEW (RSI + 4H CONFIRMATION)
             // ============================================================
-            function generateSignalNew(symbol, klines) {
+            function generateSignalNew(symbol, klines, direction4h) {
                 if (!klines || klines.length < 200) return null;
                 const closes = klines.map(k => k.close);
-                const highs = klines.map(k => k.high);
-                const lows = klines.map(k => k.low);
-                const lastClose = closes[closes.length - 1];
                 const rsiValues = calcRSI(closes, 14);
                 if (rsiValues.length < 20) return null;
                 const siglineValues = calcSMA(rsiValues, 14);
@@ -854,11 +858,6 @@
                 const sigLast = siglineValues[siglineValues.length - 1];
                 const rsiPrev = rsiValues[rsiValues.length - 2];
                 const sigPrev = siglineValues[siglineValues.length - 2];
-                const adxResult = calcADX(highs, lows, closes, CONFIG.ADX_PERIOD);
-                if (adxResult.adx.length === 0) return null;
-                const adxLast = adxResult.adx[adxResult.adx.length - 1];
-
-                if (adxLast <= 20) return null;
 
                 let direction = 'neutral';
                 let confidence = 0;
@@ -867,18 +866,34 @@
                 const isBuyCross = (rsiPrev <= sigPrev) && (rsiLast > sigLast);
                 const isSellCross = (rsiPrev >= sigPrev) && (rsiLast < sigLast);
 
-                if (isBuyCross) {
+                // شروط RSI للشراء والبيع
+                if (rsiLast < 30 && isBuyCross) {
                     direction = 'buy';
-                    confidence = 80;
-                    reasons = [`RSI تقاطع صاعد فوق خط الإشارة (${rsiLast.toFixed(1)})`, `ADX قوي: ${adxLast.toFixed(1)} (>20)`];
-                } else if (isSellCross) {
+                    confidence = 85;
+                    reasons = [`RSI تحت 30 (${rsiLast.toFixed(1)}) مع تقاطع صاعد`];
+                } else if (rsiLast > 80 && isSellCross) {
                     direction = 'sell';
-                    confidence = 80;
-                    reasons = [`RSI تقاطع هابط تحت خط الإشارة (${rsiLast.toFixed(1)})`, `ADX قوي: ${adxLast.toFixed(1)} (>20)`];
+                    confidence = 85;
+                    reasons = [`RSI فوق 80 (${rsiLast.toFixed(1)}) مع تقاطع هابط`];
                 }
 
                 if (direction === 'neutral') return null;
 
+                // التأكيد من إطار 4 ساعات
+                if (direction4h === 'up' && direction !== 'buy') {
+                    addLog(`⛔ إطار 4H صاعد، لكن الإشارة ${direction} غير متوافقة`, 'info');
+                    return null;
+                }
+                if (direction4h === 'down' && direction !== 'sell') {
+                    addLog(`⛔ إطار 4H هابط، لكن الإشارة ${direction} غير متوافقة`, 'info');
+                    return null;
+                }
+                if (direction4h === 'neutral') {
+                    addLog(`⛔ إطار 4H محايد، لا يمكن توليد إشارة`, 'info');
+                    return null;
+                }
+
+                const lastClose = closes[closes.length - 1];
                 const entryPrice = lastClose;
                 const atrValues = calcATR(klines, 14);
                 const atrVal = atrValues.length > 0 ? atrValues[atrValues.length - 1] : (entryPrice * 0.02);
@@ -899,11 +914,11 @@
                 if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) return null;
                 const modeLabel = MODES[currentMode].label;
                 const analysisText = `
-        📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة) - استراتيجية RSI</strong>
+        📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة) - استراتيجية RSI+4H</strong>
         ───────────────
         ✅ <strong>القرار:</strong> ${direction === 'buy' ? 'شراء' : 'بيع'} (ثقة ${confidence.toFixed(0)}%)
         📊 <strong>RSI:</strong> ${rsiLast.toFixed(1)} ${isBuyCross ? '(تقاطع صاعد)' : '(تقاطع هابط)'}
-        📊 <strong>ADX:</strong> ${adxLast.toFixed(1)} (>20)
+        📈 <strong>اتجاه 4H:</strong> ${direction4h === 'up' ? 'صاعد' : 'هابط'}
         🎯 <strong>الهدف:</strong> 2% (${fmtPrice(takeProfit)})
         🛑 <strong>وقف الخسارة:</strong> 0.8% (${fmtPrice(stopLoss)})
         📌 <strong>النظام:</strong> ${modeLabel}
@@ -911,27 +926,34 @@
                 return {
                     id: id(), symbol: symbol, direction: direction, entryPrice: entryPrice, 
                     takeProfit: takeProfit, stopLoss: stopLoss, confidence: confidence, 
-                    analysis: analysisText, timestamp: now(), pattern: 'rsi_heatmap', 
-                    ema: 0, stochasticK: 0, stochasticD: 0, adx: adxLast, 
+                    analysis: analysisText, timestamp: now(), pattern: 'rsi_4h_confirmation', 
+                    ema: 0, stochasticK: 0, stochasticD: 0, adx: 0, 
                     isLocked: false, isClosed: false, closedAt: null, closedResult: null
                 };
             }
 
-            function generateSignal(symbol, klines) {
-                return state.currentStrategy === 'default' ? generateSignalDefault(symbol, klines) : generateSignalNew(symbol, klines);
+            // ============================================================
+            //  GENERATE SIGNAL WRAPPER
+            // ============================================================
+            function generateSignal(symbol, klines, direction4h) {
+                if (state.currentStrategy === 'default') {
+                    return generateSignalDefault(symbol, klines);
+                } else {
+                    return generateSignalNew(symbol, klines, direction4h);
+                }
             }
 
             // ============================================================
             //  FETCH
             // ============================================================
-            async function fetchKlinesWithRetry(symbol, interval = CONFIG.INTERVAL, limit = CONFIG.KLINE_LIMIT, retries = 4) {
+            async function fetchKlinesWithRetry(symbol, interval, limit = CONFIG.KLINE_LIMIT, retries = 4) {
                 for (let i = 0; i < retries; i++) {
                     try {
                         const resp = await fetch(`${CONFIG.BINANCE_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
                         if (!resp.ok) {
                             if (resp.status === 429 || resp.status >= 500) {
                                 if (i < retries - 1) {
-                                    addLog(`⚠️ تم حظر ${symbol} مؤقتاً. إعادة المحاولة...`, 'error');
+                                    addLog(`⚠️ تم حظر ${symbol} (${interval}) مؤقتاً. إعادة المحاولة...`, 'error');
                                     await sleep(CONFIG.RETRY_DELAY_MS);
                                     continue;
                                 }
@@ -941,7 +963,7 @@
                         const data = await resp.json();
                         return data.map(k => ({ time: k[0], open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5]) }));
                     } catch (e) {
-                        addLog(`⚠️ فشل جلب ${symbol} (محاولة ${i+1}) - ${e.message}`, 'error');
+                        addLog(`⚠️ فشل جلب ${symbol} ${interval} (محاولة ${i+1}) - ${e.message}`, 'error');
                         if (i === retries - 1) throw e;
                         await sleep(CONFIG.RETRY_DELAY_MS);
                     }
@@ -961,6 +983,21 @@
                         await sleep(CONFIG.RETRY_DELAY_MS);
                     }
                 }
+            }
+
+            // ============================================================
+            //  GET 4H DIRECTION
+            // ============================================================
+            function get4hDirection(klines4h) {
+                if (!klines4h || klines4h.length < 200) return 'neutral';
+                const closes = klines4h.map(k => k.close);
+                const ema200 = calcEMA(closes, 200);
+                if (ema200.length === 0) return 'neutral';
+                const lastEMA = ema200[ema200.length - 1];
+                const lastClose = closes[closes.length - 1];
+                if (lastClose > lastEMA * 1.005) return 'up';    // فوق EMA بهامش بسيط
+                if (lastClose < lastEMA * 0.995) return 'down';  // تحت EMA بهامش بسيط
+                return 'neutral';
             }
 
             // ============================================================
@@ -1109,29 +1146,46 @@
 
                 try {
                     const symbols = CONFIG.SYMBOLS;
-                    const allKlines = {};
+                    const allKlines30m = {};
+                    const allKlines4h = {};
                     const allPrices = {};
 
-                    const fetchPromises = symbols.map(async sym => {
+                    // جلب بيانات 30 دقيقة
+                    const fetchPromises30m = symbols.map(async sym => {
                         try {
-                            const k = await fetchKlinesWithRetry(sym, CONFIG.INTERVAL, CONFIG.KLINE_LIMIT);
+                            const k = await fetchKlinesWithRetry(sym, CONFIG.INTERVAL_30M, CONFIG.KLINE_LIMIT);
                             if (k) {
-                                allKlines[sym] = k;
+                                allKlines30m[sym] = k;
                                 if (k.length > 0) allPrices[sym] = k[k.length - 1].close;
                             }
                             return { sym, ok: true };
                         } catch (e) {
-                            addLog(`❌ فشل نهائي في جلب ${sym}`, 'error');
+                            addLog(`❌ فشل نهائي في جلب ${sym} 30m`, 'error');
                             try { const p = await fetchTickerPriceWithRetry(sym); allPrices[sym] = p; } catch (e2) { addLog(`❌ حتى السعر الحالي فشل لـ ${sym}`, 'error'); }
                             return { sym, ok: false };
                         }
                     });
 
-                    await Promise.all(fetchPromises);
-                    state.prices = allPrices;
-                    state.klines = allKlines;
+                    // جلب بيانات 4 ساعات
+                    const fetchPromises4h = symbols.map(async sym => {
+                        try {
+                            const k = await fetchKlinesWithRetry(sym, CONFIG.INTERVAL_4H, CONFIG.KLINE_LIMIT);
+                            if (k) {
+                                allKlines4h[sym] = k;
+                            }
+                            return { sym, ok: true };
+                        } catch (e) {
+                            addLog(`⚠️ فشل في جلب ${sym} 4h (سيتم استخدام الاتجاه المحايد)`, 'error');
+                            return { sym, ok: false };
+                        }
+                    });
 
-                    // Close active trades
+                    await Promise.all([...fetchPromises30m, ...fetchPromises4h]);
+                    state.prices = allPrices;
+                    state.klines = allKlines30m;
+                    state.klines4h = allKlines4h;
+
+                    // Close active trades (يتم إغلاق الصفقات بناءً على سعر 30m)
                     for (const sym of symbols) {
                         const currentPrice = state.prices[sym];
                         if (currentPrice === undefined) continue;
@@ -1173,39 +1227,53 @@
 
                     // Generate new signals
                     let btcDirection = 'neutral';
-                    const btcKlines = allKlines['BTCUSDT'];
+                    const btcKlines = allKlines30m['BTCUSDT'];
                     if (btcKlines && btcKlines.length >= 200) {
-                        const btcSignal = generateSignal('BTCUSDT', btcKlines);
+                        const btcSignal = generateSignalDefault('BTCUSDT', btcKlines); // نستخدم الافتراضي لتحديد اتجاه BTC فقط
                         if (btcSignal) btcDirection = btcSignal.direction;
-                        addLog(`📊 اتجاه البيتكوين الحالي: ${btcDirection === 'buy' ? 'صاعد' : btcDirection === 'sell' ? 'هابط' : 'محايد'}`, 'info');
+                        addLog(`📊 اتجاه البيتكوين الحالي (30m): ${btcDirection === 'buy' ? 'صاعد' : btcDirection === 'sell' ? 'هابط' : 'محايد'}`, 'info');
                     }
 
                     for (const sym of symbols) {
-                        const k = allKlines[sym];
-                        if (!k || k.length < 200) {
-                            addLog(`⚠️ بيانات غير كافية لـ ${sym} (${k ? k.length : 0})`, 'error');
+                        const k30m = allKlines30m[sym];
+                        if (!k30m || k30m.length < 200) {
+                            addLog(`⚠️ بيانات 30m غير كافية لـ ${sym} (${k30m ? k30m.length : 0})`, 'error');
                             continue;
                         }
 
-                        // ✅ التعديل: إذا كان البيتكوين محايدًا والفلتر مفعل، لا تولد أي إشارة
-                        let generateNewSignal = true;
-                        if (state.btcFilterEnabled && btcDirection === 'neutral') {
-                            generateNewSignal = false;
-                            addLog(`⛔ البيتكوين محايد، تخطي توليد إشارة لـ ${getSymbolDisplay(sym)}`, 'info');
+                        // تحديد اتجاه 4 ساعات
+                        const k4h = allKlines4h[sym];
+                        const direction4h = get4hDirection(k4h);
+                        addLog(`📈 اتجاه 4H لـ ${getSymbolDisplay(sym)}: ${direction4h === 'up' ? 'صاعد' : direction4h === 'down' ? 'هابط' : 'محايد'}`, 'info');
+
+                        // إذا كان الاتجاه 4H محايدًا، لا نولد إشارة (فقط في الاستراتيجية الجديدة)
+                        if (state.currentStrategy === 'new' && direction4h === 'neutral') {
+                            addLog(`⛔ اتجاه 4H محايد لـ ${getSymbolDisplay(sym)}، تخطي توليد الإشارة`, 'info');
+                            continue;
                         }
 
+                        // فلتر البيتكوين (نطبق فقط إذا كان البيتكوين له اتجاه)
+                        if (state.btcFilterEnabled) {
+                            if (btcDirection === 'buy' && direction4h === 'down') {
+                                // إذا كان البيتكوين صاعدًا واتجاه 4H للعملة هابطًا، قد نمنع الإشارة لكننا نتركها للاستراتيجية
+                                // لكننا سنستمر لأن الفلتر يعتمد على اتجاه البيتكوين نفسه.
+                            }
+                        }
+
+                        // توليد الإشارة (مع تمرير اتجاه 4H للاستراتيجية الجديدة)
                         let signal = null;
-                        if (generateNewSignal) {
-                            signal = generateSignal(sym, k);
+                        if (state.currentStrategy === 'default') {
+                            signal = generateSignalDefault(sym, k30m);
+                        } else {
+                            signal = generateSignalNew(sym, k30m, direction4h);
                         }
 
                         if (!signal) {
-                            if (generateNewSignal) {
-                                addLog(`⏸️ لا توجد إشارة لـ ${sym} حالياً`, 'info');
-                            }
+                            addLog(`⏸️ لا توجد إشارة لـ ${sym} حالياً`, 'info');
                             continue;
                         }
 
+                        // تطبيق فلتر البيتكوين (إذا كان مفعلاً)
                         if (state.btcFilterEnabled) {
                             if (btcDirection === 'buy' && signal.direction === 'sell') {
                                 addLog(`⛔ تم تصفية إشارة بيع لـ ${getSymbolDisplay(sym)} بسبب اتجاه BTC صاعد`, 'info');
@@ -1215,6 +1283,7 @@
                                 addLog(`⛔ تم تصفية إشارة شراء لـ ${getSymbolDisplay(sym)} بسبب اتجاه BTC هابط`, 'info');
                                 continue;
                             }
+                            // إذا كان البيتكوين محايدًا، نسمح بالإشارة (لكن في الاستراتيجية الجديدة قد لا تصل لأن 4H قد يكون محايد)
                         }
 
                         const existingOpen = state.signals.find(s => s.symbol === sym && !s.isClosed);
@@ -1264,6 +1333,7 @@
                         }
                     }
 
+                    // إرسال الإشارات الجديدة للتليجرام
                     for (const sig of state.signals.filter(s => !s.isClosed && !state.sentSignals.includes(s.id))) {
                         if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
                             try {
