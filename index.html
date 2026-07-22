@@ -77,6 +77,43 @@
         .stat-card .value.red { color: var(--accent-red); }
         .stat-card .value.gold { color: var(--accent-gold); }
 
+        /* ===== Chart Section (جديد) ===== */
+        .chart-section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .chart-section .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .chart-section .chart-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .chart-section .chart-header select {
+            width: auto;
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .chart-section canvas {
+            width: 100%;
+            height: 240px;
+            display: block;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+        }
+
         /* ===== Section Header ===== */
         .section-header { display: flex; align-items: center; justify-content: space-between; margin: 24px 0 14px; flex-wrap: wrap; gap: 8px; }
         .section-header h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
@@ -200,7 +237,7 @@
             <button id="btnBtcFilter" title="تفعيل/إيقاف فلتر اتجاه البيتكوين" style="border-color:var(--accent-blue);">
                 ⚡ <span id="btcFilterLabel">BTC ON</span>
             </button>
-            <!-- الزر الجديد للتبديل بين الاستراتيجيات -->
+            <!-- زر التبديل بين الاستراتيجيات -->
             <button id="btnStrategy" class="strategy-btn" title="التبديل بين الاستراتيجيات">🧠 <span id="strategyLabel">افتراضي</span></button>
             <button class="btn-install" id="btnInstall" title="تثبيت التطبيق على جهازك">📲 <span>تثبيت</span></button>
             <button id="btnSettings" title="إعدادات البوت والتطبيق">⚙️ <span>إعدادات</span></button>
@@ -218,6 +255,25 @@
                     <span style="font-size:13px;">جاري تحميل الأسعار...</span>
                 </div>
             </div>
+        </section>
+
+        <!-- ===== CHART SECTION (جديد) ===== -->
+        <section class="chart-section" id="chartSection">
+            <div class="chart-header">
+                <h3>📊 رسم بياني شموع يابانية (فريم 30 دقيقة)</h3>
+                <select id="chartSymbolSelect">
+                    <option value="BTCUSDT">BTC/USDT</option>
+                    <option value="ETHUSDT">ETH/USDT</option>
+                    <option value="BNBUSDT">BNB/USDT</option>
+                    <option value="SOLUSDT">SOL/USDT</option>
+                    <option value="XRPUSDT">XRP/USDT</option>
+                    <option value="ADAUSDT">ADA/USDT</option>
+                    <option value="DOGEUSDT">DOGE/USDT</option>
+                    <option value="AVAXUSDT">AVAX/USDT</option>
+                    <option value="DOTUSDT">DOT/USDT</option>
+                </select>
+            </div>
+            <canvas id="candleCanvas"></canvas>
         </section>
 
         <section class="stats-row" id="statsRow">
@@ -328,7 +384,8 @@
                 HISTORY_KEY: 'cryptosignal_history',
                 SENT_SIGNALS_KEY: 'cryptosignal_sent',
                 MODE_KEY: 'cryptosignal_mode',
-                STRATEGY_KEY: 'cryptosignal_strategy'
+                STRATEGY_KEY: 'cryptosignal_strategy',
+                KLINES_KEY: 'cryptosignal_klines' // جديد لتخزين بيانات الشموع
             };
 
             // ============================================================
@@ -336,6 +393,7 @@
             // ============================================================
             let state = {
                 signals: [], closedTrades: [], prices: {}, 
+                klines: {}, // تخزين بيانات الشموع لكل زوج (آخر 100 شمعة)
                 settings: { 
                     telegramToken: '8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ', 
                     telegramChatId: '1003970108966', 
@@ -387,6 +445,9 @@
             const btnClearHistory = $('btnClearHistory');
             const liveDot = $('liveDot');
             const toastContainer = $('toastContainer');
+            // عناصر الرسم البياني
+            const candleCanvas = $('candleCanvas');
+            const chartSymbolSelect = $('chartSymbolSelect');
 
             // ============================================================
             //  MODE MANAGEMENT
@@ -421,7 +482,7 @@
             }
 
             // ============================================================
-            //  STRATEGY MANAGEMENT (جديد)
+            //  STRATEGY MANAGEMENT
             // ============================================================
             function loadStrategy() {
                 try {
@@ -445,7 +506,6 @@
                 }
             }
             function toggleStrategy() {
-                // إغلاق جميع الإشارات النشطة (لأن الاستراتيجيات قد تتعارض)
                 state.signals.forEach(sig => {
                     if (!sig.isClosed) {
                         sig.isClosed = true;
@@ -454,13 +514,11 @@
                         sig.analysis += '\n\n🔄 تم إغلاق الصفقة بسبب تبديل الاستراتيجية.';
                     }
                 });
-                // تبديل الاستراتيجية
                 state.currentStrategy = (state.currentStrategy === 'default') ? 'new' : 'default';
                 saveStrategy();
                 updateStrategyUI();
                 addLog(`🔄 تم التبديل إلى الاستراتيجية: ${state.currentStrategy === 'default' ? 'الافتراضية' : 'الجديدة'}`, 'info');
                 showToast(`🔄 تم التبديل إلى ${state.currentStrategy === 'default' ? 'الاستراتيجية الافتراضية' : 'الاستراتيجية الجديدة'}`, 'info');
-                // إعادة التحديث فورًا
                 updateAllData(true);
             }
 
@@ -523,6 +581,10 @@
                     const raw = localStorage.getItem(CONFIG.HISTORY_KEY);
                     if (raw) { const h = JSON.parse(raw); if (Array.isArray(h)) state.closedTrades = h; }
                 } catch (e) { /* ignore */ }
+                try {
+                    const raw = localStorage.getItem(CONFIG.KLINES_KEY);
+                    if (raw) { const k = JSON.parse(raw); if (k) state.klines = k; }
+                } catch (e) { /* ignore */ }
                 loadMode();
                 loadStrategy();
             }
@@ -532,6 +594,7 @@
                     const data = { signals: state.signals, closedTrades: state.closedTrades, prices: state.prices, sentSignals: state.sentSignals, lastUpdate: state.lastUpdate, btcFilterEnabled: state.btcFilterEnabled };
                     localStorage.setItem(CONFIG.CACHE_KEY, JSON.stringify(data));
                     localStorage.setItem(CONFIG.HISTORY_KEY, JSON.stringify(state.closedTrades));
+                    localStorage.setItem(CONFIG.KLINES_KEY, JSON.stringify(state.klines));
                 } catch (e) { /* ignore */ }
             }
             function persistSettings() {
@@ -601,7 +664,6 @@
                 }
                 const rsiValues = [];
                 let avgGain = 0, avgLoss = 0;
-                // أول قيمة للمتوسط
                 for (let i = 0; i < period; i++) {
                     if (changes[i] > 0) avgGain += changes[i];
                     else avgLoss += Math.abs(changes[i]);
@@ -692,41 +754,34 @@
             }
 
             // ============================================================
-            //  SIGNAL GENERATION (Default Strategy)
+            //  SIGNAL GENERATION
             // ============================================================
             function generateSignalDefault(symbol, klines) {
                 if (!klines || klines.length < 200) return null;
-
                 const closes = klines.map(k => k.close);
                 const highs = klines.map(k => k.high);
                 const lows = klines.map(k => k.low);
-
                 const emaValues = calcEMA(closes, CONFIG.EMA_PERIOD);
                 if (emaValues.length === 0) return null;
                 const currentEMA = emaValues[emaValues.length - 1];
                 const lastClose = closes[closes.length - 1];
-
                 const stoch = calcStochastic(highs, lows, closes, CONFIG.STOCH_RSI_PERIOD, CONFIG.STOCH_K_SMOOTH, CONFIG.STOCH_D_SMOOTH);
                 if (stoch.k.length < 2 || stoch.d.length < 2) return null;
                 const kLast = stoch.k[stoch.k.length - 1];
                 const dLast = stoch.d[stoch.d.length - 1];
                 const kPrev = stoch.k[stoch.k.length - 2];
                 const dPrev = stoch.d[stoch.d.length - 2];
-
                 const adxResult = calcADX(highs, lows, closes, CONFIG.ADX_PERIOD);
                 if (adxResult.adx.length === 0) return null;
                 const adxLast = adxResult.adx[adxResult.adx.length - 1];
-
                 let direction = 'neutral';
                 let confidence = 0;
                 let reasons = [];
-
                 const isStochBuyCross = (kLast > dLast) && (kPrev <= dPrev) && (kLast < CONFIG.STOCH_OVERSOLD) && (dLast < CONFIG.STOCH_OVERSOLD);
                 const isStochSellCross = (kLast < dLast) && (kPrev >= dPrev) && (kLast > CONFIG.STOCH_OVERBOUGHT) && (dLast > CONFIG.STOCH_OVERBOUGHT);
                 const isAdxStrong = adxLast > CONFIG.ADX_THRESHOLD;
                 const isPriceAboveEma = lastClose > currentEMA;
                 const isPriceBelowEma = lastClose < currentEMA;
-
                 if (currentMode === 'STRICT') {
                     if (isStochBuyCross && isAdxStrong && isPriceAboveEma) {
                         direction = 'buy'; confidence = 95;
@@ -744,9 +799,7 @@
                         else if (isAdxStrong || isPriceBelowEma) { direction = 'sell'; confidence = 70; reasons = [`ستوكاستيك تقاطع هابط`, isAdxStrong ? `ADX قوي` : `السعر تحت EMA`]; }
                     }
                 }
-
                 if (direction === 'neutral') return null;
-
                 const entryPrice = lastClose;
                 const atrValues = calcATR(klines, 14);
                 const atrVal = atrValues.length > 0 ? atrValues[atrValues.length - 1] : (entryPrice * 0.02);
@@ -755,7 +808,6 @@
                 const atrStop = atrVal * 1.2;
                 const finalStop = Math.min(atrStop, stopAmount);
                 if (finalStop < entryPrice * 0.001) return null;
-
                 let takeProfit, stopLoss;
                 if (direction === 'buy') {
                     takeProfit = entryPrice * (1 + CONFIG.TARGET_PERCENT);
@@ -766,7 +818,6 @@
                 }
                 const stopDist = Math.abs(entryPrice - stopLoss);
                 if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) return null;
-
                 const modeLabel = MODES[currentMode].label;
                 const analysisText = `
         📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة) - افتراضي</strong>
@@ -779,7 +830,6 @@
         🛑 <strong>وقف الخسارة:</strong> 0.8% (${fmtPrice(stopLoss)})
         📌 <strong>النظام:</strong> ${modeLabel}
                 `.trim();
-
                 return {
                     id: id(), symbol: symbol, direction: direction, entryPrice: entryPrice, 
                     takeProfit: takeProfit, stopLoss: stopLoss, confidence: confidence, 
@@ -789,46 +839,29 @@
                 };
             }
 
-            // ============================================================
-            //  SIGNAL GENERATION (New Strategy: RSI Heatmap + ADX > 20)
-            // ============================================================
             function generateSignalNew(symbol, klines) {
                 if (!klines || klines.length < 200) return null;
-
                 const closes = klines.map(k => k.close);
                 const highs = klines.map(k => k.high);
                 const lows = klines.map(k => k.low);
                 const lastClose = closes[closes.length - 1];
-
-                // 1. حساب RSI و Signal Line (SMA of RSI)
                 const rsiValues = calcRSI(closes, 14);
                 if (rsiValues.length < 20) return null;
                 const siglineValues = calcSMA(rsiValues, 14);
                 if (siglineValues.length < 2) return null;
-
                 const rsiLast = rsiValues[rsiValues.length - 1];
                 const sigLast = siglineValues[siglineValues.length - 1];
                 const rsiPrev = rsiValues[rsiValues.length - 2];
                 const sigPrev = siglineValues[siglineValues.length - 2];
-
-                // 2. حساب ADX
                 const adxResult = calcADX(highs, lows, closes, CONFIG.ADX_PERIOD);
                 if (adxResult.adx.length === 0) return null;
                 const adxLast = adxResult.adx[adxResult.adx.length - 1];
-
-                // 3. شرط ADX > 20
                 if (adxLast <= 20) return null;
-
-                // 4. شروط الدخول بناءً على المؤشر (RSI Heatmap)
                 let direction = 'neutral';
                 let confidence = 0;
                 let reasons = [];
-
-                // شرط الشراء: تقاطع فوق الإشارة (crossover) و RSI < 50
                 const isBuyCross = (rsiPrev <= sigPrev) && (rsiLast > sigLast);
-                // شرط البيع: تقاطع تحت الإشارة (crossunder) و RSI > 50
                 const isSellCross = (rsiPrev >= sigPrev) && (rsiLast < sigLast);
-
                 if (isBuyCross && rsiLast < 50) {
                     direction = 'buy';
                     confidence = 80;
@@ -838,10 +871,7 @@
                     confidence = 80;
                     reasons = [`RSI تقاطع هابط تحت خط الإشارة (${rsiLast.toFixed(1)})`, `ADX قوي: ${adxLast.toFixed(1)} (>20)`];
                 }
-
                 if (direction === 'neutral') return null;
-
-                // حساب الهدف ووقف الخسارة
                 const entryPrice = lastClose;
                 const atrValues = calcATR(klines, 14);
                 const atrVal = atrValues.length > 0 ? atrValues[atrValues.length - 1] : (entryPrice * 0.02);
@@ -850,7 +880,6 @@
                 const atrStop = atrVal * 1.2;
                 const finalStop = Math.min(atrStop, stopAmount);
                 if (finalStop < entryPrice * 0.001) return null;
-
                 let takeProfit, stopLoss;
                 if (direction === 'buy') {
                     takeProfit = entryPrice * (1 + CONFIG.TARGET_PERCENT);
@@ -861,7 +890,6 @@
                 }
                 const stopDist = Math.abs(entryPrice - stopLoss);
                 if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) return null;
-
                 const modeLabel = MODES[currentMode].label;
                 const analysisText = `
         📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة) - استراتيجية RSI</strong>
@@ -873,7 +901,6 @@
         🛑 <strong>وقف الخسارة:</strong> 0.8% (${fmtPrice(stopLoss)})
         📌 <strong>النظام:</strong> ${modeLabel}
                 `.trim();
-
                 return {
                     id: id(), symbol: symbol, direction: direction, entryPrice: entryPrice, 
                     takeProfit: takeProfit, stopLoss: stopLoss, confidence: confidence, 
@@ -883,19 +910,12 @@
                 };
             }
 
-            // ============================================================
-            //  SIGNAL DISPATCH
-            // ============================================================
             function generateSignal(symbol, klines) {
-                if (state.currentStrategy === 'default') {
-                    return generateSignalDefault(symbol, klines);
-                } else {
-                    return generateSignalNew(symbol, klines);
-                }
+                return state.currentStrategy === 'default' ? generateSignalDefault(symbol, klines) : generateSignalNew(symbol, klines);
             }
 
             // ============================================================
-            //  FETCH WITH AUTO-RETRY
+            //  FETCH
             // ============================================================
             async function fetchKlinesWithRetry(symbol, interval = CONFIG.INTERVAL, limit = CONFIG.KLINE_LIMIT, retries = 4) {
                 for (let i = 0; i < retries; i++) {
@@ -983,6 +1003,98 @@
             }
 
             // ============================================================
+            //  CHART DRAWING (جديد)
+            // ============================================================
+            function drawCandles() {
+                const canvas = candleCanvas;
+                const rect = canvas.parentElement.getBoundingClientRect();
+                const width = rect.width - 32; // padding
+                const height = 240;
+                canvas.width = width * window.devicePixelRatio;
+                canvas.height = height * window.devicePixelRatio;
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+                const ctx = canvas.getContext('2d');
+                ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+                const symbol = chartSymbolSelect.value;
+                const klines = state.klines[symbol];
+                if (!klines || klines.length < 2) {
+                    ctx.fillStyle = '#556688';
+                    ctx.font = '14px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('لا توجد بيانات كافية للرسم', width/2, height/2);
+                    return;
+                }
+
+                // نأخذ آخر 50 شمعة
+                const data = klines.slice(-50);
+                const numCandles = data.length;
+
+                // حساب النطاق السعري
+                let maxPrice = -Infinity, minPrice = Infinity;
+                data.forEach(k => {
+                    maxPrice = Math.max(maxPrice, k.high, k.close);
+                    minPrice = Math.min(minPrice, k.low, k.open);
+                });
+                const padding = (maxPrice - minPrice) * 0.1;
+                maxPrice += padding;
+                minPrice -= padding;
+                if (maxPrice === minPrice) { maxPrice += 1; minPrice -= 1; }
+
+                const candleWidth = (width / numCandles) * 0.8;
+                const halfCandle = candleWidth / 2;
+                const xStep = width / numCandles;
+
+                ctx.clearRect(0, 0, width, height);
+
+                // رسم الخلفية
+                ctx.fillStyle = '#131a2b';
+                ctx.fillRect(0, 0, width, height);
+
+                // رسم الشموع
+                data.forEach((k, i) => {
+                    const x = i * xStep + xStep/2;
+                    const isBullish = k.close > k.open;
+                    const color = isBullish ? '#00d4aa' : '#ff4757';
+                    const openY = height - ((k.open - minPrice) / (maxPrice - minPrice)) * height;
+                    const closeY = height - ((k.close - minPrice) / (maxPrice - minPrice)) * height;
+                    const highY = height - ((k.high - minPrice) / (maxPrice - minPrice)) * height;
+                    const lowY = height - ((k.low - minPrice) / (maxPrice - minPrice)) * height;
+
+                    ctx.beginPath();
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(x, highY);
+                    ctx.lineTo(x, lowY);
+                    ctx.stroke();
+
+                    const topY = isBullish ? closeY : openY;
+                    const bottomY = isBullish ? openY : closeY;
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x - halfCandle, topY, candleWidth, bottomY - topY);
+                });
+
+                // رسم خط السعر الحالي
+                const lastClose = data[data.length-1].close;
+                const lastY = height - ((lastClose - minPrice) / (maxPrice - minPrice)) * height;
+                ctx.beginPath();
+                ctx.strokeStyle = '#f5a623';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.moveTo(0, lastY);
+                ctx.lineTo(width, lastY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // كتابة السعر الحالي
+                ctx.fillStyle = '#f5a623';
+                ctx.font = '12px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(fmtPrice(lastClose), 4, lastY - 4);
+            }
+
+            // ============================================================
             //  UPDATE ALL DATA
             // ============================================================
             async function updateAllData(force = false) {
@@ -1017,19 +1129,17 @@
 
                     await Promise.all(fetchPromises);
                     state.prices = allPrices;
+                    state.klines = allKlines; // تخزين الشموع للرسم
 
-                    // --- 1. فحص الصفقات المفتوحة ---
+                    // فحص الصفقات المفتوحة
                     for (const sym of symbols) {
                         const currentPrice = state.prices[sym];
                         if (currentPrice === undefined) continue;
-
                         const activeTrades = state.signals.filter(s => s.symbol === sym && !s.isClosed);
-                        
                         for (const trade of activeTrades) {
                             let shouldClose = false;
                             let closeReason = '';
                             let result = 'neutral';
-
                             if (trade.direction === 'buy') {
                                 if (currentPrice >= trade.takeProfit) {
                                     shouldClose = true; result = 'win'; closeReason = `🎯 تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
@@ -1043,14 +1153,12 @@
                                     shouldClose = true; result = 'loss'; closeReason = `🛑 ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
                                 }
                             }
-
                             if (shouldClose) {
                                 trade.isClosed = true;
                                 trade.closedAt = now();
                                 trade.closedResult = result;
                                 trade.analysis += `\n\n${closeReason}`;
                                 addLog(`✖️ إغلاق صفقة ${getSymbolDisplay(sym)}: ${result === 'win' ? 'ربح' : 'خسارة'}`, result === 'win' ? 'success' : 'error');
-
                                 if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
                                     try {
                                         let closeMsg = `🔔 <b>إغلاق صفقة تلقائي</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة: ${trade.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}\n💵 سعر الإغلاق: ${fmtPrice(currentPrice)}`;
@@ -1063,7 +1171,7 @@
                         }
                     }
 
-                    // --- 2. توليد إشارات جديدة ---
+                    // توليد إشارات جديدة
                     const newSignals = [];
                     let btcDirection = 'neutral';
                     const btcKlines = allKlines['BTCUSDT'];
@@ -1084,7 +1192,6 @@
                             addLog(`⏸️ لا توجد إشارة لـ ${sym} حالياً`, 'info');
                             continue;
                         }
-
                         if (state.btcFilterEnabled) {
                             if (btcDirection === 'buy' && signal.direction === 'sell') {
                                 addLog(`⛔ تم تصفية إشارة بيع لـ ${getSymbolDisplay(sym)} بسبب اتجاه BTC صاعد`, 'info');
@@ -1095,7 +1202,6 @@
                                 continue;
                             }
                         }
-
                         const existingOpen = state.signals.find(s => s.symbol === sym && !s.isClosed);
                         if (existingOpen) {
                             if (existingOpen.isLocked) {
@@ -1111,7 +1217,6 @@
                                 existingOpen.timestamp = signal.timestamp;
                                 continue; 
                             }
-
                             const currentPrice = state.prices[sym];
                             let result = 'neutral';
                             if (currentPrice !== undefined) {
@@ -1128,7 +1233,6 @@
                             existingOpen.closedResult = result;
                             existingOpen.analysis += `\n\n🔄 انعكاس اتجاه: ظهرت إشارة جديدة معاكسة.`;
                             addLog(`🔄 انعكاس اتجاه لـ ${getSymbolDisplay(sym)}. إغلاق الصفقة السابقة.`, 'info');
-
                             if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
                                 try {
                                     let closeMsg = `🔔 <b>إغلاق صفقة تلقائي (انعكاس)</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة السابقة: ${existingOpen.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}`;
@@ -1137,7 +1241,6 @@
                                     addLog(`⚠️ فشل إرسال إغلاق الانعكاس للتليجرام`, 'error');
                                 }
                             }
-
                             state.signals.push(signal);
                             newSignals.push(signal);
                             addLog(`📈 تم توليد إشارة جديدة لـ ${getSymbolDisplay(sym)} (${signal.direction})`, 'success');
@@ -1148,7 +1251,7 @@
                         }
                     }
 
-                    // إرسال الإشارات الجديدة للتليجرام والإشعارات المحلية
+                    // إرسال الإشارات
                     for (const sig of newSignals) {
                         const alreadySent = state.sentSignals.includes(sig.id);
                         if (!alreadySent) {
@@ -1168,6 +1271,7 @@
                         }
                     }
 
+                    // تنقية الإشارات
                     const activeSignals = state.signals.filter(s => !s.isClosed);
                     const closedSignals = state.signals.filter(s => s.isClosed);
                     const activeBySymbol = {};
@@ -1187,6 +1291,7 @@
                     state.failureCount = 0;
                     persistState();
                     renderAll();
+                    drawCandles(); // رسم الشموع
 
                     liveDot.style.background = '#00d4aa';
                     liveDot.style.animation = 'pulse-dot 2s infinite';
@@ -1217,7 +1322,6 @@
 
             function sendLocalNotification(signal) {
                 if (!('Notification' in window) || Notification.permission !== 'granted') return;
-                
                 const sym = getSymbolDisplay(signal.symbol);
                 const dir = signal.direction === 'buy' ? 'شراء 🟢' : 'بيع 🔴';
                 try {
@@ -1434,10 +1538,8 @@
             function startUpdateTimer() {
                 if (state.updateTimer) { clearInterval(state.updateTimer); state.updateTimer = null; }
                 if (nextUpdateTimeout) { clearTimeout(nextUpdateTimeout); nextUpdateTimeout = null; }
-                
                 addLog(`⏰ بدء تحديث تلقائي في الخلفية.`, 'info');
                 scheduleNextUpdate();
-                
                 document.addEventListener('visibilitychange', () => { 
                     if (!document.hidden) {
                         updateAllData(false);
@@ -1612,7 +1714,9 @@
                 btnClearHistory.addEventListener('click', clearHistory);
                 btnBtcFilter.addEventListener('click', toggleBtcFilter);
                 btnModeToggle.addEventListener('click', toggleMode);
-                btnStrategy.addEventListener('click', toggleStrategy); // ربط زر الاستراتيجية
+                btnStrategy.addEventListener('click', toggleStrategy);
+                chartSymbolSelect.addEventListener('change', drawCandles); // عند تغيير الزوج، يُعاد الرسم
+                window.addEventListener('resize', drawCandles); // إعادة رسم عند تغيير حجم الشاشة
                 
                 settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
                 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSettings(); });
@@ -1642,4 +1746,4 @@
         })();
     </script>
 </body>
-                                                                           </html>
+    </html>
