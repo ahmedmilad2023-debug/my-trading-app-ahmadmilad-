@@ -193,6 +193,7 @@ select,.pill-input{background:var(--panel2);color:var(--txt);border:1px solid va
 <div class="field"><label data-i18n="tgToken">Bot Token</label><input type="password" id="s_tgToken" placeholder="123:ABC..."></div>
 <div class="field"><label data-i18n="tgChat">Chat ID</label><input type="text" id="s_tgChat" placeholder="-100..."></div>
 <button class="btn secondary" onclick="testTelegram()" data-i18n="tgTest">Send Test Message</button>
+<button class="btn secondary" onclick="resetTelegramDefaults()" data-i18n="tgRestore">Restore Built-in Token/Chat ID</button>
 <div style="font-size:11px;color:var(--dim);line-height:1.6;padding-top:8px;" data-i18n="sleepNote">Keep this tab open and the screen on for the most reliable delivery. If the phone is manually locked, the browser may pause and the app will catch up and resend as soon as it's reopened.</div>
 </div>
 <button class="btn" onclick="saveSettings()" data-i18n="saveSettings">Save Settings</button>
@@ -245,7 +246,8 @@ btRun:"تشغيل الاختبار", btRunning:"جارٍ تحميل البيان
 p7:"7 أيام", p30:"30 يوماً", p90:"90 يوماً", p180:"180 يوماً", p365:"سنة", pCustom:"مخصص",
 btBuySignals:"إشارات شراء", btSellSignals:"إشارات بيع", btEquity:"منحنى رأس المال",
 btTrades:"صفقات الباك تست", btEntry:"دخول", btExit:"خروج", btNoData:"لا توجد بيانات كافية لهذه الفترة",
-sleepNote:"اترك الصفحة مفتوحة والشاشة مضاءة لأفضل موثوقية. لو قفلت الهاتف يدويًا قد يوقف المتصفح التطبيق مؤقتًا، وسيلحق كل الإشارات فور إعادة فتحه."
+sleepNote:"اترك الصفحة مفتوحة والشاشة مضاءة لأفضل موثوقية. لو قفلت الهاتف يدويًا قد يوقف المتصفح التطبيق مؤقتًا، وسيلحق كل الإشارات فور إعادة فتحه.",
+tgRestore:"استرجاع التوكن والمعرف الأساسيين", tgRestored:"تم استرجاع بيانات تيليجرام الافتراضية وحفظها"
 },
 en:{
 recentSignals:"Recent Signals", openTrades:"Open Trades", closedTrades:"Trade History",
@@ -282,7 +284,8 @@ btRun:"Run Backtest", btRunning:"Loading data and running backtest...", btNoResu
 p7:"7 days", p30:"30 days", p90:"90 days", p180:"180 days", p365:"1 year", pCustom:"Custom",
 btBuySignals:"Buy Signals", btSellSignals:"Sell Signals", btEquity:"Equity Curve",
 btTrades:"Backtest Trades", btEntry:"Entry", btExit:"Exit", btNoData:"Not enough data for this period",
-sleepNote:"Keep this tab open and the screen on for the most reliable delivery. If the phone is manually locked, the browser may pause the app; it will catch up and resend as soon as it's reopened."
+sleepNote:"Keep this tab open and the screen on for the most reliable delivery. If the phone is manually locked, the browser may pause the app; it will catch up and resend as soon as it's reopened.",
+tgRestore:"Restore Built-in Token/Chat ID", tgRestored:"Telegram defaults restored and saved"
 }
 };
 let LANG = localStorage.getItem("bw_lang") || "ar";
@@ -892,6 +895,15 @@ sendTelegramRaw("BOSWaves Signals: test message OK ✅").then(res=>{
 if(res.ok && res.unverified){ alert(t("tgTestSent")); return; }
 alert(res.ok ? t("tgTestSent") : (t("tgTestFail")+"\n\n"+(res.error||"")));
 });
+}
+
+function resetTelegramDefaults(){
+settings.tgToken = DEFAULT_SETTINGS.tgToken;
+settings.tgChat = DEFAULT_SETTINGS.tgChat;
+settings.tgEnable = DEFAULT_SETTINGS.tgEnable;
+persistSettings();
+fillSettingsForm();
+alert(t("tgRestored"));
 }
 
 /* ---------------- Bybit data layer ---------------- */
