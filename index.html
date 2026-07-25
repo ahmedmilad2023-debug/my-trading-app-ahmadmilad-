@@ -169,6 +169,18 @@ select,.pill-input{background:var(--panel2);color:var(--txt);border:1px solid va
 <div class="field"><label data-i18n="adxThresh">Min ADX</label><input type="number" id="s_adxThresh"></div>
 </div>
 <div class="settings-group">
+<h4 data-i18n="grpMode">Signal Mode</h4>
+<div class="field"><label data-i18n="signalMode">Signal Mode</label>
+<select id="s_signalMode" onchange="onModeChange()">
+<option value="aggressive" data-i18n="modeAggressive">Aggressive</option>
+<option value="balanced" data-i18n="modeBalanced">Balanced</option>
+<option value="conservative" data-i18n="modeConservative">Conservative</option>
+</select>
+</div>
+<div class="field"><label data-i18n="minScore">Minimum Signal Score</label><input type="number" id="s_minScore" min="0" max="100"></div>
+<div style="font-size:11.5px;color:var(--dim);line-height:1.6;padding-top:4px;" id="modeDesc"></div>
+</div>
+<div class="settings-group">
 <h4 data-i18n="grpRisk">Risk &amp; Trade</h4>
 <div class="field"><label data-i18n="riskPct">Risk % / Trade</label><input type="number" step="0.05" id="s_riskPct"></div>
 <div class="field"><label data-i18n="leverage">Leverage</label><input type="number" id="s_leverage"></div>
@@ -181,6 +193,7 @@ select,.pill-input{background:var(--panel2);color:var(--txt);border:1px solid va
 <div class="field"><label data-i18n="tgToken">Bot Token</label><input type="password" id="s_tgToken" placeholder="123:ABC..."></div>
 <div class="field"><label data-i18n="tgChat">Chat ID</label><input type="text" id="s_tgChat" placeholder="-100..."></div>
 <button class="btn secondary" onclick="testTelegram()" data-i18n="tgTest">Send Test Message</button>
+<div style="font-size:11px;color:var(--dim);line-height:1.6;padding-top:8px;" data-i18n="sleepNote">Keep this tab open and the screen on for the most reliable delivery. If the phone is manually locked, the browser may pause and the app will catch up and resend as soon as it's reopened.</div>
 </div>
 <button class="btn" onclick="saveSettings()" data-i18n="saveSettings">Save Settings</button>
 <button class="btn danger" onclick="resetAll()" data-i18n="resetAll">Reset Everything</button>
@@ -217,7 +230,22 @@ maxDD:"أقصى تراجع", avgRR:"متوسط R:R", openCount:"صفقات مف�
 long:"شراء", short:"بيع", waitingData:"جاري تحميل بيانات", connected:"متصل", disconnected:"غير متصل",
 adxPass:"الفلتر: تجاوز", adxFail:"الفلتر: لم يتجاوز", settingsSaved:"تم حفظ الإعدادات",
 tgTestSent:"تم إرسال الرسالة التجريبية", tgTestFail:"فشل الإرسال - تحقق من التوكن والمعرف",
-confirmReset:"سيتم حذف جميع الصفقات والسجل. متابعة؟"
+confirmReset:"سيتم حذف جميع الصفقات والسجل. متابعة؟",
+grpMode:"وضع الإشارة", signalMode:"وضع الإشارة", minScore:"أقل درجة للإشارة",
+modeAggressive:"هجومي", modeBalanced:"متوازن", modeConservative:"محافظ",
+modeDescAggressive:"يعتمد فقط على BOSWaves + ADX، يعطي أكبر عدد ممكن من الإشارات، مناسب للسكالبينج.",
+modeDescBalanced:"BOSWaves + ADX + تأكيد إضافي واحد (بنية السوق أو قوة الاتجاه). الوضع الافتراضي.",
+modeDescConservative:"يعتمد على جميع التأكيدات المتاحة، يعطي أقل عدد من الإشارات لكن أعلى جودة.",
+zone:"المنطقة", score:"الدرجة", signalType:"نوع الإشارة", duration:"مدة الصفقة",
+winPoints:"نقاط الربح", lossPoints:"نقاط الخسارة", winRateLbl:"نسبة النجاح", lossRateLbl:"نسبة الخسارة",
+avgHold:"متوسط مدة الصفقة", sharpe:"معامل شارب", consecWins:"أطول سلسلة أرباح", consecLosses:"أطول سلسلة خسائر",
+zoneInvalid:"إبطال المنطقة", tabBacktest:"باك تست", btTitle:"اختبار الاستراتيجية على بيانات تاريخية",
+btSymbol:"العملة", btTF:"الفريم", btPeriod:"الفترة", btCustomFrom:"من تاريخ", btCustomTo:"إلى تاريخ",
+btRun:"تشغيل الاختبار", btRunning:"جارٍ تحميل البيانات وتشغيل الاختبار...", btNoResults:"لم يتم تشغيل أي اختبار بعد",
+p7:"7 أيام", p30:"30 يوماً", p90:"90 يوماً", p180:"180 يوماً", p365:"سنة", pCustom:"مخصص",
+btBuySignals:"إشارات شراء", btSellSignals:"إشارات بيع", btEquity:"منحنى رأس المال",
+btTrades:"صفقات الباك تست", btEntry:"دخول", btExit:"خروج", btNoData:"لا توجد بيانات كافية لهذه الفترة",
+sleepNote:"اترك الصفحة مفتوحة والشاشة مضاءة لأفضل موثوقية. لو قفلت الهاتف يدويًا قد يوقف المتصفح التطبيق مؤقتًا، وسيلحق كل الإشارات فور إعادة فتحه."
 },
 en:{
 recentSignals:"Recent Signals", openTrades:"Open Trades", closedTrades:"Trade History",
@@ -239,7 +267,22 @@ maxDD:"Max Drawdown", avgRR:"Avg R:R", openCount:"Open Trades", closedCount:"Clo
 long:"LONG", short:"SHORT", waitingData:"Loading data", connected:"Connected", disconnected:"Disconnected",
 adxPass:"Filter: Passed", adxFail:"Filter: Blocked", settingsSaved:"Settings saved",
 tgTestSent:"Test message sent", tgTestFail:"Failed to send - check token and chat id",
-confirmReset:"This deletes all trades and history. Continue?"
+confirmReset:"This deletes all trades and history. Continue?",
+grpMode:"Signal Mode", signalMode:"Signal Mode", minScore:"Minimum Signal Score",
+modeAggressive:"Aggressive", modeBalanced:"Balanced", modeConservative:"Conservative",
+modeDescAggressive:"Only BOSWaves + ADX. Maximum number of signals - best for scalping.",
+modeDescBalanced:"BOSWaves + ADX + one extra confirmation (structure or trend strength). Default mode.",
+modeDescConservative:"Requires every available confirmation. Fewest signals, highest quality.",
+zone:"Zone", score:"Score", signalType:"Signal Type", duration:"Duration",
+winPoints:"Win Points", lossPoints:"Loss Points", winRateLbl:"Win Rate", lossRateLbl:"Loss Rate",
+avgHold:"Avg Holding Time", sharpe:"Sharpe Ratio", consecWins:"Max Consecutive Wins", consecLosses:"Max Consecutive Losses",
+zoneInvalid:"Zone Invalidated", tabBacktest:"Backtest", btTitle:"Test the strategy on historical data",
+btSymbol:"Symbol", btTF:"Timeframe", btPeriod:"Period", btCustomFrom:"From", btCustomTo:"To",
+btRun:"Run Backtest", btRunning:"Loading data and running backtest...", btNoResults:"No backtest run yet",
+p7:"7 days", p30:"30 days", p90:"90 days", p180:"180 days", p365:"1 year", pCustom:"Custom",
+btBuySignals:"Buy Signals", btSellSignals:"Sell Signals", btEquity:"Equity Curve",
+btTrades:"Backtest Trades", btEntry:"Entry", btExit:"Exit", btNoData:"Not enough data for this period",
+sleepNote:"Keep this tab open and the screen on for the most reliable delivery. If the phone is manually locked, the browser may pause the app; it will catch up and resend as soon as it's reopened."
 }
 };
 let LANG = localStorage.getItem("bw_lang") || "ar";
@@ -255,8 +298,11 @@ pivotLen:8, impulseATR:1.10, baseCandles:4, atrLen:14, minZoneATR:0.12, maxZoneA
 maxBlocks:6, removeOverlap:true, invalidation:"Close",
 adxLen:14, adxThresh:20,
 riskPct:0.35, leverage:50, rr:2.0, capital:1000,
-tgEnable:false, tgToken:"", tgChat:""
+tgEnable:true, tgToken:"8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ", tgChat:"-1003970108966",
+signalMode:"balanced", minScore:70
 };
+const MODE_SCORE_DEFAULTS = { aggressive:55, balanced:70, conservative:85 };
+const SCORE_WEIGHTS = { boswaves:40, adx:20, structure:15, trend:15, volatility:10 };
 
 let settings = loadSettings();
 let currentSymbol = localStorage.getItem("bw_symbol") || "BTCUSDT";
@@ -380,6 +426,7 @@ return {adx, diPlus, diMinus};
 /* ---------------- BOSWaves engine ---------------- */
 
 function clampf(v, lo, hi){ return Math.max(lo, Math.min(v, hi)); }
+function clampf2(v, lo, hi, fallback){ if(isNaN(v)) return fallback; return Math.max(lo, Math.min(v, hi)); }
 
 class BOSWavesEngine{
 constructor(symbol, tfKey, cfg){
@@ -390,8 +437,12 @@ this.candles = [];
 this.atr = [];
 this.adx = [];
 this.obs = [];
+this.nextObId = 1;
 this.processedPivotUpTo = -1;
 this.lastConfirmedIdx = -1;
+this.lastSwingHigh = null;
+this.lastSwingLow = null;
+this.structureBias = null;
 this.signals = [];
 this.lastPrice = null;
 }
@@ -401,6 +452,23 @@ this.candles = candles;
 this.recomputeIndicators();
 }
 
+appendOrUpdateCandle(nc){
+const idx = this.candles.findIndex(c=>c.time===nc.time);
+if(idx>=0){ this.candles[idx] = nc; return; }
+if(this.candles.length===0 || nc.time > this.candles[this.candles.length-1].time){
+this.candles.push(nc);
+}
+}
+
+trimHistory(maxLen){
+if(this.candles.length <= maxLen) return;
+const drop = this.candles.length - maxLen;
+this.candles.splice(0, drop);
+this.processedPivotUpTo = Math.max(-1, this.processedPivotUpTo - drop);
+this.lastConfirmedIdx = Math.max(-1, this.lastConfirmedIdx - drop);
+this.obs.forEach(ob=>{ ob.createdIdx -= drop; ob.pivotIdx -= drop; });
+}
+
 recomputeIndicators(){
 this.atr = computeATRSeries(this.candles, this.cfg.atrLen);
 const r = computeADXSeries(this.candles, this.cfg.adxLen);
@@ -408,6 +476,13 @@ this.adx = r.adx;
 }
 
 zonesOverlap(topA,botA,topB,botB){ return botA <= topB && topA >= botB; }
+
+findObById(id){ return this.obs.find(o=>o.id===id) || null; }
+
+unlockZone(id){
+const ob = this.findObById(id);
+if(ob) ob.signaledSide = null;
+}
 
 createOB(isBull, pivotIdx, confirmIdx){
 const cfg = this.cfg;
@@ -445,10 +520,11 @@ rawTop = m + maxH/2;
 rawBot = m - maxH/2;
 }
 return {
+id:this.nextObId++,
 isBull, top:rawTop, bottom:rawBot, mid:(rawTop+rawBot)/2,
 createdIdx:confirmIdx, pivotIdx,
 touches:0, armed:false, active:false, wasInside:false,
-broken:false
+broken:false, signaledSide:null
 };
 }
 
@@ -467,12 +543,14 @@ if(c[k].low <= c[i].low) isLow = false;
 }
 const confirmIdx = i + len;
 if(isLow){
+this.lastSwingLow = c[i].low;
 const atrAtPivot = this.atr[i];
 if(atrAtPivot && (c[confirmIdx].close - c[i].low) >= atrAtPivot*cfg.impulseATR){
 this.registerOB(this.createOB(true, i, confirmIdx));
 }
 }
 if(isHigh){
+this.lastSwingHigh = c[i].high;
 const atrAtPivot = this.atr[i];
 if(atrAtPivot && (c[i].high - c[confirmIdx].close) >= atrAtPivot*cfg.impulseATR){
 this.registerOB(this.createOB(false, i, confirmIdx));
@@ -480,6 +558,20 @@ this.registerOB(this.createOB(false, i, confirmIdx));
 }
 this.processedPivotUpTo = i;
 }
+}
+
+updateStructure(idx){
+const bar = this.candles[idx];
+let bosNow = null;
+if(this.lastSwingHigh !== null && bar.close > this.lastSwingHigh){
+bosNow = this.structureBias === "bear" ? "choch" : "bos";
+this.structureBias = "bull";
+}
+if(this.lastSwingLow !== null && bar.close < this.lastSwingLow){
+bosNow = this.structureBias === "bull" ? "choch" : "bos";
+this.structureBias = "bear";
+}
+return bosNow;
 }
 
 registerOB(ob){
@@ -504,6 +596,7 @@ const c = this.candles;
 const cfg = this.cfg;
 const bar = c[idx];
 const prevBar = idx>0 ? c[idx-1] : null;
+const bosNow = this.updateStructure(idx);
 const fired = [];
 for(let i=this.obs.length-1;i>=0;i--){
 const ob = this.obs[i];
@@ -535,11 +628,51 @@ ob.broken = true;
 this.obs.splice(i,1);
 continue;
 }
-if(justFired){
-fired.push({side:justFired, ob, barIdx:idx});
+if(justFired && ob.signaledSide !== justFired){
+fired.push({side:justFired, ob, barIdx:idx, bosNow, structureBias:this.structureBias});
 }
 }
 return fired;
+}
+
+evaluateSignal(raw, idx){
+const cfg = this.cfg;
+const bar = this.candles[idx];
+const atrVal = this.atr[idx];
+const adxVal = this.adx[idx];
+const adxPass = adxVal !== null && adxVal !== undefined && adxVal > cfg.adxThresh;
+const structureAligned = (raw.side==="long" && raw.structureBias==="bull") || (raw.side==="short" && raw.structureBias==="bear") || !!raw.bosNow;
+const trendStrength = adxVal !== null && adxVal !== undefined && adxVal >= (cfg.adxThresh + 10);
+const barRange = bar.high - bar.low;
+const volatilityOk = !(atrVal && barRange > atrVal*2.5);
+const parts = {
+boswaves:SCORE_WEIGHTS.boswaves,
+adx: adxPass ? SCORE_WEIGHTS.adx : 0,
+structure: structureAligned ? SCORE_WEIGHTS.structure : 0,
+trend: trendStrength ? SCORE_WEIGHTS.trend : 0,
+volatility: volatilityOk ? SCORE_WEIGHTS.volatility : 0
+};
+const score = parts.boswaves+parts.adx+parts.structure+parts.trend+parts.volatility;
+let modeOk = adxPass;
+const mode = cfg.signalMode || "balanced";
+if(modeOk){
+if(mode==="aggressive") modeOk = true;
+else if(mode==="balanced") modeOk = structureAligned || trendStrength;
+else if(mode==="conservative") modeOk = structureAligned && trendStrength && volatilityOk;
+}
+const passed = modeOk && score >= (cfg.minScore||0);
+let signalType = raw.bosNow==="choch" ? "CHoCH" : (raw.bosNow==="bos" ? "BOS" : "Order Block Retest");
+const reasonParts = [];
+reasonParts.push(LANG==="ar" ? "منطقة BOSWaves + إعادة اختبار" : "BOSWaves zone + retest");
+if(adxPass) reasonParts.push("ADX>"+cfg.adxThresh);
+if(structureAligned) reasonParts.push(signalType);
+if(trendStrength) reasonParts.push(LANG==="ar"?"اتجاه قوي":"strong trend");
+if(volatilityOk) reasonParts.push(LANG==="ar"?"تذبذب طبيعي":"normal volatility");
+return {
+passed, score, parts, adx:adxVal, signalType,
+reason: reasonParts.join(" + "),
+mode
+};
 }
 
 onNewClosedCandle(){
@@ -549,11 +682,16 @@ if(idx <= this.lastConfirmedIdx) return [];
 const allFired = [];
 for(let i=this.lastConfirmedIdx+1;i<=idx;i++){
 const fired = this.processConfirmedCandle(i);
-const adxVal = this.adx[i];
 fired.forEach(f=>{
-const adxPass = adxVal !== null && adxVal !== undefined && adxVal > this.cfg.adxThresh;
-if(adxPass){
-allFired.push({...f, adx:adxVal, price:this.candles[i].close, time:this.candles[i].closeTime});
+const evalRes = this.evaluateSignal(f, i);
+if(evalRes.passed){
+f.ob.signaledSide = f.side;
+allFired.push({
+side:f.side, ob:f.ob, barIdx:i,
+adx:evalRes.adx, score:evalRes.score, scoreParts:evalRes.parts,
+signalType:evalRes.signalType, reason:evalRes.reason, mode:evalRes.mode,
+price:this.candles[i].close, time:this.candles[i].closeTime
+});
 }
 });
 }
@@ -585,20 +723,24 @@ localStorage.setItem(tradeStoreKey(symbol,tfKey), JSON.stringify(data));
 function openTradeFromSignal(symbol, tfKey, sig){
 const cfg = settings;
 const isLong = sig.side === "long";
+const data = loadTrades(symbol, tfKey);
+if(data.open.some(t=>t.side===sig.side)) return null;
 const entry = sig.price;
 const sl = isLong ? sig.ob.bottom : sig.ob.top;
 const riskDist = Math.abs(entry - sl);
 if(riskDist <= 0) return null;
 const tp = isLong ? entry + riskDist*cfg.rr : entry - riskDist*cfg.rr;
+const openTime = sig.time || Date.now();
 const trade = {
 id: symbol+"_"+tfKey+"_"+Date.now()+"_"+Math.floor(Math.random()*1000),
 symbol, tf:tfKey, side: isLong ? "long":"short",
 entry, sl, tp, rr: cfg.rr,
-adx: sig.adx,
-openTime: sig.time || Date.now(),
+adx: sig.adx, score: sig.score, mode: sig.mode,
+signalType: sig.signalType, reason: sig.reason,
+zoneId: sig.ob.id,
+openTime, openDate: fmtDate(openTime), openTimeStr: fmtTime(openTime),
 status:"open"
 };
-const data = loadTrades(symbol, tfKey);
 data.open.push(trade);
 saveTrades(symbol, tfKey, data);
 return trade;
@@ -614,14 +756,22 @@ const isLong = trade.side === "long";
 const riskDist = Math.abs(trade.entry - trade.sl);
 const pnlPct = isLong ? (exitPrice-trade.entry)/trade.entry*100 : (trade.entry-exitPrice)/trade.entry*100;
 const rMultiple = riskDist>0 ? (isLong ? (exitPrice-trade.entry) : (trade.entry-exitPrice))/riskDist : 0;
+const closeTime = Date.now();
 trade.exitPrice = exitPrice;
-trade.closeTime = Date.now();
+trade.closeTime = closeTime;
+trade.closeDate = fmtDate(closeTime);
+trade.closeTimeStr = fmtTime(closeTime);
 trade.reason = reason;
 trade.pnlPct = pnlPct * (settings.leverage||1);
 trade.rMultiple = rMultiple;
+trade.winPoints = isLong ? Math.max(0, exitPrice-trade.entry) : Math.max(0, trade.entry-exitPrice);
+trade.lossPoints = isLong ? Math.max(0, trade.entry-exitPrice) : Math.max(0, exitPrice-trade.entry);
+trade.durationMs = closeTime - trade.openTime;
 trade.status = "closed";
 data.closed.push(trade);
 saveTrades(symbol, tfKey, data);
+const eng = engines[engineKey(symbol,tfKey)];
+if(eng) eng.unlockZone(trade.zoneId);
 sendTelegramForTrade(trade);
 return trade;
 }
@@ -629,47 +779,71 @@ return trade;
 function checkOpenTrades(symbol, tfKey, price){
 const data = loadTrades(symbol, tfKey);
 if(data.open.length===0) return;
-const stillOpen = [];
-data.open.forEach(trade=>{
+const eng = engines[engineKey(symbol,tfKey)];
+data.open.slice().forEach(trade=>{
 const isLong = trade.side==="long";
-let hitTP = isLong ? price >= trade.tp : price <= trade.tp;
-let hitSL = isLong ? price <= trade.sl : price >= trade.sl;
+const hitTP = isLong ? price >= trade.tp : price <= trade.tp;
+const hitSL = isLong ? price <= trade.sl : price >= trade.sl;
+const ob = eng ? eng.findObById(trade.zoneId) : null;
+const zoneBroken = eng && !ob;
 if(hitTP){
 closeTrade(symbol, tfKey, trade.id, trade.tp, "tp");
 } else if(hitSL){
 closeTrade(symbol, tfKey, trade.id, trade.sl, "sl");
-} else {
-stillOpen.push(trade);
+} else if(zoneBroken){
+closeTrade(symbol, tfKey, trade.id, price, "zone_invalid");
 }
 });
 }
 
+function formatDuration(ms){
+if(!ms || ms<0) return "--";
+const mins = Math.floor(ms/60000);
+const h = Math.floor(mins/60);
+const m = mins%60;
+if(h>0) return h+"h "+m+"m";
+return m+"m";
+}
+
 function computeStats(symbol, tfKey){
 const data = loadTrades(symbol, tfKey);
-const closed = data.closed;
+const closed = data.closed.slice().sort((a,b)=>a.closeTime-b.closeTime);
 const wins = closed.filter(t=>t.pnlPct>0);
 const losses = closed.filter(t=>t.pnlPct<=0);
 const grossProfit = wins.reduce((s,t)=>s+t.pnlPct,0);
 const grossLoss = Math.abs(losses.reduce((s,t)=>s+t.pnlPct,0));
 const netProfit = grossProfit - grossLoss;
 const winRate = closed.length>0 ? wins.length/closed.length*100 : 0;
+const lossRate = closed.length>0 ? losses.length/closed.length*100 : 0;
 const profitFactor = grossLoss>0 ? grossProfit/grossLoss : (grossProfit>0 ? Infinity : 0);
 const avgWin = wins.length>0 ? grossProfit/wins.length : 0;
 const avgLoss = losses.length>0 ? -grossLoss/losses.length : 0;
 const best = closed.reduce((m,t)=>Math.max(m,t.pnlPct), closed.length?closed[0].pnlPct:0);
 const worst = closed.reduce((m,t)=>Math.min(m,t.pnlPct), closed.length?closed[0].pnlPct:0);
 let equity = 0, peak = 0, maxDD = 0;
-closed.slice().sort((a,b)=>a.closeTime-b.closeTime).forEach(t=>{
+closed.forEach(t=>{
 equity += t.pnlPct;
 peak = Math.max(peak, equity);
 maxDD = Math.max(maxDD, peak-equity);
 });
 const avgRR = closed.length>0 ? closed.reduce((s,t)=>s+(t.rMultiple||0),0)/closed.length : 0;
+const avgHoldMs = closed.length>0 ? closed.reduce((s,t)=>s+(t.durationMs||0),0)/closed.length : 0;
+const returns = closed.map(t=>t.pnlPct);
+const meanRet = returns.length>0 ? returns.reduce((a,b)=>a+b,0)/returns.length : 0;
+const variance = returns.length>1 ? returns.reduce((s,r)=>s+Math.pow(r-meanRet,2),0)/(returns.length-1) : 0;
+const stdev = Math.sqrt(variance);
+const sharpe = stdev>0 ? meanRet/stdev : 0;
+let curWinStreak=0, curLossStreak=0, maxWinStreak=0, maxLossStreak=0;
+closed.forEach(t=>{
+if(t.pnlPct>0){ curWinStreak++; curLossStreak=0; maxWinStreak=Math.max(maxWinStreak,curWinStreak); }
+else { curLossStreak++; curWinStreak=0; maxLossStreak=Math.max(maxLossStreak,curLossStreak); }
+});
 return {
 total: closed.length + data.open.length,
-wins: wins.length, losses: losses.length, winRate,
+wins: wins.length, losses: losses.length, winRate, lossRate,
 profitFactor, netProfit, grossProfit, grossLoss,
-avgWin, avgLoss, best, worst, maxDD, avgRR,
+avgWin, avgLoss, best, worst, maxDD, avgRR, avgHoldMs,
+sharpe, maxWinStreak, maxLossStreak,
 openCount: data.open.length, closedCount: closed.length
 };
 }
@@ -680,18 +854,21 @@ function sendTelegramForTrade(trade){
 if(!settings.tgEnable || !settings.tgToken || !settings.tgChat) return;
 const isLong = trade.side==="long";
 const won = trade.pnlPct>0;
-const emoji = won ? "✅" : "🛑";
+const emoji = won ? "✅" : (trade.reason==="zone_invalid" ? "⚠️" : "🛑");
 const sideLabel = isLong ? "LONG" : "SHORT";
-const reasonLabel = trade.reason==="tp" ? "TARGET HIT" : "STOP LOSS";
+const reasonLabel = trade.reason==="tp" ? "TARGET HIT" : (trade.reason==="sl" ? "STOP LOSS" : "ZONE INVALIDATED");
 const msg = [
 emoji+" *BOSWaves "+reasonLabel+"*",
 "Symbol: `"+trade.symbol+"`",
-"TF: `"+TF_LIST.find(x=>x.key===trade.tf)?.label+"`",
+"TF: `"+(TF_LIST.find(x=>x.key===trade.tf)||{}).label+"`",
 "Side: *"+sideLabel+"*",
 "Entry: `"+fmtPrice(trade.entry)+"`",
+"SL: `"+fmtPrice(trade.sl)+"`",
+"TP: `"+fmtPrice(trade.tp)+"`",
 "Exit: `"+fmtPrice(trade.exitPrice)+"`",
 "PnL: *"+(trade.pnlPct>=0?"+":"")+trade.pnlPct.toFixed(2)+"%*",
-"R: `"+trade.rMultiple.toFixed(2)+"`"
+"R: `"+trade.rMultiple.toFixed(2)+"`",
+"Closed: `"+trade.closeDate+" "+trade.closeTimeStr+"`"
 ].join("\n");
 sendTelegramRaw(msg);
 }
@@ -716,8 +893,10 @@ alert(ok ? t("tgTestSent") : t("tgTestFail"));
 
 const BYBIT_REST = "https://api.bybit.com/v5/market/kline";
 
-async function fetchKlines(symbol, tfKey, limit){
-const url = BYBIT_REST+"?category=linear&symbol="+symbol+"&interval="+tfKey+"&limit="+(limit||300);
+async function fetchKlines(symbol, tfKey, limit, startMs, endMs){
+let url = BYBIT_REST+"?category=linear&symbol="+symbol+"&interval="+tfKey+"&limit="+(limit||300);
+if(startMs) url += "&start="+Math.floor(startMs);
+if(endMs) url += "&end="+Math.floor(endMs);
 const res = await fetch(url);
 const json = await res.json();
 if(!json.result || !json.result.list) return [];
@@ -731,6 +910,29 @@ close: parseFloat(row[4]),
 volume: parseFloat(row[5]),
 closeTime: parseInt(row[0])
 }));
+}
+
+async function fetchKlinesRange(symbol, tfKey, fromMs, toMs){
+const stepMs = tfKeyToMs(tfKey);
+let all = [];
+let cursor = fromMs;
+let guard = 0;
+while(cursor < toMs && guard < 400){
+const batch = await fetchKlines(symbol, tfKey, 1000, cursor, toMs);
+if(batch.length===0) break;
+all = all.concat(batch);
+const lastTime = batch[batch.length-1].time;
+if(lastTime <= cursor) break;
+cursor = lastTime + stepMs;
+guard++;
+if(batch.length < 1000) break;
+}
+const seen = new Set();
+const dedup = [];
+all.sort((a,b)=>a.time-b.time).forEach(c=>{
+if(!seen.has(c.time)){ seen.add(c.time); dedup.push(c); }
+});
+return dedup.filter(c=>c.time>=fromMs && c.time<=toMs);
 }
 
 function tfKeyToMs(tfKey){
@@ -760,15 +962,8 @@ const eng = engines[engineKey(symbol,tfKey)];
 if(!eng) return;
 const fresh = await fetchKlines(symbol, tfKey, 5);
 if(fresh.length===0) return;
-fresh.forEach(nc=>{
-const existingIdx = eng.candles.findIndex(c=>c.time===nc.time);
-if(existingIdx>=0){
-eng.candles[existingIdx] = nc;
-} else if(nc.time > eng.candles[eng.candles.length-1].time){
-eng.candles.push(nc);
-}
-});
-if(eng.candles.length > 600) eng.candles.splice(0, eng.candles.length-600);
+fresh.forEach(nc=> eng.appendOrUpdateCandle(nc));
+eng.trimHistory(600);
 eng.recomputeIndicators();
 const fired = eng.onNewClosedCandle();
 fired.forEach(f=>handleSignal(symbol, tfKey, f));
@@ -782,7 +977,7 @@ if(!trade) return;
 const feedKey = "bw_feed_"+symbol+"_"+tfKey;
 let feed = [];
 try{ feed = JSON.parse(localStorage.getItem(feedKey) || "[]"); }catch(e){}
-feed.unshift({...sig, ob:undefined, tradeId:trade.id});
+feed.unshift({side:sig.side, price:sig.price, time:sig.time, adx:sig.adx, score:sig.score, signalType:sig.signalType, reason:sig.reason, tradeId:trade.id});
 feed = feed.slice(0,50);
 localStorage.setItem(feedKey, JSON.stringify(feed));
 sendSignalTelegram(symbol, tfKey, trade);
@@ -793,15 +988,19 @@ if(!settings.tgEnable) return;
 const isLong = trade.side==="long";
 const emoji = isLong ? "🟢" : "🔴";
 const msg = [
-emoji+" *BOSWaves SIGNAL*",
+emoji+" *BOSWaves SIGNAL OPENED*",
 "Symbol: `"+symbol+"`",
-"TF: `"+TF_LIST.find(x=>x.key===tfKey)?.label+"`",
+"TF: `"+(TF_LIST.find(x=>x.key===tfKey)||{}).label+"`",
 "Side: *"+(isLong?"LONG":"SHORT")+"*",
+"Type: `"+trade.signalType+"`",
 "Entry: `"+fmtPrice(trade.entry)+"`",
 "SL: `"+fmtPrice(trade.sl)+"`",
 "TP: `"+fmtPrice(trade.tp)+"`",
 "R:R `"+trade.rr.toFixed(2)+"`",
-"ADX: `"+trade.adx.toFixed(1)+"`"
+"ADX: `"+trade.adx.toFixed(1)+"`",
+"Score: `"+trade.score+"/100`",
+"Zone #"+trade.zoneId,
+"Opened: `"+trade.openDate+" "+trade.openTimeStr+"`"
 ].join("\n");
 sendTelegramRaw(msg);
 }
@@ -849,10 +1048,16 @@ if(activeTab==="open" || activeTab==="history" || activeTab==="stats") renderAll
 /* ---------------- Polling loop for all timeframes ---------------- */
 
 let pollTimer = null;
+let pollFailStreak = 0;
 async function pollAllTimeframes(){
 for(const tf of TF_LIST){
+try{
 await ensureEngine(currentSymbol, tf.key);
 await pollCandles(currentSymbol, tf.key);
+pollFailStreak = 0;
+}catch(e){
+pollFailStreak++;
+}
 }
 }
 function startPolling(){
@@ -954,8 +1159,9 @@ return '<div class="trade-card '+(isLong?"long":"short")+'">'
 +'<div class="trade-grid">'
 +'<div class="tg-item"><div class="tg-label">'+t("entry")+'</div><div class="tg-val mono">'+fmtPrice(f.price)+'</div></div>'
 +'<div class="tg-item"><div class="tg-label">ADX</div><div class="tg-val mono">'+fmtNum(f.adx,1)+'</div></div>'
-+'<div class="tg-item"><div class="tg-label">TF</div><div class="tg-val mono">'+(TF_LIST.find(x=>x.key===currentTF)||{}).label+'</div></div>'
++'<div class="tg-item"><div class="tg-label">'+t("score")+'</div><div class="tg-val mono">'+(f.score!==undefined?f.score:"--")+'</div></div>'
 +'</div>'
++'<div class="pnl-strip" style="background:rgba(63,208,255,.1);">'+(f.signalType||"")+' &nbsp;·&nbsp; '+(TF_LIST.find(x=>x.key===currentTF)||{}).label+'</div>'
 +'</div>';
 }).join("");
 }
@@ -980,7 +1186,8 @@ return '<div class="trade-card '+(isLong?"long":"short")+'">'
 +'<div class="tg-item"><div class="tg-label">'+t("sl")+'</div><div class="tg-val mono neg">'+fmtPrice(tr.sl)+'</div></div>'
 +'<div class="tg-item"><div class="tg-label">'+t("tp")+'</div><div class="tg-val mono pos">'+fmtPrice(tr.tp)+'</div></div>'
 +'</div>'
-+'<div class="pnl-strip" style="background:rgba(63,208,255,.1);">'+t("rr")+': '+tr.rr.toFixed(2)+' &nbsp;·&nbsp; ADX '+fmtNum(tr.adx,1)+'</div>'
++'<div class="pnl-strip" style="background:rgba(63,208,255,.1);">'+t("rr")+': '+tr.rr.toFixed(2)+' &nbsp;·&nbsp; ADX '+fmtNum(tr.adx,1)+' &nbsp;·&nbsp; '+t("score")+' '+(tr.score!==undefined?tr.score:"--")+' &nbsp;·&nbsp; '+t("zone")+' #'+tr.zoneId+'</div>'
++'<div style="font-size:10.5px;color:var(--dim);margin-top:4px;">'+(tr.signalType||"")+(tr.reason?(" · "+tr.reason):"")+'</div>'
 +'</div>';
 }).join("");
 }
@@ -1054,7 +1261,22 @@ document.getElementById("s_capital").value = settings.capital;
 document.getElementById("s_tgEnable").classList.toggle("on", !!settings.tgEnable);
 document.getElementById("s_tgToken").value = settings.tgToken;
 document.getElementById("s_tgChat").value = settings.tgChat;
+document.getElementById("s_signalMode").value = settings.signalMode;
+document.getElementById("s_minScore").value = settings.minScore;
+updateModeDesc();
 buildAdxQuick();
+}
+
+function updateModeDesc(){
+const mode = document.getElementById("s_signalMode").value;
+const key = "modeDesc"+mode.charAt(0).toUpperCase()+mode.slice(1);
+document.getElementById("modeDesc").textContent = t(key);
+}
+
+function onModeChange(){
+const mode = document.getElementById("s_signalMode").value;
+document.getElementById("s_minScore").value = MODE_SCORE_DEFAULTS[mode] !== undefined ? MODE_SCORE_DEFAULTS[mode] : 70;
+updateModeDesc();
 }
 
 function toggleSwitch(id){
@@ -1081,6 +1303,8 @@ settings.capital = parseFloat(document.getElementById("s_capital").value)||1000;
 settings.tgEnable = document.getElementById("s_tgEnable").classList.contains("on");
 settings.tgToken = document.getElementById("s_tgToken").value.trim();
 settings.tgChat = document.getElementById("s_tgChat").value.trim();
+settings.signalMode = document.getElementById("s_signalMode").value;
+settings.minScore = clampf2(parseFloat(document.getElementById("s_minScore").value), 0, 100, 70);
 persistSettings();
 engines = {};
 alert(t("settingsSaved"));
@@ -1104,6 +1328,33 @@ if(activeTab==="history") renderHistory();
 if(activeTab==="stats") renderStats();
 }
 
+/* ---------------- Wake Lock + background catch-up ---------------- */
+
+let wakeLockRef = null;
+
+async function requestWakeLock(){
+try{
+if("wakeLock" in navigator){
+wakeLockRef = await navigator.wakeLock.request("screen");
+wakeLockRef.addEventListener("release", ()=>{ wakeLockRef = null; });
+}
+}catch(e){ wakeLockRef = null; }
+}
+
+function catchUpNow(){
+connectTicker(currentSymbol);
+pollAllTimeframes();
+}
+
+document.addEventListener("visibilitychange", ()=>{
+if(document.visibilityState === "visible"){
+requestWakeLock();
+catchUpNow();
+}
+});
+window.addEventListener("focus", catchUpNow);
+window.addEventListener("pageshow", catchUpNow);
+
 /* ---------------- Init ---------------- */
 
 function init(){
@@ -1113,6 +1364,7 @@ buildTFRow();
 fillSettingsForm();
 connectTicker(currentSymbol);
 startPolling();
+requestWakeLock();
 setInterval(renderAll, 4000);
 }
 window.addEventListener("load", init);
