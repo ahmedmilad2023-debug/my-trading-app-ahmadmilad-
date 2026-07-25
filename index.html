@@ -1,1806 +1,1121 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0b0e17">
-    <meta name="description" content="CryptoSignal Pro - منصة توليد إشارات تداول العملات الرقمية">
-    <title>CryptoSignal Pro | إشارات التداول</title>
-    <link rel="manifest" href="#" id="manifest-link">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --bg-primary: #0b0e17; --bg-secondary: #131a2b; --bg-card: #1a2336; --bg-card-hover: #1f2a42;
-            --border-color: #2a3a5a; --text-primary: #e8edf5; --text-secondary: #8899bb; --text-muted: #556688;
-            --accent-green: #00d4aa; --accent-red: #ff4757; --accent-blue: #4a7cf7; --accent-gold: #f5a623;
-            --accent-purple: #a855f7; --shadow: 0 8px 32px rgba(0, 0, 0, 0.6); --radius: 16px; --radius-sm: 10px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-        }
-        html { scroll-behavior: smooth; }
-        body {
-            font-family: var(--font); background: var(--bg-primary); color: var(--text-primary);
-            min-height: 100vh; padding-bottom: 100px; overflow-x: hidden; line-height: 1.6;
-        }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
-        ::-webkit-scrollbar-thumb { background: var(--accent-blue); border-radius: 10px; }
-        a { color: var(--accent-blue); text-decoration: none; }
-        button { cursor: pointer; font-family: inherit; border: none; outline: none; background: none; color: inherit; }
-        input, select, textarea {
-            font-family: inherit; background: var(--bg-secondary); color: var(--text-primary);
-            border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px 14px;
-            font-size: 14px; width: 100%; transition: var(--transition);
-        }
-        input:focus, select:focus, textarea:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(74, 124, 247, 0.2); outline: none; }
-        input::placeholder, textarea::placeholder { color: var(--text-muted); }
-
-        /* ===== App Bar ===== */
-        .app-bar {
-            position: sticky; top: 0; z-index: 100; background: rgba(11, 14, 23, 0.92); backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-color);
-            padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-        }
-        .app-bar .logo { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .app-bar .logo span { font-size: 26px; -webkit-text-fill-color: initial; }
-        .app-bar .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .app-bar .actions button { padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; transition: var(--transition); background: var(--bg-card); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px; }
-        .app-bar .actions button:hover { background: var(--bg-card-hover); transform: translateY(-1px); }
-        .app-bar .actions button.strategy-btn { border-color: var(--accent-purple); color: var(--accent-purple); }
-        .app-bar .actions button.strategy-btn.active { background: var(--accent-purple); color: #fff; border-color: var(--accent-purple); }
-        .app-bar .actions .btn-install { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); border-color: transparent; color: #fff; }
-        .app-bar .actions .btn-install:hover { opacity: 0.9; transform: scale(1.03); }
-        .badge-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); animation: pulse-dot 2s infinite; }
-        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
-
-        /* ===== Container ===== */
-        .container { max-width: 1200px; margin: 0 auto; padding: 16px 16px 0; }
-
-        /* ===== Ticker Strip ===== */
-        .ticker-strip { background: var(--bg-secondary); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; border: 1px solid var(--border-color); overflow: hidden; position: relative; }
-        .ticker-strip .scroll-wrap { display: flex; gap: 24px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-        .ticker-strip .scroll-wrap::-webkit-scrollbar { display: none; }
-        .ticker-item { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 14px; font-weight: 500; padding: 4px 10px; border-radius: 20px; background: var(--bg-card); border: 1px solid var(--border-color); flex-shrink: 0; }
-        .ticker-item .sym { color: var(--text-secondary); font-weight: 600; }
-        .ticker-item .price { font-weight: 700; }
-        .ticker-item .signal-badge { font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 700; background: var(--bg-secondary); }
-        .ticker-item .signal-badge.buy { color: var(--accent-green); background: rgba(0, 212, 170, 0.2); }
-        .ticker-item .signal-badge.sell { color: var(--accent-red); background: rgba(255, 71, 87, 0.2); }
-        .ticker-item .signal-badge.neutral { color: var(--text-muted); background: rgba(136, 153, 187, 0.15); }
-
-        /* ===== Stats Row ===== */
-        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
-        .stat-card { background: var(--bg-card); border-radius: var(--radius-sm); padding: 14px 16px; text-align: center; border: 1px solid var(--border-color); }
-        .stat-card .label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-card .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
-        .stat-card .value.green { color: var(--accent-green); }
-        .stat-card .value.red { color: var(--accent-red); }
-        .stat-card .value.gold { color: var(--accent-gold); }
-
-        /* ===== Chart Section ===== */
-        .chart-section {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            border: 1px solid var(--border-color);
-            padding: 16px;
-            margin-bottom: 20px;
-            position: relative;
-        }
-        .chart-section .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .chart-section .chart-header h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-        .chart-section .chart-header select {
-            width: auto;
-            padding: 4px 10px;
-            font-size: 12px;
-            border-radius: 20px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-        }
-        .chart-section canvas {
-            width: 100%;
-            height: 240px;
-            display: block;
-            background: var(--bg-secondary);
-            border-radius: var(--radius-sm);
-        }
-
-        /* ===== Section Header ===== */
-        .section-header { display: flex; align-items: center; justify-content: space-between; margin: 24px 0 14px; flex-wrap: wrap; gap: 8px; }
-        .section-header h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-        .section-header h2 .badge-count { font-size: 13px; font-weight: 600; background: var(--bg-card); padding: 2px 12px; border-radius: 20px; color: var(--text-secondary); }
-        .section-header .actions button { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--bg-card); border: 1px solid var(--border-color); transition: var(--transition); }
-        .section-header .actions button:hover { background: var(--bg-card-hover); }
-
-        /* ===== Signal Cards ===== */
-        .signals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
-        .signal-card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border-color); padding: 18px 20px 20px; transition: var(--transition); position: relative; overflow: hidden; }
-        .signal-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--text-muted); }
-        .signal-card.buy::before { background: linear-gradient(90deg, var(--accent-green), #00e6b8); }
-        .signal-card.sell::before { background: linear-gradient(90deg, var(--accent-red), #ff6b7a); }
-        .signal-card:hover { border-color: var(--accent-blue); transform: translateY(-2px); box-shadow: var(--shadow); }
-        .signal-card .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .signal-card .header .symbol { font-size: 20px; font-weight: 700; }
-        .signal-card .header .symbol small { font-weight: 400; font-size: 14px; color: var(--text-secondary); }
-        .signal-card .header .direction { font-size: 14px; font-weight: 700; padding: 4px 16px; border-radius: 20px; background: var(--bg-secondary); }
-        .signal-card .header .direction.buy { color: var(--accent-green); background: rgba(0, 212, 170, 0.15); }
-        .signal-card .header .direction.sell { color: var(--accent-red); background: rgba(255, 71, 87, 0.15); }
-        .signal-card .price-info { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; padding: 12px 0; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
-        .signal-card .price-info .item { text-align: center; }
-        .signal-card .price-info .item .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; }
-        .signal-card .price-info .item .val { font-size: 16px; font-weight: 700; margin-top: 2px; }
-        .signal-card .price-info .item .val.green { color: var(--accent-green); }
-        .signal-card .price-info .item .val.red { color: var(--accent-red); }
-        .signal-card .analysis { font-size: 13px; color: var(--text-secondary); background: var(--bg-secondary); padding: 10px 14px; border-radius: var(--radius-sm); margin: 12px 0; border-right: 3px solid var(--accent-blue); line-height: 1.7; max-height: 80px; overflow-y: auto; }
-        .signal-card .analysis strong { color: var(--text-primary); }
-        .signal-card .footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-        .signal-card .footer .timestamp { font-size: 12px; color: var(--text-muted); }
-        .signal-card .footer .actions { display: flex; gap: 6px; }
-        .signal-card .footer .actions button { padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; transition: var(--transition); border: 1px solid var(--border-color); background: var(--bg-secondary); }
-        .signal-card .footer .actions button:hover { background: var(--bg-card-hover); }
-        .signal-card .footer .actions .btn-share { color: var(--accent-blue); }
-        .signal-card .footer .actions .btn-lock { color: var(--accent-gold); }
-        .signal-card .footer .actions .btn-close { color: var(--accent-red); }
-        .signal-card .footer .actions .btn-lock.locked { background: var(--accent-gold); color: #fff; border-color: var(--accent-gold); }
-
-        /* ===== Closed Trades ===== */
-        .closed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-        .closed-card { background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-color); padding: 14px 16px; opacity: 0.7; transition: var(--transition); }
-        .closed-card:hover { opacity: 1; border-color: var(--text-muted); }
-        .closed-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .closed-card .header .symbol { font-weight: 700; }
-        .closed-card .header .result { font-weight: 700; font-size: 13px; padding: 2px 12px; border-radius: 12px; }
-        .closed-card .header .result.win { color: var(--accent-green); background: rgba(0, 212, 170, 0.15); }
-        .closed-card .header .result.loss { color: var(--accent-red); background: rgba(255, 71, 87, 0.15); }
-        .closed-card .header .result.neutral { color: var(--text-muted); background: rgba(136, 153, 187, 0.15); }
-        .closed-card .details { font-size: 13px; color: var(--text-secondary); display: flex; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
-        .closed-card .details span { display: flex; align-items: center; gap: 4px; }
-
-        /* ===== Modal / Settings ===== */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-overlay.active { display: flex; }
-        .modal { background: var(--bg-secondary); border-radius: var(--radius); border: 1px solid var(--border-color); padding: 28px 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow); animation: modalIn 0.3s ease; }
-        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        .modal .title { font-size: 22px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        .modal .form-group { margin-bottom: 16px; }
-        .modal .form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
-        .modal .form-group .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-        .modal .form-group input.ltr-fix { direction: ltr !important; text-align: left !important; unicode-bidi: plaintext !important; font-family: monospace !important; }
-        .modal .form-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-        .modal .form-actions button { padding: 10px 24px; border-radius: 30px; font-weight: 600; transition: var(--transition); flex: 1; min-width: 100px; }
-        .modal .form-actions .btn-primary { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); color: #fff; }
-        .modal .form-actions .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
-        .modal .form-actions .btn-secondary { background: var(--bg-card); border: 1px solid var(--border-color); }
-        .modal .form-actions .btn-secondary:hover { background: var(--bg-card-hover); }
-        .modal .status-msg { margin-top: 12px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 14px; display: none; }
-        .modal .status-msg.success { display: block; background: rgba(0, 212, 170, 0.15); color: var(--accent-green); border: 1px solid rgba(0, 212, 170, 0.3); }
-        .modal .status-msg.error { display: block; background: rgba(255, 71, 87, 0.15); color: var(--accent-red); border: 1px solid rgba(255, 71, 87, 0.3); }
-        .btn-copy-settings { background: var(--accent-blue) !important; color: #fff !important; border-color: var(--accent-blue) !important; }
-
-        /* ===== Toast ===== */
-        .toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; max-width: 90%; }
-        .toast { background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; box-shadow: var(--shadow); animation: toastIn 0.3s ease; pointer-events: auto; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); text-align: center; }
-        .toast.success { border-color: var(--accent-green); color: var(--accent-green); }
-        .toast.error { border-color: var(--accent-red); color: var(--accent-red); }
-        .toast.info { border-color: var(--accent-blue); color: var(--accent-blue); }
-        @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-        /* ===== Debug Log ===== */
-        .debug-container { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-top: 20px; margin-bottom: 20px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; color: var(--text-secondary); }
-        .debug-container .log-line { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .debug-container .log-line.success { color: var(--accent-green); }
-        .debug-container .log-line.error { color: var(--accent-red); }
-        .debug-container .log-line.info { color: var(--accent-blue); }
-        .debug-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary); }
-
-        /* ===== Responsive ===== */
-        @media (max-width: 768px) {
-            .app-bar .logo { font-size: 18px; }
-            .app-bar .actions button { font-size: 12px; padding: 6px 12px; }
-            .signals-grid, .closed-grid { grid-template-columns: 1fr; }
-            .signal-card .price-info { grid-template-columns: 1fr 1fr; }
-            .stats-row { grid-template-columns: repeat(2, 1fr); }
-            .modal { padding: 20px 16px; }
-            .container { padding: 12px 12px 0; }
-            .ticker-strip .scroll-wrap { gap: 12px; }
-        }
-        @media (max-width: 480px) {
-            .signal-card .price-info { grid-template-columns: 1fr; gap: 4px; }
-            .signal-card .footer { flex-direction: column; align-items: stretch; }
-            .signal-card .footer .actions { justify-content: center; }
-            .app-bar { padding: 8px 12px; }
-            .app-bar .logo { font-size: 16px; gap: 6px; }
-            .stat-card .value { font-size: 18px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e14">
+<title>BOSWaves Signals</title>
+<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22BOSWaves%20Signals%22,%22short_name%22:%22BOSWaves%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230a0e14%22,%22theme_color%22:%22%230a0e14%22}">
+<style>
+:root{
+--bg:#0a0e14;
+--panel:#10151d;
+--panel2:#151b25;
+--line:#1f2733;
+--txt:#e7ecf3;
+--dim:#7c8798;
+--bull:#00ff88;
+--bear:#ff3355;
+--accent:#3fd0ff;
+--amber:#ffb84d;
+--mono:'JetBrains Mono','Courier New',monospace;
+--disp:'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font-family:var(--disp);height:100%;overflow-x:hidden;}
+body{padding-bottom:64px;}
+.mono{font-family:var(--mono);}
+.topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0d1219,#0a0e14 90%);border-bottom:1px solid var(--line);padding:10px 12px 8px;}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.brand{display:flex;align-items:center;gap:8px;}
+.brand-dot{width:9px;height:9px;border-radius:50%;background:var(--bull);box-shadow:0 0 8px var(--bull);}
+.brand-dot.off{background:var(--bear);box-shadow:0 0 8px var(--bear);}
+.brand-name{font-weight:700;font-size:15px;letter-spacing:.3px;}
+.lang-btn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:12px;}
+.selectors{display:flex;gap:6px;margin-top:8px;overflow-x:auto;padding-bottom:2px;}
+.selectors::-webkit-scrollbar{display:none;}
+select,.pill-input{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-size:12px;font-family:var(--mono);white-space:nowrap;}
+.tf-row{display:flex;gap:5px;margin-top:8px;overflow-x:auto;}
+.tf-row::-webkit-scrollbar{display:none;}
+.tf-btn{flex:0 0 auto;background:var(--panel2);border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:20px;font-size:12px;font-family:var(--mono);}
+.tf-btn.active{background:var(--accent);color:#031018;border-color:var(--accent);font-weight:700;}
+.tabs{position:fixed;bottom:0;left:0;right:0;z-index:50;display:flex;background:#0d1219;border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));}
+.tab{flex:1;text-align:center;background:none;border:none;color:var(--dim);font-size:11px;padding:6px 2px;font-family:var(--disp);}
+.tab.active{color:var(--accent);}
+.tab .ic{display:block;font-size:17px;margin-bottom:2px;}
+.view{display:none;padding:12px;}
+.view.active{display:block;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;}
+.card-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.card-title{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-grid.g3{grid-template-columns:1fr 1fr 1fr;}
+.stat{background:var(--panel2);border-radius:10px;padding:9px 10px;}
+.stat-label{font-size:10.5px;color:var(--dim);margin-bottom:3px;}
+.stat-val{font-size:16px;font-weight:700;font-family:var(--mono);}
+.pos{color:var(--bull);}
+.neg{color:var(--bear);}
+.neu{color:var(--accent);}
+.trade-card{border-radius:12px;padding:12px;margin-bottom:10px;border:1px solid var(--line);background:var(--panel);position:relative;overflow:hidden;}
+.trade-card.long{border-left:4px solid var(--bull);}
+.trade-card.short{border-left:4px solid var(--bear);}
+.trade-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.side-badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:6px;letter-spacing:.4px;}
+.side-badge.long{background:rgba(0,255,136,.14);color:var(--bull);}
+.side-badge.short{background:rgba(255,51,85,.14);color:var(--bear);}
+.trade-sym{font-weight:700;font-size:14px;margin-top:4px;}
+.trade-tf{font-size:11px;color:var(--dim);font-family:var(--mono);}
+.trade-time{font-size:10.5px;color:var(--dim);text-align:left;font-family:var(--mono);}
+.trade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
+.tg-item{background:var(--panel2);border-radius:8px;padding:7px 8px;text-align:center;}
+.tg-label{font-size:9.5px;color:var(--dim);margin-bottom:2px;}
+.tg-val{font-size:12.5px;font-weight:700;font-family:var(--mono);}
+.pnl-strip{margin-top:8px;font-family:var(--mono);font-size:12px;text-align:center;padding:6px;border-radius:8px;}
+.pnl-strip.pos{background:rgba(0,255,136,.1);}
+.pnl-strip.neg{background:rgba(255,51,85,.1);}
+.empty{text-align:center;color:var(--dim);padding:40px 10px;font-size:13px;}
+.empty .ic{font-size:34px;display:block;margin-bottom:8px;opacity:.5;}
+.settings-group{margin-bottom:14px;}
+.settings-group h4{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px;}
+.field{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);gap:10px;}
+.field label{font-size:13px;flex:1;}
+.field input[type=number],.field input[type=text],.field input[type=password]{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:7px 9px;width:110px;font-family:var(--mono);font-size:13px;text-align:center;}
+.field select{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:7px 9px;font-family:var(--mono);font-size:12px;}
+.switch{position:relative;width:42px;height:24px;background:var(--panel2);border:1px solid var(--line);border-radius:20px;flex-shrink:0;}
+.switch.on{background:var(--accent);border-color:var(--accent);}
+.switch .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .15s;}
+.switch.on .knob{transform:translateX(18px);}
+.btn{display:block;width:100%;background:var(--accent);color:#031018;border:none;border-radius:10px;padding:11px;font-weight:700;font-size:13px;margin-top:6px;}
+.btn.secondary{background:var(--panel2);color:var(--txt);border:1px solid var(--line);}
+.btn.danger{background:rgba(255,51,85,.15);color:var(--bear);border:1px solid rgba(255,51,85,.3);}
+.livebar{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--panel);border-radius:12px;margin-bottom:10px;border:1px solid var(--line);}
+.livebar .px{font-family:var(--mono);font-size:19px;font-weight:700;}
+.livebar .adx{font-family:var(--mono);font-size:12px;color:var(--dim);}
+.badge-sm{font-size:10px;padding:2px 7px;border-radius:5px;font-family:var(--mono);}
+.badge-adx-pass{background:rgba(0,255,136,.14);color:var(--bull);}
+.badge-adx-fail{background:rgba(124,135,152,.14);color:var(--dim);}
+.section-label{font-size:11px;color:var(--dim);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px;}
+::-webkit-scrollbar{width:0;height:0;}
+</style>
 </head>
 <body>
 
-    <!-- ===== APP BAR ===== -->
-    <header class="app-bar" id="appBar">
-        <div class="logo">
-            <span>📈</span> CryptoSignal <span style="font-weight:300;color:var(--text-secondary);font-size:0.7em;">Pro</span>
-        </div>
-        <div class="actions">
-            <button id="btnModeToggle" title="التبديل بين النظام المرن والنظام الصارم" style="border-color:var(--accent-gold); color:var(--accent-gold);">
-                ⚙️ <span id="modeLabel">مرن</span>
-            </button>
-            <button id="btnBtcFilter" title="تفعيل/إيقاف فلتر اتجاه البيتكوين" style="border-color:var(--accent-blue);">
-                ⚡ <span id="btcFilterLabel">BTC ON</span>
-            </button>
-            <button id="btnStrategy" class="strategy-btn" title="التبديل بين الاستراتيجيات">🧠 <span id="strategyLabel">افتراضي</span></button>
-            <button class="btn-install" id="btnInstall" title="تثبيت التطبيق على جهازك">📲 <span>تثبيت</span></button>
-            <button id="btnSettings" title="إعدادات البوت والتطبيق">⚙️ <span>إعدادات</span></button>
-            <button id="btnRefresh" title="تحديث البيانات يدوياً">🔄</button>
-            <span class="badge-dot" id="liveDot" title="متصل"></span>
-        </div>
-    </header>
-
-    <!-- ===== CONTAINER ===== -->
-    <main class="container">
-        <section class="ticker-strip">
-            <div class="scroll-wrap" id="tickerStrip">
-                <div class="loading-spinner" style="padding:8px 0;width:100%;">
-                    <div class="spinner" style="width:20px;height:20px;"></div>
-                    <span style="font-size:13px;">جاري تحميل الأسعار...</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- ===== CHART SECTION ===== -->
-        <section class="chart-section" id="chartSection">
-            <div class="chart-header">
-                <h3>📊 رسم بياني شموع يابانية (فريم 30 دقيقة)</h3>
-                <select id="chartSymbolSelect">
-                    <option value="BTCUSDT">BTC/USDT</option>
-                    <option value="ETHUSDT">ETH/USDT</option>
-                    <option value="BNBUSDT">BNB/USDT</option>
-                    <option value="SOLUSDT">SOL/USDT</option>
-                    <option value="XRPUSDT">XRP/USDT</option>
-                    <option value="ADAUSDT">ADA/USDT</option>
-                    <option value="DOGEUSDT">DOGE/USDT</option>
-                    <option value="AVAXUSDT">AVAX/USDT</option>
-                    <option value="DOTUSDT">DOT/USDT</option>
-                </select>
-            </div>
-            <canvas id="candleCanvas"></canvas>
-        </section>
-
-        <section class="stats-row" id="statsRow">
-            <div class="stat-card"><div class="label">إشارات نشطة</div><div class="value gold" id="statActive">0</div></div>
-            <div class="stat-card"><div class="label">إشارات اليوم</div><div class="value" id="statToday" style="color:var(--accent-blue);">0</div></div>
-            <div class="stat-card"><div class="label">صفقات رابحة</div><div class="value green" id="statWins">0</div></div>
-            <div class="stat-card"><div class="label">صفقات خاسرة</div><div class="value red" id="statLosses">0</div></div>
-        </section>
-
-        <div class="section-header">
-            <h2>📊 إشارات التداول <span class="badge-count" id="signalCount">0</span></h2>
-            <div class="actions">
-                <button id="btnExportHistory" title="تصدير السجل">📥 تصدير</button>
-                <button id="btnClearHistory" title="مسح السجل" style="color:var(--accent-red);">🗑️ مسح</button>
-            </div>
-        </div>
-        <div id="signalsContainer">
-            <div class="loading-spinner"><div class="spinner"></div><span>جاري تحليل الأسواق...</span></div>
-        </div>
-
-        <!-- سجل الأحداث -->
-        <div class="debug-container" id="debugLogContainer">
-            <div class="debug-label">📋 سجل الأحداث والمراقبة</div>
-            <div id="debugLogContent"><div style="color:var(--text-muted);">بانتظار بدء التحديث...</div></div>
-        </div>
-
-        <div class="section-header" style="margin-top:32px;">
-            <h2>📁 سجل الصفقات المغلقة <span class="badge-count" id="closedCount">0</span></h2>
-        </div>
-        <div id="closedContainer">
-            <div class="empty-state"><div class="icon">📂</div><h3>لا توجد صفقات مغلقة بعد</h3><p>سيظهر هنا سجل الصفقات التي تم إغلاقها يدوياً أو تلقائياً</p></div>
-        </div>
-    </main>
-
-    <!-- ===== SETTINGS MODAL ===== -->
-    <div class="modal-overlay" id="settingsModal">
-        <div class="modal">
-            <div class="title">⚙️ إعدادات التطبيق</div>
-            <div class="form-group">
-                <label>🤖 توكن بوت التليجرام (Bot Token)</label>
-                <input type="text" id="telegramToken" class="ltr-fix" value="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" placeholder="8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ" />
-                <div class="hint">احصل عليه من @BotFather على تليجرام</div>
-            </div>
-            <div class="form-group">
-                <label>🆔 معرف الدردشة (Chat ID)</label>
-                <input type="text" id="telegramChatId" class="ltr-fix" value="1003970108966" placeholder="1003970108966" />
-                <div class="hint">معرف القناة أو المجموعة، أو معرف المستخدم</div>
-            </div>
-            <div class="form-group">
-                <label>⏱️ تحديث البيانات (بالدقائق)</label>
-                <input type="number" id="updateInterval" min="1" max="60" value="1" />
-                <div class="hint">كل كم دقيقة يتم تحديث الأسعار والتحليل (يُفضل 1-2 دقيقة)</div>
-            </div>
-            <div class="form-group" style="display:flex;align-items:center;gap:10px;">
-                <label style="margin:0;cursor:pointer;">
-                    <input type="checkbox" id="autoSendTelegram" checked />
-                    إرسال الإشارات تلقائياً للتليجرام
-                </label>
-            </div>
-            <div class="status-msg" id="settingsStatus"></div>
-            <div class="form-actions">
-                <button class="btn-primary" id="settingsSave">💾 حفظ الإعدادات</button>
-                <button class="btn-secondary" id="settingsClose">إغلاق</button>
-                <button class="btn-secondary" id="settingsTest" style="flex:0.5;border-color:var(--accent-gold);color:var(--accent-gold);">🧪 اختبار</button>
-                <button class="btn-secondary btn-copy-settings" id="settingsCopy">📋 نسخ الإعدادات</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== TOAST CONTAINER ===== -->
-    <div class="toast-container" id="toastContainer"></div>
-
-    <script>
-        (function() {
-            'use strict';
-
-            // ============================================================
-            //  CONFIGURATION
-            // ============================================================
-            const MODES = {
-                FLEXIBLE: { label: 'مرن', ADX_THRESHOLD: 15, STOCH_OVERBOUGHT: 70, STOCH_OVERSOLD: 30 },
-                STRICT: { label: 'صارم', ADX_THRESHOLD: 20, STOCH_OVERBOUGHT: 80, STOCH_OVERSOLD: 20 }
-            };
-
-            let currentMode = 'FLEXIBLE';
-
-            const CONFIG = {
-                SYMBOLS: ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'DOTUSDT'],
-                INTERVAL_30M: '30m',
-                KLINE_LIMIT: 220,
-                STOCH_RSI_PERIOD: 14,
-                STOCH_K_SMOOTH: 3,
-                STOCH_D_SMOOTH: 3,
-                ADX_PERIOD: 14,
-                EMA_PERIOD: 200,
-                ADX_THRESHOLD: MODES.FLEXIBLE.ADX_THRESHOLD,
-                STOCH_OVERBOUGHT: MODES.FLEXIBLE.STOCH_OVERBOUGHT,
-                STOCH_OVERSOLD: MODES.FLEXIBLE.STOCH_OVERSOLD,
-                TARGET_PERCENT: 0.02,
-                STOP_PERCENT_MAX: 0.008,
-                UPDATE_INTERVAL_DEFAULT: 1,
-                MAX_SIGNALS_PER_SYMBOL: 3,
-                RETRY_DELAY_MS: 5000,
-                TELEGRAM_API: 'https://api.telegram.org/bot',
-                BINANCE_BASE: 'https://api.binance.com/api/v3',
-                CACHE_KEY: 'cryptosignal_data',
-                SETTINGS_KEY: 'cryptosignal_settings',
-                HISTORY_KEY: 'cryptosignal_history',
-                SENT_SIGNALS_KEY: 'cryptosignal_sent',
-                MODE_KEY: 'cryptosignal_mode',
-                STRATEGY_KEY: 'cryptosignal_strategy',
-                KLINES_KEY: 'cryptosignal_klines'
-            };
-
-            // ============================================================
-            //  STATE
-            // ============================================================
-            let state = {
-                signals: [], closedTrades: [], prices: {}, 
-                klines: {},
-                settings: { 
-                    telegramToken: '8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ', 
-                    telegramChatId: '1003970108966', 
-                    updateInterval: CONFIG.UPDATE_INTERVAL_DEFAULT, 
-                    autoSendTelegram: true 
-                },
-                sentSignals: [], isUpdating: false, lastUpdate: null, installPrompt: null, updateTimer: null,
-                btcFilterEnabled: true,
-                failureCount: 0,
-                wakeLock: null,
-                audioCtx: null,
-                currentStrategy: 'default'
-            };
-
-            // ============================================================
-            //  DOM REFS
-            // ============================================================
-            const $ = (id) => document.getElementById(id);
-            const tickerStrip = $('tickerStrip');
-            const signalsContainer = $('signalsContainer');
-            const closedContainer = $('closedContainer');
-            const debugLogContent = $('debugLogContent');
-            const signalCount = $('signalCount');
-            const closedCount = $('closedCount');
-            const statActive = $('statActive');
-            const statToday = $('statToday');
-            const statWins = $('statWins');
-            const statLosses = $('statLosses');
-            const settingsModal = $('settingsModal');
-            const settingsToken = $('telegramToken');
-            const settingsChatId = $('telegramChatId');
-            const settingsInterval = $('updateInterval');
-            const settingsAutoSend = $('autoSendTelegram');
-            const settingsStatus = $('settingsStatus');
-            const btnInstall = $('btnInstall');
-            const btnSettings = $('btnSettings');
-            const btnRefresh = $('btnRefresh');
-            const btnBtcFilter = $('btnBtcFilter');
-            const btcFilterLabel = $('btcFilterLabel');
-            const btnModeToggle = $('btnModeToggle');
-            const modeLabel = $('modeLabel');
-            const btnStrategy = $('btnStrategy');
-            const strategyLabel = $('strategyLabel');
-            const btnSettingsClose = $('settingsClose');
-            const btnSettingsSave = $('settingsSave');
-            const btnSettingsTest = $('settingsTest');
-            const btnSettingsCopy = $('settingsCopy');
-            const btnExportHistory = $('btnExportHistory');
-            const btnClearHistory = $('btnClearHistory');
-            const liveDot = $('liveDot');
-            const toastContainer = $('toastContainer');
-            const candleCanvas = $('candleCanvas');
-            const chartSymbolSelect = $('chartSymbolSelect');
-
-            // ============================================================
-            //  MODE MANAGEMENT
-            // ============================================================
-            function loadMode() {
-                try { const saved = localStorage.getItem(CONFIG.MODE_KEY); if (saved === 'STRICT' || saved === 'FLEXIBLE') currentMode = saved; } catch (e) {}
-                applyModeConfig();
-            }
-            function saveMode() { try { localStorage.setItem(CONFIG.MODE_KEY, currentMode); } catch (e) {} }
-            function applyModeConfig() {
-                const mode = MODES[currentMode];
-                if (!mode) return;
-                CONFIG.ADX_THRESHOLD = mode.ADX_THRESHOLD;
-                CONFIG.STOCH_OVERBOUGHT = mode.STOCH_OVERBOUGHT;
-                CONFIG.STOCH_OVERSOLD = mode.STOCH_OVERSOLD;
-                modeLabel.textContent = mode.label;
-                if (currentMode === 'STRICT') {
-                    btnModeToggle.style.borderColor = 'var(--accent-red)';
-                    btnModeToggle.style.color = 'var(--accent-red)';
-                } else {
-                    btnModeToggle.style.borderColor = 'var(--accent-green)';
-                    btnModeToggle.style.color = 'var(--accent-green)';
-                }
-                addLog(`🔄 تم التبديل إلى النظام ${mode.label}`, 'info');
-            }
-            function toggleMode() {
-                currentMode = (currentMode === 'FLEXIBLE') ? 'STRICT' : 'FLEXIBLE';
-                saveMode();
-                applyModeConfig();
-                showToast(`✅ تم التبديل إلى النظام ${MODES[currentMode].label}`, 'info');
-                updateAllData(true);
-            }
-
-            // ============================================================
-            //  STRATEGY MANAGEMENT
-            // ============================================================
-            function loadStrategy() {
-                try {
-                    const saved = localStorage.getItem(CONFIG.STRATEGY_KEY);
-                    if (saved === 'default' || saved === 'new') {
-                        state.currentStrategy = saved;
-                    }
-                } catch (e) {}
-                updateStrategyUI();
-            }
-            function saveStrategy() {
-                try { localStorage.setItem(CONFIG.STRATEGY_KEY, state.currentStrategy); } catch (e) {}
-            }
-            function updateStrategyUI() {
-                if (state.currentStrategy === 'default') {
-                    strategyLabel.textContent = 'افتراضي';
-                    btnStrategy.classList.remove('active');
-                } else {
-                    strategyLabel.textContent = 'SuperTrend + ADX';
-                    btnStrategy.classList.add('active');
-                }
-            }
-            function toggleStrategy() {
-                state.signals.forEach(sig => {
-                    if (!sig.isClosed) {
-                        sig.isClosed = true;
-                        sig.closedAt = now();
-                        sig.closedResult = 'neutral';
-                        sig.analysis += '\n\n🔄 تم إغلاق الصفقة بسبب تبديل الاستراتيجية.';
-                    }
-                });
-                state.currentStrategy = (state.currentStrategy === 'default') ? 'new' : 'default';
-                saveStrategy();
-                updateStrategyUI();
-                addLog(`🔄 تم التبديل إلى الاستراتيجية: ${state.currentStrategy === 'default' ? 'الافتراضية' : 'SuperTrend + ADX'}`, 'info');
-                showToast(`🔄 تم التبديل إلى ${state.currentStrategy === 'default' ? 'الاستراتيجية الافتراضية' : 'استراتيجية SuperTrend + ADX'}`, 'info');
-                updateAllData(true);
-            }
-
-            // ============================================================
-            //  DEBUG LOG
-            // ============================================================
-            function addLog(message, type = 'info') {
-                const div = document.createElement('div');
-                div.className = `log-line ${type}`;
-                const time = new Date().toLocaleTimeString();
-                div.textContent = `[${time}] ${message}`;
-                debugLogContent.appendChild(div);
-                while (debugLogContent.children.length > 50) {
-                    debugLogContent.removeChild(debugLogContent.firstChild);
-                }
-                debugLogContent.scrollTop = debugLogContent.scrollHeight;
-                console.log(`[DEBUG] ${message}`);
-            }
-
-            // ============================================================
-            //  UTILITY
-            // ============================================================
-            function fmt(n, d = 2) { if (n === undefined || n === null || !isFinite(n)) return '—'; if (Math.abs(n) >= 1000) return n.toFixed(2); if (Math.abs(n) >= 1) return n.toFixed(4); return n.toFixed(6); }
-            function fmtPrice(n) { if (n === undefined || n === null || !isFinite(n)) return '—'; if (n >= 10000) return n.toFixed(2); if (n >= 1) return n.toFixed(4); if (n >= 0.01) return n.toFixed(6); return n.toFixed(8); }
-            function fmtDate(ts) { const d = new Date(ts); return d.toLocaleString('ar-EG', { hour12: false, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }
-            function fmtDateFull(ts) { const d = new Date(ts); return d.toLocaleString('ar-EG', { hour12: false, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
-            function now() { return Date.now(); }
-            function isToday(ts) { const d = new Date(ts); const t = new Date(); return d.getDate() === t.getDate() && d.getMonth() === t.getMonth() && d.getFullYear() === t.getFullYear(); }
-            function id() { return Math.random().toString(36).substring(2) + Date.now().toString(36); }
-            function getSymbolDisplay(sym) { return sym.replace('USDT', ''); }
-            function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-            // ============================================================
-            //  LOCAL STORAGE
-            // ============================================================
-            function loadState() {
-                try {
-                    const raw = localStorage.getItem(CONFIG.CACHE_KEY);
-                    if (raw) {
-                        const data = JSON.parse(raw);
-                        if (data.signals) state.signals = data.signals;
-                        if (data.closedTrades) state.closedTrades = data.closedTrades;
-                        if (data.prices) state.prices = data.prices;
-                        if (data.sentSignals) state.sentSignals = data.sentSignals;
-                        if (data.lastUpdate) state.lastUpdate = data.lastUpdate;
-                        if (data.btcFilterEnabled !== undefined) state.btcFilterEnabled = data.btcFilterEnabled;
-                    }
-                } catch (e) { /* ignore */ }
-                try {
-                    const raw = localStorage.getItem(CONFIG.SETTINGS_KEY);
-                    if (raw) { 
-                        const s = JSON.parse(raw); 
-                        if (s.telegramToken) state.settings.telegramToken = s.telegramToken;
-                        if (s.telegramChatId) state.settings.telegramChatId = s.telegramChatId;
-                        if (s.updateInterval) state.settings.updateInterval = s.updateInterval;
-                        if (s.autoSendTelegram !== undefined) state.settings.autoSendTelegram = s.autoSendTelegram;
-                    }
-                } catch (e) { /* ignore */ }
-                try {
-                    const raw = localStorage.getItem(CONFIG.HISTORY_KEY);
-                    if (raw) { const h = JSON.parse(raw); if (Array.isArray(h)) state.closedTrades = h; }
-                } catch (e) { /* ignore */ }
-                try {
-                    const raw = localStorage.getItem(CONFIG.KLINES_KEY);
-                    if (raw) { const k = JSON.parse(raw); if (k) state.klines = k; }
-                } catch (e) { /* ignore */ }
-                loadMode();
-                loadStrategy();
-            }
-
-            function persistState() {
-                try {
-                    const data = { signals: state.signals, closedTrades: state.closedTrades, prices: state.prices, sentSignals: state.sentSignals, lastUpdate: state.lastUpdate, btcFilterEnabled: state.btcFilterEnabled };
-                    localStorage.setItem(CONFIG.CACHE_KEY, JSON.stringify(data));
-                    localStorage.setItem(CONFIG.HISTORY_KEY, JSON.stringify(state.closedTrades));
-                    localStorage.setItem(CONFIG.KLINES_KEY, JSON.stringify(state.klines));
-                } catch (e) { /* ignore */ }
-            }
-            function persistSettings() {
-                try { localStorage.setItem(CONFIG.SETTINGS_KEY, JSON.stringify(state.settings)); } catch (e) { /* ignore */ }
-            }
-
-            // ============================================================
-            //  TELEGRAM
-            // ============================================================
-            async function sendTelegramMessage(text) {
-                const { telegramToken, telegramChatId } = state.settings;
-                if (!telegramToken || !telegramChatId) throw new Error('يرجى إعداد توكن التليجرام ومعرف الدردشة أولاً');
-                const resp = await fetch(`${CONFIG.TELEGRAM_API}${telegramToken}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: telegramChatId, text: text, parse_mode: 'HTML', disable_web_page_preview: true })
-                });
-                if (!resp.ok) { 
-                    let errorMsg = `فشل الإرسال (HTTP ${resp.status})`;
-                    try { const err = await resp.json(); errorMsg = err.description || errorMsg; } catch (e) {}
-                    throw new Error(errorMsg); 
-                }
-                return await resp.json();
-            }
-
-            function formatSignalMessage(signal) {
-                const dir = signal.direction === 'buy' ? '🟢 شراء' : '🔴 بيع';
-                const sym = getSymbolDisplay(signal.symbol);
-                const modeLabel = MODES[currentMode].label;
-                const strategyLabel = state.currentStrategy === 'default' ? 'الافتراضية' : 'SuperTrend + ADX';
-                return `
-        🔔 <b>إشارة تداول جديدة</b> 🔔
-        ───────────────
-        💰 العملة: ${sym} (${signal.symbol})
-        📈 الاتجاه: ${dir}
-        💵 سعر الدخول: ${fmtPrice(signal.entryPrice)}
-        🎯 الهدف: ${fmtPrice(signal.takeProfit)} (2%)
-        🛑 وقف الخسارة: ${fmtPrice(signal.stopLoss)} (0.8%)
-        📊 الاستراتيجية: ${strategyLabel}
-        🕐 الوقت: ${fmtDateFull(signal.timestamp)}
-        📌 النظام: ${modeLabel}
-        ───────────────
-        ⚡ CryptoSignal Pro`.trim();
-            }
-
-            // ============================================================
-            //  INDICATORS
-            // ============================================================
-            function calcSMA(data, period) {
-                if (data.length < period) return [];
-                const result = [];
-                for (let i = period - 1; i < data.length; i++) {
-                    let sum = 0;
-                    for (let j = i - period + 1; j <= i; j++) {
-                        sum += data[j];
-                    }
-                    result.push(sum / period);
-                }
-                return result;
-            }
-
-            function calcRSI(closes, period) {
-                if (closes.length < period + 1) return [];
-                const changes = [];
-                for (let i = 1; i < closes.length; i++) {
-                    changes.push(closes[i] - closes[i - 1]);
-                }
-                const rsiValues = [];
-                let avgGain = 0, avgLoss = 0;
-                for (let i = 0; i < period; i++) {
-                    if (changes[i] > 0) avgGain += changes[i];
-                    else avgLoss += Math.abs(changes[i]);
-                }
-                avgGain /= period;
-                avgLoss /= period;
-                let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-                rsiValues.push(100 - (100 / (1 + rs)));
-
-                for (let i = period; i < changes.length; i++) {
-                    const change = changes[i];
-                    if (change > 0) {
-                        avgGain = (avgGain * (period - 1) + change) / period;
-                        avgLoss = (avgLoss * (period - 1) + 0) / period;
-                    } else {
-                        avgGain = (avgGain * (period - 1) + 0) / period;
-                        avgLoss = (avgLoss * (period - 1) + Math.abs(change)) / period;
-                    }
-                    rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-                    rsiValues.push(100 - (100 / (1 + rs)));
-                }
-                return rsiValues;
-            }
-
-            function calcEMA(data, period) {
-                if (data.length < period) return [];
-                const multiplier = 2 / (period + 1);
-                let ema = data.slice(0, period).reduce((a, b) => a + b, 0) / period;
-                const result = [ema];
-                for (let i = period; i < data.length; i++) { ema = (data[i] - ema) * multiplier + ema; result.push(ema); }
-                return result;
-            }
-
-            function calcStochastic(high, low, close, kPeriod = 14, kSmooth = 3, dSmooth = 3) {
-                const len = high.length;
-                if (len < kPeriod + kSmooth + dSmooth) return { k: [], d: [] };
-                const kValues = [];
-                for (let i = kPeriod - 1; i < len; i++) {
-                    const hh = Math.max(...high.slice(i - kPeriod + 1, i + 1));
-                    const ll = Math.min(...low.slice(i - kPeriod + 1, i + 1));
-                    const c = close[i];
-                    kValues.push(hh === ll ? 50 : ((c - ll) / (hh - ll)) * 100);
-                }
-                const kSmoothValues = [];
-                for (let i = kSmooth - 1; i < kValues.length; i++) { const sum = kValues.slice(i - kSmooth + 1, i + 1).reduce((a, b) => a + b, 0); kSmoothValues.push(sum / kSmooth); }
-                const dValues = [];
-                for (let i = dSmooth - 1; i < kSmoothValues.length; i++) { const sum = kSmoothValues.slice(i - dSmooth + 1, i + 1).reduce((a, b) => a + b, 0); dValues.push(sum / dSmooth); }
-                return { k: kSmoothValues.slice(dSmooth - 1), d: dValues };
-            }
-
-            function calcADX(high, low, close, period = 14) {
-                const len = high.length;
-                if (len < period + 1) return { adx: [], plusDI: [], minusDI: [] };
-                const tr = [], plusDM = [], minusDM = [];
-                for (let i = 1; i < len; i++) {
-                    const h = high[i], l = low[i], c = close[i - 1];
-                    tr.push(Math.max(h - l, Math.abs(h - c), Math.abs(l - c)));
-                    const up = high[i] - high[i - 1], down = low[i - 1] - low[i];
-                    plusDM.push(up > down && up > 0 ? up : 0);
-                    minusDM.push(down > up && down > 0 ? down : 0);
-                }
-                const atr = []; let atrVal = tr.slice(0, period).reduce((a, b) => a + b, 0) / period; atr.push(atrVal);
-                for (let i = period; i < tr.length; i++) { atrVal = (atrVal * (period - 1) + tr[i]) / period; atr.push(atrVal); }
-                const plusDI14 = [], minusDI14 = [];
-                let plusSum = plusDM.slice(0, period).reduce((a, b) => a + b, 0), minusSum = minusDM.slice(0, period).reduce((a, b) => a + b, 0);
-                plusDI14.push((plusSum / (atr[0] * period)) * 100);
-                minusDI14.push((minusSum / (atr[0] * period)) * 100);
-                for (let i = period; i < plusDM.length; i++) {
-                    plusSum = plusSum - (plusDM[i - period] || 0) + plusDM[i];
-                    minusSum = minusSum - (minusDM[i - period] || 0) + minusDM[i];
-                    const atrIdx = i - period + 1;
-                    if (atrIdx < atr.length) { plusDI14.push((plusSum / (atr[atrIdx] * period)) * 100); minusDI14.push((minusSum / (atr[atrIdx] * period)) * 100); }
-                }
-                const dx = []; const minLen = Math.min(plusDI14.length, minusDI14.length);
-                for (let i = 0; i < minLen; i++) { const p = plusDI14[i], m = minusDI14[i]; dx.push((p + m) === 0 ? 0 : (Math.abs(p - m) / (p + m)) * 100); }
-                const adx = [];
-                if (dx.length >= period) { let adxVal = dx.slice(0, period).reduce((a, b) => a + b, 0) / period; adx.push(adxVal); for (let i = period; i < dx.length; i++) { adxVal = (adxVal * (period - 1) + dx[i]) / period; adx.push(adxVal); } }
-                return { adx: adx, plusDI: plusDI14.slice(0, adx.length), minusDI: minusDI14.slice(0, adx.length) };
-            }
-
-            function calcATR(klines, period = 14) {
-                if (klines.length < period + 1) return [];
-                const tr = [];
-                for (let i = 1; i < klines.length; i++) { const h = klines[i].high, l = klines[i].low, c = klines[i - 1].close; tr.push(Math.max(h - l, Math.abs(h - c), Math.abs(l - c))); }
-                const atr = []; let atrVal = tr.slice(0, period).reduce((a, b) => a + b, 0) / period; atr.push(atrVal);
-                for (let i = period; i < tr.length; i++) { atrVal = (atrVal * (period - 1) + tr[i]) / period; atr.push(atrVal); }
-                return atr;
-            }
-
-            // ============================================================
-            //  SIGNAL GENERATION - DEFAULT
-            // ============================================================
-            function generateSignalDefault(symbol, klines) {
-                if (!klines || klines.length < 200) return null;
-                const closes = klines.map(k => k.close);
-                const highs = klines.map(k => k.high);
-                const lows = klines.map(k => k.low);
-                const emaValues = calcEMA(closes, CONFIG.EMA_PERIOD);
-                if (emaValues.length === 0) return null;
-                const currentEMA = emaValues[emaValues.length - 1];
-                const lastClose = closes[closes.length - 1];
-                const stoch = calcStochastic(highs, lows, closes, CONFIG.STOCH_RSI_PERIOD, CONFIG.STOCH_K_SMOOTH, CONFIG.STOCH_D_SMOOTH);
-                if (stoch.k.length < 2 || stoch.d.length < 2) return null;
-                const kLast = stoch.k[stoch.k.length - 1];
-                const dLast = stoch.d[stoch.d.length - 1];
-                const kPrev = stoch.k[stoch.k.length - 2];
-                const dPrev = stoch.d[stoch.d.length - 2];
-                const adxResult = calcADX(highs, lows, closes, CONFIG.ADX_PERIOD);
-                if (adxResult.adx.length === 0) return null;
-                const adxLast = adxResult.adx[adxResult.adx.length - 1];
-                let direction = 'neutral';
-                let confidence = 0;
-                let reasons = [];
-                const isStochBuyCross = (kLast > dLast) && (kPrev <= dPrev) && (kLast < CONFIG.STOCH_OVERSOLD) && (dLast < CONFIG.STOCH_OVERSOLD);
-                const isStochSellCross = (kLast < dLast) && (kPrev >= dPrev) && (kLast > CONFIG.STOCH_OVERBOUGHT) && (dLast > CONFIG.STOCH_OVERBOUGHT);
-                const isAdxStrong = adxLast > CONFIG.ADX_THRESHOLD;
-                const isPriceAboveEma = lastClose > currentEMA;
-                const isPriceBelowEma = lastClose < currentEMA;
-                if (currentMode === 'STRICT') {
-                    if (isStochBuyCross && isAdxStrong && isPriceAboveEma) {
-                        direction = 'buy'; confidence = 95;
-                        reasons = [`ستوكاستيك تقاطع صاعد تحت ${CONFIG.STOCH_OVERSOLD}`, `ADX قوي: ${adxLast.toFixed(1)}`, `السعر فوق EMA`];
-                    } else if (isStochSellCross && isAdxStrong && isPriceBelowEma) {
-                        direction = 'sell'; confidence = 95;
-                        reasons = [`ستوكاستيك تقاطع هابط فوق ${CONFIG.STOCH_OVERBOUGHT}`, `ADX قوي: ${adxLast.toFixed(1)}`, `السعر تحت EMA`];
-                    }
-                } else {
-                    if (isStochBuyCross) {
-                        if (isAdxStrong && isPriceAboveEma) { direction = 'buy'; confidence = 90; reasons = [`ستوكاستيك تقاطع صاعد`, `ADX قوي`, `السعر فوق EMA`]; }
-                        else if (isAdxStrong || isPriceAboveEma) { direction = 'buy'; confidence = 70; reasons = [`ستوكاستيك تقاطع صاعد`, isAdxStrong ? `ADX قوي` : `السعر فوق EMA`]; }
-                    } else if (isStochSellCross) {
-                        if (isAdxStrong && isPriceBelowEma) { direction = 'sell'; confidence = 90; reasons = [`ستوكاستيك تقاطع هابط`, `ADX قوي`, `السعر تحت EMA`]; }
-                        else if (isAdxStrong || isPriceBelowEma) { direction = 'sell'; confidence = 70; reasons = [`ستوكاستيك تقاطع هابط`, isAdxStrong ? `ADX قوي` : `السعر تحت EMA`]; }
-                    }
-                }
-                if (direction === 'neutral') return null;
-                const entryPrice = lastClose;
-                const atrValues = calcATR(klines, 14);
-                const atrVal = atrValues.length > 0 ? atrValues[atrValues.length - 1] : (entryPrice * 0.02);
-                const stopPct = CONFIG.STOP_PERCENT_MAX;
-                const stopAmount = entryPrice * stopPct;
-                const atrStop = atrVal * 1.2;
-                const finalStop = Math.min(atrStop, stopAmount);
-                if (finalStop < entryPrice * 0.001) return null;
-                let takeProfit, stopLoss;
-                if (direction === 'buy') {
-                    takeProfit = entryPrice * (1 + CONFIG.TARGET_PERCENT);
-                    stopLoss = entryPrice - finalStop;
-                } else {
-                    takeProfit = entryPrice * (1 - CONFIG.TARGET_PERCENT);
-                    stopLoss = entryPrice + finalStop;
-                }
-                const stopDist = Math.abs(entryPrice - stopLoss);
-                if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) return null;
-                const modeLabel = MODES[currentMode].label;
-                const analysisText = `
-        📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة) - افتراضي</strong>
-        ───────────────
-        ✅ <strong>القرار:</strong> ${direction === 'buy' ? 'شراء' : 'بيع'} (ثقة ${confidence.toFixed(0)}%)
-        📉 <strong>الستوكاستيك:</strong> ${reasons[0] || '—'}
-        📊 <strong>ADX:</strong> ${reasons[1] || '—'}
-        📈 <strong>EMA 200:</strong> ${reasons[2] || '—'}
-        🎯 <strong>الهدف:</strong> 2% (${fmtPrice(takeProfit)})
-        🛑 <strong>وقف الخسارة:</strong> 0.8% (${fmtPrice(stopLoss)})
-        📌 <strong>النظام:</strong> ${modeLabel}
-                `.trim();
-                return {
-                    id: id(), symbol: symbol, direction: direction, entryPrice: entryPrice, 
-                    takeProfit: takeProfit, stopLoss: stopLoss, confidence: confidence, 
-                    analysis: analysisText, timestamp: now(), pattern: 'default', 
-                    ema: currentEMA, stochasticK: kLast, stochasticD: dLast, adx: adxLast, 
-                    isLocked: false, isClosed: false, closedAt: null, closedResult: null
-                };
-            }
-
-            // ============================================================
-            //  SIGNAL GENERATION - NEW (SuperTrend + ADX > 20)
-            // ============================================================
-            function calcSuperTrend(klines, period = 10, multiplier = 3.0) {
-                // حساب ATR (باستخدام SMA للـ True Range)
-                const tr = [];
-                for (let i = 1; i < klines.length; i++) {
-                    const h = klines[i].high, l = klines[i].low, c = klines[i-1].close;
-                    tr.push(Math.max(h - l, Math.abs(h - c), Math.abs(l - c)));
-                }
-                // حساب ATR كـ SMA لآخر period شمعات
-                const atr = [];
-                for (let i = 0; i < tr.length; i++) {
-                    if (i < period - 1) atr.push(NaN);
-                    else {
-                        let sum = 0;
-                        for (let j = 0; j < period; j++) sum += tr[i - j];
-                        atr.push(sum / period);
-                    }
-                }
-                // حساب up و dn
-                const up = new Array(klines.length).fill(0);
-                const dn = new Array(klines.length).fill(0);
-                const trend = new Array(klines.length).fill(0);
-                const src = klines.map(k => (k.high + k.low) / 2); // hl2
-                // أول شمعة نبدأ بـ trend = 1 (صاعد) و up, dn بناءً على السعر
-                if (klines.length < 2) return null;
-                const firstATR = atr[period-1] || 0;
-                up[0] = src[0] - multiplier * firstATR;
-                dn[0] = src[0] + multiplier * firstATR;
-                trend[0] = 1; // افتراضي صاعد
-                for (let i = 1; i < klines.length; i++) {
-                    const atrVal = atr[i - period + 1] || atr[atr.length - 1];
-                    const prevUp = up[i-1];
-                    const prevDn = dn[i-1];
-                    // حساب up
-                    const upBase = src[i] - multiplier * atrVal;
-                    up[i] = (klines[i].close > prevUp) ? Math.max(upBase, prevUp) : upBase;
-                    // حساب dn
-                    const dnBase = src[i] + multiplier * atrVal;
-                    dn[i] = (klines[i].close < prevDn) ? Math.min(dnBase, prevDn) : dnBase;
-                    // تحديد الاتجاه
-                    if (trend[i-1] === -1 && klines[i].close > dn[i-1]) {
-                        trend[i] = 1;
-                    } else if (trend[i-1] === 1 && klines[i].close < up[i-1]) {
-                        trend[i] = -1;
-                    } else {
-                        trend[i] = trend[i-1];
-                    }
-                }
-                return { up, dn, trend };
-            }
-
-            function generateSignalNew(symbol, klines) {
-                if (!klines || klines.length < 200) return null;
-                
-                // 1. حساب SuperTrend
-                const superTrendResult = calcSuperTrend(klines, 10, 3.0);
-                if (!superTrendResult) return null;
-                const { trend } = superTrendResult;
-                const lastTrend = trend[trend.length - 1];
-                const prevTrend = trend.length >= 2 ? trend[trend.length - 2] : null;
-
-                // 2. حساب ADX للتأكيد
-                const closes = klines.map(k => k.close);
-                const highs = klines.map(k => k.high);
-                const lows = klines.map(k => k.low);
-                const adxResult = calcADX(highs, lows, closes, CONFIG.ADX_PERIOD);
-                if (adxResult.adx.length === 0) return null;
-                const adxLast = adxResult.adx[adxResult.adx.length - 1];
-
-                let direction = 'neutral';
-                let confidence = 0;
-                let reasons = [];
-
-                // 3. شروط التغيير (مع تأكيد ADX > 20)
-                const isBuySignal = (prevTrend === -1 && lastTrend === 1) && (adxLast > 20);
-                const isSellSignal = (prevTrend === 1 && lastTrend === -1) && (adxLast > 20);
-
-                if (isBuySignal) {
-                    direction = 'buy';
-                    confidence = 85;
-                    reasons = [`SuperTrend تحول من هابط إلى صاعد`, `ADX قوي: ${adxLast.toFixed(1)} (>20)`];
-                } else if (isSellSignal) {
-                    direction = 'sell';
-                    confidence = 85;
-                    reasons = [`SuperTrend تحول من صاعد إلى هابط`, `ADX قوي: ${adxLast.toFixed(1)} (>20)`];
-                }
-
-                if (direction === 'neutral') return null;
-
-                const lastClose = klines[klines.length - 1].close;
-                const entryPrice = lastClose;
-                const atrValues = calcATR(klines, 14);
-                const atrVal = atrValues.length > 0 ? atrValues[atrValues.length - 1] : (entryPrice * 0.02);
-                const stopPct = CONFIG.STOP_PERCENT_MAX;
-                const stopAmount = entryPrice * stopPct;
-                const atrStop = atrVal * 1.2;
-                const finalStop = Math.min(atrStop, stopAmount);
-                if (finalStop < entryPrice * 0.001) return null;
-                let takeProfit, stopLoss;
-                if (direction === 'buy') {
-                    takeProfit = entryPrice * (1 + CONFIG.TARGET_PERCENT);
-                    stopLoss = entryPrice - finalStop;
-                } else {
-                    takeProfit = entryPrice * (1 - CONFIG.TARGET_PERCENT);
-                    stopLoss = entryPrice + finalStop;
-                }
-                const stopDist = Math.abs(entryPrice - stopLoss);
-                if (stopDist / entryPrice > CONFIG.STOP_PERCENT_MAX + 0.001) return null;
-                const modeLabel = MODES[currentMode].label;
-                const analysisText = `
-        📈 <strong>تحليل فني لـ ${getSymbolDisplay(symbol)} (فريم 30 دقيقة) - استراتيجية SuperTrend+ADX</strong>
-        ───────────────
-        ✅ <strong>القرار:</strong> ${direction === 'buy' ? 'شراء' : 'بيع'} (ثقة ${confidence.toFixed(0)}%)
-        📊 <strong>SuperTrend:</strong> ${reasons[0] || '—'}
-        📊 <strong>ADX:</strong> ${reasons[1] || '—'}
-        🎯 <strong>الهدف:</strong> 2% (${fmtPrice(takeProfit)})
-        🛑 <strong>وقف الخسارة:</strong> 0.8% (${fmtPrice(stopLoss)})
-        📌 <strong>النظام:</strong> ${modeLabel}
-                `.trim();
-                return {
-                    id: id(), symbol: symbol, direction: direction, entryPrice: entryPrice, 
-                    takeProfit: takeProfit, stopLoss: stopLoss, confidence: confidence, 
-                    analysis: analysisText, timestamp: now(), pattern: 'supertrend_adx', 
-                    ema: 0, stochasticK: 0, stochasticD: 0, adx: adxLast, 
-                    isLocked: false, isClosed: false, closedAt: null, closedResult: null
-                };
-            }
-
-            // ============================================================
-            //  GENERATE SIGNAL WRAPPER
-            // ============================================================
-            function generateSignal(symbol, klines) {
-                if (state.currentStrategy === 'default') {
-                    return generateSignalDefault(symbol, klines);
-                } else {
-                    return generateSignalNew(symbol, klines);
-                }
-            }
-
-            // ============================================================
-            //  FETCH
-            // ============================================================
-            async function fetchKlinesWithRetry(symbol, interval, limit = CONFIG.KLINE_LIMIT, retries = 4) {
-                for (let i = 0; i < retries; i++) {
-                    try {
-                        const resp = await fetch(`${CONFIG.BINANCE_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-                        if (!resp.ok) {
-                            if (resp.status === 429 || resp.status >= 500) {
-                                if (i < retries - 1) {
-                                    addLog(`⚠️ تم حظر ${symbol} (${interval}) مؤقتاً. إعادة المحاولة...`, 'error');
-                                    await sleep(CONFIG.RETRY_DELAY_MS);
-                                    continue;
-                                }
-                            }
-                            throw new Error(`Binance API error: ${resp.status}`);
-                        }
-                        const data = await resp.json();
-                        return data.map(k => ({ time: k[0], open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5]) }));
-                    } catch (e) {
-                        addLog(`⚠️ فشل جلب ${symbol} ${interval} (محاولة ${i+1}) - ${e.message}`, 'error');
-                        if (i === retries - 1) throw e;
-                        await sleep(CONFIG.RETRY_DELAY_MS);
-                    }
-                }
-                return null;
-            }
-
-            async function fetchTickerPriceWithRetry(symbol, retries = 3) {
-                for (let i = 0; i < retries; i++) {
-                    try {
-                        const resp = await fetch(`${CONFIG.BINANCE_BASE}/ticker/price?symbol=${symbol}`);
-                        if (!resp.ok) throw new Error(`Binance ticker error: ${resp.status}`);
-                        const data = await resp.json(); 
-                        return parseFloat(data.price);
-                    } catch (e) {
-                        if (i === retries - 1) throw e;
-                        await sleep(CONFIG.RETRY_DELAY_MS);
-                    }
-                }
-            }
-
-            // ============================================================
-            //  BACKGROUND KEEP-ALIVE
-            // ============================================================
-            async function requestWakeLock() {
-                try {
-                    if ('wakeLock' in navigator) {
-                        state.wakeLock = await navigator.wakeLock.request('screen');
-                        addLog('💤 تم تفعيل WakeLock (الحفاظ على نشاط الشاشة)', 'info');
-                        state.wakeLock.addEventListener('release', () => {
-                            addLog('💤 تم تحرير WakeLock، سيتم إعادة طلبه', 'info');
-                            setTimeout(requestWakeLock, 1000);
-                        });
-                    } else {
-                        addLog('⚠️ المتصفح لا يدعم WakeLock API', 'info');
-                    }
-                } catch (e) {
-                    addLog(`⚠️ فشل تفعيل WakeLock: ${e.message}`, 'error');
-                }
-            }
-
-            function startSilentAudioLoop() {
-                try {
-                    if (state.audioCtx) return;
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    if (!AudioContext) return;
-                    state.audioCtx = new AudioContext();
-                    const oscillator = state.audioCtx.createOscillator();
-                    const gainNode = state.audioCtx.createGain();
-                    oscillator.frequency.value = 0;
-                    gainNode.gain.value = 0;
-                    oscillator.connect(gainNode);
-                    gainNode.connect(state.audioCtx.destination);
-                    oscillator.start();
-                    function keepAlive() {
-                        if (state.audioCtx && state.audioCtx.state === 'suspended') {
-                            state.audioCtx.resume();
-                        }
-                        setTimeout(keepAlive, 5000);
-                    }
-                    keepAlive();
-                    addLog('🔊 تم تفعيل الحلقة الصوتية الصامتة (لمنع السكون)', 'info');
-                } catch (e) {
-                    addLog(`⚠️ فشل تفعيل الصوت الصامت: ${e.message}`, 'error');
-                }
-            }
-
-            // ============================================================
-            //  CHART DRAWING
-            // ============================================================
-            function drawCandles() {
-                const canvas = candleCanvas;
-                const rect = canvas.parentElement.getBoundingClientRect();
-                const width = rect.width - 32;
-                const height = 240;
-                canvas.width = width * window.devicePixelRatio;
-                canvas.height = height * window.devicePixelRatio;
-                canvas.style.width = width + 'px';
-                canvas.style.height = height + 'px';
-                const ctx = canvas.getContext('2d');
-                ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
-                const symbol = chartSymbolSelect.value;
-                const klines = state.klines[symbol];
-                if (!klines || klines.length < 2) {
-                    ctx.fillStyle = '#556688';
-                    ctx.font = '14px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('لا توجد بيانات كافية للرسم', width/2, height/2);
-                    return;
-                }
-
-                const data = klines.slice(-50);
-                const numCandles = data.length;
-
-                let maxPrice = -Infinity, minPrice = Infinity;
-                data.forEach(k => {
-                    maxPrice = Math.max(maxPrice, k.high, k.close);
-                    minPrice = Math.min(minPrice, k.low, k.open);
-                });
-                const padding = (maxPrice - minPrice) * 0.1;
-                maxPrice += padding;
-                minPrice -= padding;
-                if (maxPrice === minPrice) { maxPrice += 1; minPrice -= 1; }
-
-                const candleWidth = (width / numCandles) * 0.8;
-                const halfCandle = candleWidth / 2;
-                const xStep = width / numCandles;
-
-                ctx.clearRect(0, 0, width, height);
-                ctx.fillStyle = '#131a2b';
-                ctx.fillRect(0, 0, width, height);
-
-                data.forEach((k, i) => {
-                    const x = i * xStep + xStep/2;
-                    const isBullish = k.close > k.open;
-                    const color = isBullish ? '#00d4aa' : '#ff4757';
-                    const openY = height - ((k.open - minPrice) / (maxPrice - minPrice)) * height;
-                    const closeY = height - ((k.close - minPrice) / (maxPrice - minPrice)) * height;
-                    const highY = height - ((k.high - minPrice) / (maxPrice - minPrice)) * height;
-                    const lowY = height - ((k.low - minPrice) / (maxPrice - minPrice)) * height;
-
-                    ctx.beginPath();
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = 1;
-                    ctx.moveTo(x, highY);
-                    ctx.lineTo(x, lowY);
-                    ctx.stroke();
-
-                    const topY = isBullish ? closeY : openY;
-                    const bottomY = isBullish ? openY : closeY;
-                    ctx.fillStyle = color;
-                    ctx.fillRect(x - halfCandle, topY, candleWidth, bottomY - topY);
-                });
-
-                const lastClose = data[data.length-1].close;
-                const lastY = height - ((lastClose - minPrice) / (maxPrice - minPrice)) * height;
-                ctx.beginPath();
-                ctx.strokeStyle = '#f5a623';
-                ctx.lineWidth = 1;
-                ctx.setLineDash([4, 4]);
-                ctx.moveTo(0, lastY);
-                ctx.lineTo(width, lastY);
-                ctx.stroke();
-                ctx.setLineDash([]);
-
-                ctx.fillStyle = '#f5a623';
-                ctx.font = '12px sans-serif';
-                ctx.textAlign = 'left';
-                ctx.fillText(fmtPrice(lastClose), 4, lastY - 4);
-            }
-
-            // ============================================================
-            //  UPDATE ALL DATA
-            // ============================================================
-            async function updateAllData(force = false) {
-                if (state.isUpdating && !force) {
-                    addLog('⏳ تحديث قيد التقدم، تخطي...', 'info');
-                    return;
-                }
-                state.isUpdating = true;
-                liveDot.style.background = '#f5a623';
-                liveDot.style.animation = 'none';
-                addLog('🔄 بدء دورة تحديث جديدة...', 'info');
-
-                try {
-                    const symbols = CONFIG.SYMBOLS;
-                    const allKlines30m = {};
-                    const allPrices = {};
-
-                    // جلب بيانات 30 دقيقة فقط (تم حذف 4 ساعات)
-                    const fetchPromises30m = symbols.map(async sym => {
-                        try {
-                            const k = await fetchKlinesWithRetry(sym, CONFIG.INTERVAL_30M, CONFIG.KLINE_LIMIT);
-                            if (k) {
-                                allKlines30m[sym] = k;
-                                if (k.length > 0) allPrices[sym] = k[k.length - 1].close;
-                            }
-                            return { sym, ok: true };
-                        } catch (e) {
-                            addLog(`❌ فشل نهائي في جلب ${sym} 30m`, 'error');
-                            try { const p = await fetchTickerPriceWithRetry(sym); allPrices[sym] = p; } catch (e2) { addLog(`❌ حتى السعر الحالي فشل لـ ${sym}`, 'error'); }
-                            return { sym, ok: false };
-                        }
-                    });
-
-                    await Promise.all(fetchPromises30m);
-                    state.prices = allPrices;
-                    state.klines = allKlines30m;
-
-                    // Close active trades (يتم إغلاق الصفقات بناءً على سعر 30m)
-                    for (const sym of symbols) {
-                        const currentPrice = state.prices[sym];
-                        if (currentPrice === undefined) continue;
-                        const activeTrades = state.signals.filter(s => s.symbol === sym && !s.isClosed);
-                        for (const trade of activeTrades) {
-                            let shouldClose = false;
-                            let closeReason = '';
-                            let result = 'neutral';
-                            if (trade.direction === 'buy') {
-                                if (currentPrice >= trade.takeProfit) {
-                                    shouldClose = true; result = 'win'; closeReason = `🎯 تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
-                                } else if (currentPrice <= trade.stopLoss) {
-                                    shouldClose = true; result = 'loss'; closeReason = `🛑 ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
-                                }
-                            } else {
-                                if (currentPrice <= trade.takeProfit) {
-                                    shouldClose = true; result = 'win'; closeReason = `🎯 تحقيق الهدف عند ${fmtPrice(currentPrice)}`;
-                                } else if (currentPrice >= trade.stopLoss) {
-                                    shouldClose = true; result = 'loss'; closeReason = `🛑 ضرب وقف الخسارة عند ${fmtPrice(currentPrice)}`;
-                                }
-                            }
-                            if (shouldClose) {
-                                trade.isClosed = true;
-                                trade.closedAt = now();
-                                trade.closedResult = result;
-                                trade.analysis += `\n\n${closeReason}`;
-                                addLog(`✖️ إغلاق صفقة ${getSymbolDisplay(sym)}: ${result === 'win' ? 'ربح' : 'خسارة'}`, result === 'win' ? 'success' : 'error');
-                                if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
-                                    try {
-                                        let closeMsg = `🔔 <b>إغلاق صفقة تلقائي</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة: ${trade.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}\n💵 سعر الإغلاق: ${fmtPrice(currentPrice)}`;
-                                        await sendTelegramMessage(closeMsg);
-                                    } catch (e) {
-                                        addLog(`⚠️ فشل إرسال إغلاق الصفقة للتليجرام`, 'error');
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Generate new signals
-                    let btcDirection = 'neutral';
-                    const btcKlines = allKlines30m['BTCUSDT'];
-                    if (btcKlines && btcKlines.length >= 200) {
-                        const btcSignal = generateSignalDefault('BTCUSDT', btcKlines);
-                        if (btcSignal) btcDirection = btcSignal.direction;
-                        addLog(`📊 اتجاه البيتكوين الحالي (30m): ${btcDirection === 'buy' ? 'صاعد' : btcDirection === 'sell' ? 'هابط' : 'محايد'}`, 'info');
-                    }
-
-                    for (const sym of symbols) {
-                        const k30m = allKlines30m[sym];
-                        if (!k30m || k30m.length < 200) {
-                            addLog(`⚠️ بيانات 30m غير كافية لـ ${sym} (${k30m ? k30m.length : 0})`, 'error');
-                            continue;
-                        }
-
-                        // توليد الإشارة
-                        let signal = generateSignal(sym, k30m);
-
-                        if (!signal) {
-                            addLog(`⏸️ لا توجد إشارة لـ ${sym} حالياً`, 'info');
-                            continue;
-                        }
-
-                        // تطبيق فلتر البيتكوين (إذا كان مفعلاً)
-                        if (state.btcFilterEnabled) {
-                            if (btcDirection === 'buy' && signal.direction === 'sell') {
-                                addLog(`⛔ تم تصفية إشارة بيع لـ ${getSymbolDisplay(sym)} بسبب اتجاه BTC صاعد`, 'info');
-                                continue;
-                            }
-                            if (btcDirection === 'sell' && signal.direction === 'buy') {
-                                addLog(`⛔ تم تصفية إشارة شراء لـ ${getSymbolDisplay(sym)} بسبب اتجاه BTC هابط`, 'info');
-                                continue;
-                            }
-                        }
-
-                        const existingOpen = state.signals.find(s => s.symbol === sym && !s.isClosed);
-                        if (existingOpen) {
-                            if (existingOpen.isLocked) {
-                                addLog(`🔒 صفقة ${getSymbolDisplay(sym)} مقفولة، تجاهل الإشارة الجديدة`, 'info');
-                                continue;
-                            }
-                            if (existingOpen.direction === signal.direction) {
-                                addLog(`🔄 نفس الاتجاه لـ ${getSymbolDisplay(sym)}، تحديث السعر فقط`, 'info');
-                                existingOpen.entryPrice = signal.entryPrice;
-                                existingOpen.takeProfit = signal.takeProfit;
-                                existingOpen.stopLoss = signal.stopLoss;
-                                existingOpen.analysis = signal.analysis;
-                                existingOpen.timestamp = signal.timestamp;
-                                continue; 
-                            }
-                            const currentPrice = state.prices[sym];
-                            let result = 'neutral';
-                            if (currentPrice !== undefined) {
-                                if (existingOpen.direction === 'buy') {
-                                    if (currentPrice >= existingOpen.takeProfit) result = 'win';
-                                    else if (currentPrice <= existingOpen.stopLoss) result = 'loss';
-                                } else {
-                                    if (currentPrice <= existingOpen.takeProfit) result = 'win';
-                                    else if (currentPrice >= existingOpen.stopLoss) result = 'loss';
-                                }
-                            }
-                            existingOpen.isClosed = true;
-                            existingOpen.closedAt = now();
-                            existingOpen.closedResult = result;
-                            existingOpen.analysis += `\n\n🔄 انعكاس اتجاه: ظهرت إشارة جديدة معاكسة.`;
-                            addLog(`🔄 انعكاس اتجاه لـ ${getSymbolDisplay(sym)}. إغلاق الصفقة السابقة.`, 'info');
-                            if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
-                                try {
-                                    let closeMsg = `🔔 <b>إغلاق صفقة تلقائي (انعكاس)</b>\n💰 العملة: ${getSymbolDisplay(sym)}\n📉 الصفقة السابقة: ${existingOpen.direction === 'buy' ? 'شراء' : 'بيع'}\n📊 النتيجة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}`;
-                                    await sendTelegramMessage(closeMsg);
-                                } catch (e) {
-                                    addLog(`⚠️ فشل إرسال إغلاق الانعكاس للتليجرام`, 'error');
-                                }
-                            }
-                            state.signals.push(signal);
-                            addLog(`📈 تم توليد إشارة جديدة لـ ${getSymbolDisplay(sym)} (${signal.direction})`, 'success');
-                        } else {
-                            state.signals.push(signal);
-                            addLog(`📈 تم توليد إشارة جديدة لـ ${getSymbolDisplay(sym)} (${signal.direction})`, 'success');
-                        }
-                    }
-
-                    // إرسال الإشارات الجديدة للتليجرام
-                    for (const sig of state.signals.filter(s => !s.isClosed && !state.sentSignals.includes(s.id))) {
-                        if (state.settings.autoSendTelegram && state.settings.telegramToken && state.settings.telegramChatId) {
-                            try {
-                                await sendTelegramMessage(formatSignalMessage(sig));
-                                state.sentSignals.push(sig.id);
-                                if (state.sentSignals.length > 200) state.sentSignals = state.sentSignals.slice(-100);
-                                addLog(`📨 تم إرسال إشارة ${getSymbolDisplay(sig.symbol)} إلى التليجرام`, 'success');
-                            } catch (e) {
-                                addLog(`⚠️ فشل إرسال إشارة ${getSymbolDisplay(sig.symbol)}`, 'error');
-                            }
-                        } else {
-                            state.sentSignals.push(sig.id);
-                        }
-                        sendLocalNotification(sig);
-                    }
-
-                    const activeSignals = state.signals.filter(s => !s.isClosed);
-                    const closedSignals = state.signals.filter(s => s.isClosed);
-                    const activeBySymbol = {};
-                    for (const s of activeSignals) {
-                        if (!activeBySymbol[s.symbol]) activeBySymbol[s.symbol] = [];
-                        activeBySymbol[s.symbol].push(s);
-                    }
-                    let prunedActive = [];
-                    for (const sym in activeBySymbol) {
-                        const list = activeBySymbol[sym];
-                        list.sort((a, b) => b.timestamp - a.timestamp);
-                        prunedActive.push(...list.slice(0, CONFIG.MAX_SIGNALS_PER_SYMBOL));
-                    }
-                    state.signals = [...prunedActive, ...closedSignals];
-
-                    state.lastUpdate = now();
-                    state.failureCount = 0;
-                    persistState();
-                    renderAll();
-                    drawCandles();
-
-                    liveDot.style.background = '#00d4aa';
-                    liveDot.style.animation = 'pulse-dot 2s infinite';
-                    addLog('✅ انتهت دورة التحديث بنجاح.', 'success');
-
-                } catch (e) {
-                    console.error('❌ خطأ جسيم في دورة التحديث:', e);
-                    state.failureCount++;
-                    addLog(`❌ خطأ في التحديث (المحاولة ${state.failureCount}) - ${e.message}`, 'error');
-                    liveDot.style.background = '#ff4757';
-                    liveDot.style.animation = 'pulse-dot 2s infinite';
-                } finally {
-                    state.isUpdating = false;
-                }
-            }
-
-            // ============================================================
-            //  LOCAL NOTIFICATIONS
-            // ============================================================
-            function requestNotificationPermission() {
-                if ('Notification' in window && Notification.permission === 'default') {
-                    Notification.requestPermission().then(perm => {
-                        if (perm === 'granted') addLog('✅ تم تفعيل الإشعارات المحلية', 'success');
-                        else addLog('⚠️ تم رفض الإشعارات المحلية', 'info');
-                    });
-                }
-            }
-
-            function sendLocalNotification(signal) {
-                if (!('Notification' in window) || Notification.permission !== 'granted') return;
-                const sym = getSymbolDisplay(signal.symbol);
-                const dir = signal.direction === 'buy' ? 'شراء 🟢' : 'بيع 🔴';
-                try {
-                    const notification = new Notification('📈 إشارة تداول جديدة!', {
-                        body: `العملة: ${sym} | الاتجاه: ${dir} | السعر: ${fmtPrice(signal.entryPrice)}`,
-                        icon: 'data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'.9em\' font-size=\'90\'>📈</text></svg>',
-                        tag: signal.id,
-                        requireInteraction: true
-                    });
-                    setTimeout(() => notification.close(), 10000);
-                } catch (e) {}
-            }
-
-            // ============================================================
-            //  RENDER
-            // ============================================================
-            function renderTicker() {
-                let html = '';
-                for (const sym of CONFIG.SYMBOLS) {
-                    const price = state.prices[sym];
-                    const display = getSymbolDisplay(sym);
-                    const activeSig = state.signals.find(s => s.symbol === sym && !s.isClosed);
-                    let badge = activeSig ? `<span class="signal-badge ${activeSig.direction}">${activeSig.direction === 'buy' ? '🟢 شراء' : '🔴 بيع'}</span>` : `<span class="signal-badge neutral">● محايد</span>`;
-                    html += `<div class="ticker-item"><span class="sym">${display}</span><span class="price">${price !== undefined ? fmtPrice(price) : '—'}</span>${badge}</div>`;
-                }
-                tickerStrip.innerHTML = html;
-            }
-
-            function renderSignals() {
-                const active = state.signals.filter(s => !s.isClosed);
-                signalCount.textContent = active.length;
-                if (active.length === 0) { signalsContainer.innerHTML = `<div class="empty-state"><div class="icon">📊</div><h3>لا توجد إشارات نشطة حالياً</h3><p>جاري مراقبة الأسواق (فريم 30 دقيقة)...</p></div>`; return; }
-                active.sort((a, b) => b.timestamp - a.timestamp);
-                let html = '<div class="signals-grid">';
-                for (const sig of active) {
-                    const dirClass = sig.direction === 'buy' ? 'buy' : 'sell';
-                    const dirLabel = sig.direction === 'buy' ? '🟢 شراء' : '🔴 بيع';
-                    const sym = getSymbolDisplay(sig.symbol);
-                    const lockLabel = sig.isLocked ? '🔓 فتح' : '🔒 قفل';
-                    const lockClass = sig.isLocked ? 'locked' : '';
-                    html += `
-                <div class="signal-card ${dirClass}">
-                    <div class="header"><div class="symbol">${sym} <small>${sig.symbol}</small></div><div class="direction ${dirClass}">${dirLabel}</div></div>
-                    <div class="price-info">
-                        <div class="item"><div class="label">دخول</div><div class="val">${fmtPrice(sig.entryPrice)}</div></div>
-                        <div class="item"><div class="label">🎯 الهدف (2%)</div><div class="val green">${fmtPrice(sig.takeProfit)}</div></div>
-                        <div class="item"><div class="label">🛑 وقف (0.8%)</div><div class="val red">${fmtPrice(sig.stopLoss)}</div></div>
-                    </div>
-                    <div class="analysis">${sig.analysis}</div>
-                    <div class="footer">
-                        <div class="timestamp">🕐 ${fmtDate(sig.timestamp)} • ثقة ${sig.confidence.toFixed(0)}%</div>
-                        <div class="actions">
-                            <button class="btn-share" data-id="${sig.id}">📤 مشاركة</button>
-                            <button class="btn-lock ${lockClass}" data-id="${sig.id}">${lockLabel}</button>
-                            <button class="btn-close" data-id="${sig.id}">✖️ إغلاق</button>
-                        </div>
-                    </div>
-                </div>`;
-                }
-                html += '</div>';
-                signalsContainer.innerHTML = html;
-                signalsContainer.querySelectorAll('.btn-share').forEach(btn => btn.addEventListener('click', () => shareSignal(btn.dataset.id)));
-                signalsContainer.querySelectorAll('.btn-lock').forEach(btn => btn.addEventListener('click', () => toggleLock(btn.dataset.id)));
-                signalsContainer.querySelectorAll('.btn-close').forEach(btn => btn.addEventListener('click', () => closeTrade(btn.dataset.id)));
-            }
-
-            function renderClosed() {
-                const closed = state.signals.filter(s => s.isClosed);
-                closedCount.textContent = closed.length;
-                if (closed.length === 0) { closedContainer.innerHTML = `<div class="empty-state"><div class="icon">📂</div><h3>لا توجد صفقات مغلقة بعد</h3></div>`; return; }
-                closed.sort((a, b) => (b.closedAt || 0) - (a.closedAt || 0));
-                let html = '<div class="closed-grid">';
-                for (const sig of closed) {
-                    const sym = getSymbolDisplay(sig.symbol);
-                    const resultLabel = sig.closedResult === 'win' ? '✅ ربح' : sig.closedResult === 'loss' ? '❌ خسارة' : '⚪ محايد';
-                    html += `
-                <div class="closed-card">
-                    <div class="header"><div class="symbol">${sym}</div><div class="result ${sig.closedResult || 'neutral'}">${resultLabel}</div></div>
-                    <div class="details">
-                        <span>📌 ${sig.direction === 'buy' ? 'شراء' : 'بيع'}</span>
-                        <span>💰 دخول: ${fmtPrice(sig.entryPrice)}</span>
-                        <span>🕐 ${fmtDate(sig.closedAt || sig.timestamp)}</span>
-                    </div>
-                </div>`;
-                }
-                html += '</div>';
-                closedContainer.innerHTML = html;
-            }
-
-            function renderStats() {
-                const active = state.signals.filter(s => !s.isClosed);
-                const closed = state.signals.filter(s => s.isClosed);
-                const wins = closed.filter(s => s.closedResult === 'win');
-                const losses = closed.filter(s => s.closedResult === 'loss');
-                const today = state.signals.filter(s => isToday(s.timestamp));
-                statActive.textContent = active.length;
-                statToday.textContent = today.length;
-                statWins.textContent = wins.length;
-                statLosses.textContent = losses.length;
-            }
-
-            function renderAll() { renderTicker(); renderSignals(); renderClosed(); renderStats(); updateBtcFilterButtonUI(); updateStrategyUI(); }
-
-            // ============================================================
-            //  ACTIONS
-            // ============================================================
-            function updateBtcFilterButtonUI() {
-                if (state.btcFilterEnabled) { btcFilterLabel.textContent = 'BTC ON'; btnBtcFilter.style.borderColor = 'var(--accent-green)'; btnBtcFilter.style.color = 'var(--accent-green)'; } 
-                else { btcFilterLabel.textContent = 'BTC OFF'; btnBtcFilter.style.borderColor = 'var(--accent-red)'; btnBtcFilter.style.color = 'var(--accent-red)'; }
-            }
-            function toggleBtcFilter() { state.btcFilterEnabled = !state.btcFilterEnabled; persistState(); updateBtcFilterButtonUI(); showToast(state.btcFilterEnabled ? '⚡ تم تفعيل فلتر البيتكوين' : '⚡ تم إيقاف فلتر البيتكوين', 'info'); updateAllData(true); }
-
-            function shareSignal(id) {
-                const sig = state.signals.find(s => s.id === id);
-                if (!sig) return;
-                const text = `📈 إشارة تداول: ${getSymbolDisplay(sig.symbol)} - ${sig.direction === 'buy' ? 'شراء' : 'بيع'}\n💰 الدخول: ${fmtPrice(sig.entryPrice)}\n🎯 الهدف: ${fmtPrice(sig.takeProfit)}\n🛑 وقف: ${fmtPrice(sig.stopLoss)}\n⏱️ ${fmtDateFull(sig.timestamp)}`;
-                if (navigator.share) navigator.share({ title: `إشارة ${getSymbolDisplay(sig.symbol)}`, text: text }).catch(() => {});
-                else navigator.clipboard.writeText(text).then(() => showToast('📋 تم نسخ الإشارة', 'success')).catch(() => showToast('⚠️ تعذر النسخ', 'error'));
-            }
-            function toggleLock(id) {
-                const sig = state.signals.find(s => s.id === id);
-                if (!sig || sig.isClosed) return;
-                sig.isLocked = !sig.isLocked;
-                persistState(); renderSignals();
-                showToast(sig.isLocked ? '🔒 تم قفل الصفقة' : '🔓 تم فتح الصفقة', 'info');
-            }
-            function closeTrade(id) {
-                const sig = state.signals.find(s => s.id === id);
-                if (!sig || sig.isClosed) return;
-                if (sig.isLocked) { showToast('🔒 الصفقة مقفولة', 'error'); return; }
-                const currentPrice = state.prices[sig.symbol];
-                let result = 'neutral';
-                if (currentPrice !== undefined) {
-                    if (sig.direction === 'buy') { if (currentPrice >= sig.takeProfit) result = 'win'; else if (currentPrice <= sig.stopLoss) result = 'loss'; } 
-                    else { if (currentPrice <= sig.takeProfit) result = 'win'; else if (currentPrice >= sig.stopLoss) result = 'loss'; }
-                }
-                sig.isClosed = true; sig.closedAt = now(); sig.closedResult = result;
-                persistState(); renderAll();
-                showToast(`✖️ إغلاق الصفقة: ${result === 'win' ? '✅ ربح' : result === 'loss' ? '❌ خسارة' : '⚪ محايد'}`, result === 'win' ? 'success' : result === 'loss' ? 'error' : 'info');
-            }
-
-            function showToast(message, type = 'info') {
-                const toast = document.createElement('div');
-                toast.className = `toast ${type}`; toast.textContent = message;
-                toastContainer.appendChild(toast);
-                setTimeout(() => { if (toast.parentNode) { toast.style.opacity = '0'; setTimeout(() => { if (toast.parentNode) toast.remove(); }, 300); } }, 3500);
-            }
-
-            // ============================================================
-            //  SETTINGS & PWA
-            // ============================================================
-            function openSettings() {
-                settingsToken.value = state.settings.telegramToken || '';
-                settingsChatId.value = state.settings.telegramChatId || '';
-                settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
-                settingsAutoSend.checked = state.settings.autoSendTelegram !== false;
-                settingsStatus.className = 'status-msg'; settingsStatus.textContent = '';
-                settingsModal.classList.add('active');
-            }
-            function closeSettings() { settingsModal.classList.remove('active'); }
-            function saveSettings() {
-                state.settings.telegramToken = settingsToken.value.trim();
-                state.settings.telegramChatId = settingsChatId.value.trim();
-                state.settings.updateInterval = Math.max(1, Math.min(60, parseInt(settingsInterval.value) || CONFIG.UPDATE_INTERVAL_DEFAULT));
-                state.settings.autoSendTelegram = settingsAutoSend.checked;
-                persistSettings();
-                if (state.updateTimer) { clearInterval(state.updateTimer); state.updateTimer = null; }
-                startUpdateTimer();
-                settingsStatus.className = 'status-msg success'; settingsStatus.textContent = '✅ تم حفظ الإعدادات';
-                showToast('✅ تم حفظ الإعدادات', 'success');
-            }
-            async function testTelegram() {
-                const token = settingsToken.value.trim(), chatId = settingsChatId.value.trim();
-                if (!token || !chatId) { settingsStatus.className = 'status-msg error'; settingsStatus.textContent = '⚠️ يرجى إدخال التوكن والمعرف'; return; }
-                try {
-                    settingsStatus.className = 'status-msg'; settingsStatus.textContent = '⏳ جاري الاختبار...';
-                    await sendTelegramMessage('🧪 <b>اختبار اتصال</b>\nتم استلام الإعدادات بنجاح! 🚀');
-                    settingsStatus.className = 'status-msg success'; settingsStatus.textContent = '✅ تم إرسال رسالة الاختبار!';
-                    showToast('✅ رسالة اختبار أرسلت للتليجرام', 'success');
-                } catch (e) {
-                    settingsStatus.className = 'status-msg error'; 
-                    settingsStatus.textContent = '❌ فشل الإرسال: ' + e.message; 
-                    showToast('❌ فشل الاختبار: ' + e.message, 'error');
-                }
-            }
-
-            async function copySettings() {
-                const token = settingsToken.value.trim();
-                const chatId = settingsChatId.value.trim();
-                const text = `توكن التليجرام: ${token}\nمعرف الدردشة: ${chatId}`;
-                try {
-                    await navigator.clipboard.writeText(text);
-                    showToast('📋 تم نسخ الإعدادات إلى الحافظة', 'success');
-                } catch (e) {
-                    showToast('⚠️ فشل النسخ: ' + e.message, 'error');
-                }
-            }
-
-            // ============================================================
-            //  TIMER & BACKGROUND
-            // ============================================================
-            let nextUpdateTimeout = null;
-
-            function scheduleNextUpdate() {
-                if (nextUpdateTimeout) clearTimeout(nextUpdateTimeout);
-                const interval = (state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT) * 60 * 1000;
-                const effectiveInterval = Math.max(15000, interval); 
-                nextUpdateTimeout = setTimeout(() => {
-                    updateAllData(false);
-                    scheduleNextUpdate();
-                }, effectiveInterval);
-            }
-
-            function startUpdateTimer() {
-                if (state.updateTimer) { clearInterval(state.updateTimer); state.updateTimer = null; }
-                if (nextUpdateTimeout) { clearTimeout(nextUpdateTimeout); nextUpdateTimeout = null; }
-                addLog(`⏰ بدء تحديث تلقائي في الخلفية.`, 'info');
-                scheduleNextUpdate();
-                document.addEventListener('visibilitychange', () => { 
-                    if (!document.hidden) {
-                        updateAllData(false);
-                        if (nextUpdateTimeout) clearTimeout(nextUpdateTimeout);
-                        scheduleNextUpdate();
-                    }
-                });
-            }
-
-            // ============================================================
-            //  PWA WITH SERVICE WORKER
-            // ============================================================
-            function setupPWA() {
-                const manifestData = {
-                    "name": "CryptoSignal Pro",
-                    "short_name": "CryptoSignal",
-                    "description": "منصة توليد إشارات تداول العملات الرقمية",
-                    "start_url": "/",
-                    "display": "standalone",
-                    "background_color": "#0b0e17",
-                    "theme_color": "#0b0e17",
-                    "icons": [{
-                        "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>",
-                        "sizes": "512x512",
-                        "type": "image/svg+xml",
-                        "purpose": "any"
-                    }]
-                };
-                const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
-                const manifestURL = URL.createObjectURL(manifestBlob);
-                document.getElementById('manifest-link').href = manifestURL;
-
-                registerServiceWorker();
-
-                window.addEventListener('beforeinstallprompt', (e) => { 
-                    e.preventDefault(); 
-                    state.installPrompt = e; 
-                    btnInstall.style.display = 'flex'; 
-                    btnInstall.innerHTML = '📲 <span>تثبيت التطبيق</span>';
-                });
-
-                btnInstall.addEventListener('click', async () => {
-                    if (state.installPrompt) {
-                        try { 
-                            const result = await state.installPrompt.prompt(); 
-                            if (result.outcome === 'accepted') { 
-                                showToast('✅ تم التثبيت!', 'success'); 
-                                btnInstall.style.display = 'none'; 
-                            } 
-                            state.installPrompt = null; 
-                        } catch (e) { 
-                            showToast('⚠️ تعذر التثبيت', 'error'); 
-                        }
-                    } else {
-                        showToast('📱 أضف إلى الشاشة الرئيسية من قائمة المتصفح', 'info');
-                    }
-                });
-
-                if (!('beforeinstallprompt' in window)) {
-                    btnInstall.style.display = 'flex';
-                    btnInstall.innerHTML = '📲 <span>تثبيت</span>';
-                    btnInstall.addEventListener('click', () => {
-                        showToast('📱 أضف هذا التطبيق إلى شاشتك الرئيسية عبر قائمة المتصفح', 'info');
-                    });
-                }
-            }
-
-            function registerServiceWorker() {
-                const swCode = `
-                    self.addEventListener('install', e => {
-                        e.waitUntil(
-                            caches.open('cryptosignal-v1').then(cache => {
-                                return cache.addAll(['/']);
-                            })
-                        );
-                        self.skipWaiting();
-                    });
-                    self.addEventListener('activate', e => {
-                        e.waitUntil(self.clients.claim());
-                    });
-                    self.addEventListener('message', e => {
-                        if (e.data === 'update') {
-                            self.clients.matchAll().then(clients => {
-                                clients.forEach(client => client.postMessage('forceUpdate'));
-                            });
-                        }
-                    });
-                    self.addEventListener('periodicsync', e => {
-                        if (e.tag === 'crypto-update') {
-                            e.waitUntil(
-                                self.clients.matchAll().then(clients => {
-                                    if (clients.length > 0) {
-                                        clients.forEach(client => client.postMessage('forceUpdate'));
-                                    }
-                                })
-                            );
-                        }
-                    });
-                    self.addEventListener('fetch', e => {
-                        e.respondWith(
-                            caches.match(e.request).then(response => {
-                                return response || fetch(e.request);
-                            })
-                        );
-                    });
-                `;
-                try {
-                    const blob = new Blob([swCode], { type: 'application/javascript' });
-                    const swURL = URL.createObjectURL(blob);
-                    navigator.serviceWorker.register(swURL, { scope: '/' })
-                        .then(reg => {
-                            addLog('✅ Service Worker مسجل بنجاح', 'success');
-                            if ('periodicSync' in navigator) {
-                                navigator.periodicSync.register('crypto-update', { minInterval: 60 * 1000 })
-                                    .then(() => addLog('📡 تم تفعيل التزامن الدوري (Periodic Sync)', 'info'))
-                                    .catch(err => addLog(`⚠️ فشل تفعيل التزامن الدوري: ${err.message}`, 'error'));
-                            }
-                        })
-                        .catch(err => addLog(`⚠️ فشل تسجيل Service Worker: ${err.message}`, 'error'));
-                } catch (e) {
-                    addLog(`⚠️ خطأ في إنشاء Service Worker: ${e.message}`, 'error');
-                }
-            }
-
-            function listenToServiceWorkerMessages() {
-                if (!navigator.serviceWorker) return;
-                navigator.serviceWorker.addEventListener('message', event => {
-                    if (event.data === 'forceUpdate') {
-                        addLog('📩 استقبال إشارة تحديث من Service Worker (خلفية)', 'info');
-                        updateAllData(false);
-                    }
-                });
-            }
-
-            // ============================================================
-            //  EXPORT / CLEAR HISTORY
-            // ============================================================
-            function exportHistory() {
-                const data = { exportedAt: new Date().toISOString(), signals: state.signals, closedTrades: state.signals.filter(s => s.isClosed) };
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `cryptosignal_export_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
-                showToast('📥 تم التصدير', 'success');
-            }
-            function clearHistory() {
-                if (!confirm('هل أنت متأكد من مسح جميع الصفقات المغلقة؟')) return;
-                state.signals = state.signals.filter(s => !s.isClosed); state.closedTrades = []; persistState(); renderAll(); showToast('🗑️ تم المسح', 'info');
-            }
-
-            // ============================================================
-            //  INIT
-            // ============================================================
-            async function init() {
-                loadState();
-                settingsToken.value = state.settings.telegramToken || '';
-                settingsChatId.value = state.settings.telegramChatId || '';
-                settingsInterval.value = state.settings.updateInterval || CONFIG.UPDATE_INTERVAL_DEFAULT;
-                settingsAutoSend.checked = state.settings.autoSendTelegram !== false;
-                applyModeConfig();
-                renderAll();
-                setupPWA();
-                listenToServiceWorkerMessages();
-                requestNotificationPermission();
-                addLog('🚀 تم بدء تشغيل التطبيق بنجاح.', 'success');
-                
-                btnSettings.addEventListener('click', openSettings);
-                btnSettingsClose.addEventListener('click', closeSettings);
-                btnSettingsSave.addEventListener('click', saveSettings);
-                btnSettingsTest.addEventListener('click', testTelegram);
-                btnSettingsCopy.addEventListener('click', copySettings);
-                btnRefresh.addEventListener('click', () => updateAllData(true));
-                btnExportHistory.addEventListener('click', exportHistory);
-                btnClearHistory.addEventListener('click', clearHistory);
-                btnBtcFilter.addEventListener('click', toggleBtcFilter);
-                btnModeToggle.addEventListener('click', toggleMode);
-                btnStrategy.addEventListener('click', toggleStrategy);
-                chartSymbolSelect.addEventListener('change', drawCandles);
-                window.addEventListener('resize', drawCandles);
-                
-                settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
-                document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSettings(); });
-
-                await requestWakeLock();
-                startSilentAudioLoop();
-
-                startUpdateTimer();
-                await updateAllData(true);
-                
-                window.addEventListener('online', () => { showToast('🌐 تم استعادة الاتصال', 'success'); updateAllData(false); });
-                window.addEventListener('offline', () => { showToast('📡 انقطع الاتصال', 'error'); });
-
-                setInterval(() => {
-                    if (state.failureCount >= 3) {
-                        addLog('🔁 محاولة استعادة التحديث بعد فشل متكرر', 'info');
-                        updateAllData(true);
-                        state.failureCount = 0;
-                    }
-                }, 30000);
-            }
-
-            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-            else init();
-
-            window.__cryptoSignal = { state, updateAllData, renderAll, sendTelegramMessage, generateSignal, CONFIG, currentMode, MODES };
-        })();
-    </script>
+<div class="topbar">
+<div class="topbar-row">
+<div class="brand">
+<div class="brand-dot off" id="connDot"></div>
+<div class="brand-name">BOSWaves <span class="mono" style="color:var(--dim);font-weight:400;">Signals</span></div>
+</div>
+<button class="lang-btn" id="langBtn" onclick="toggleLang()">EN</button>
+</div>
+<div class="selectors">
+<select id="symbolSel" class="pill-input" onchange="onSymbolChange()"></select>
+<select id="adxThreshQuick" class="pill-input" onchange="onAdxQuickChange()"></select>
+</div>
+<div class="tf-row" id="tfRow"></div>
+</div>
+
+<div class="view active" id="view-live">
+<div class="livebar">
+<div>
+<div style="font-size:11px;color:var(--dim);" id="liveSymLabel">--</div>
+<div class="px" id="livePx">--</div>
+</div>
+<div style="text-align:left;">
+<div class="adx">ADX <span id="liveAdx">--</span></div>
+<div id="adxBadge" class="badge-sm badge-adx-fail">--</div>
+</div>
+</div>
+<div class="section-label" data-i18n="recentSignals">Recent Signals</div>
+<div id="signalsFeed"></div>
+</div>
+
+<div class="view" id="view-open">
+<div class="section-label" data-i18n="openTrades">Open Trades</div>
+<div id="openList"></div>
+</div>
+
+<div class="view" id="view-history">
+<div class="section-label" data-i18n="closedTrades">Closed Trades</div>
+<div id="historyList"></div>
+</div>
+
+<div class="view" id="view-stats">
+<div class="card">
+<div class="card-h"><div class="card-title" data-i18n="performance">Performance</div></div>
+<div class="stat-grid g3" id="statsGrid"></div>
+</div>
+</div>
+
+<div class="view" id="view-settings">
+<div class="card">
+<div class="settings-group">
+<h4 data-i18n="grpEngine">BOSWaves Engine</h4>
+<div class="field"><label data-i18n="pivotLen">Pivot Length</label><input type="number" id="s_pivotLen" min="2" max="50"></div>
+<div class="field"><label data-i18n="impulseATR">Impulse Size (ATR)</label><input type="number" step="0.05" id="s_impulseATR"></div>
+<div class="field"><label data-i18n="baseCandles">Formation Candles</label><input type="number" id="s_baseCandles" min="2" max="10"></div>
+<div class="field"><label data-i18n="atrLen">ATR Length</label><input type="number" id="s_atrLen"></div>
+<div class="field"><label data-i18n="minZoneATR">Min Zone (ATR)</label><input type="number" step="0.01" id="s_minZoneATR"></div>
+<div class="field"><label data-i18n="maxZoneATR">Max Zone (ATR)</label><input type="number" step="0.05" id="s_maxZoneATR"></div>
+<div class="field"><label data-i18n="maxBlocks">Max Blocks</label><input type="number" id="s_maxBlocks" min="1" max="20"></div>
+<div class="field"><label data-i18n="removeOverlap">Remove Overlap</label><div class="switch" id="s_removeOverlap" onclick="toggleSwitch('s_removeOverlap')"><div class="knob"></div></div></div>
+<div class="field"><label data-i18n="invalidation">Invalidation</label>
+<select id="s_invalidation"><option value="Close">Close</option><option value="Wick">Wick</option></select>
+</div>
+</div>
+<div class="settings-group">
+<h4 data-i18n="grpFilter">ADX Filter</h4>
+<div class="field"><label data-i18n="adxLen">ADX Length</label><input type="number" id="s_adxLen"></div>
+<div class="field"><label data-i18n="adxThresh">Min ADX</label><input type="number" id="s_adxThresh"></div>
+</div>
+<div class="settings-group">
+<h4 data-i18n="grpRisk">Risk &amp; Trade</h4>
+<div class="field"><label data-i18n="riskPct">Risk % / Trade</label><input type="number" step="0.05" id="s_riskPct"></div>
+<div class="field"><label data-i18n="leverage">Leverage</label><input type="number" id="s_leverage"></div>
+<div class="field"><label data-i18n="rrRatio">Target R:R</label><input type="number" step="0.1" id="s_rr"></div>
+<div class="field"><label data-i18n="capital">Account Balance (USDT)</label><input type="number" id="s_capital"></div>
+</div>
+<div class="settings-group">
+<h4 data-i18n="grpTelegram">Telegram Alerts</h4>
+<div class="field"><label data-i18n="tgEnable">Enable</label><div class="switch" id="s_tgEnable" onclick="toggleSwitch('s_tgEnable')"><div class="knob"></div></div></div>
+<div class="field"><label data-i18n="tgToken">Bot Token</label><input type="password" id="s_tgToken" placeholder="123:ABC..."></div>
+<div class="field"><label data-i18n="tgChat">Chat ID</label><input type="text" id="s_tgChat" placeholder="-100..."></div>
+<button class="btn secondary" onclick="testTelegram()" data-i18n="tgTest">Send Test Message</button>
+</div>
+<button class="btn" onclick="saveSettings()" data-i18n="saveSettings">Save Settings</button>
+<button class="btn danger" onclick="resetAll()" data-i18n="resetAll">Reset Everything</button>
+</div>
+</div>
+
+<div class="tabs">
+<button class="tab active" data-view="live" onclick="switchTab('live')"><span class="ic">◈</span><span data-i18n="tabLive">Live</span></button>
+<button class="tab" data-view="open" onclick="switchTab('open')"><span class="ic">◷</span><span data-i18n="tabOpen">Open</span></button>
+<button class="tab" data-view="history" onclick="switchTab('history')"><span class="ic">☰</span><span data-i18n="tabHistory">History</span></button>
+<button class="tab" data-view="stats" onclick="switchTab('stats')"><span class="ic">▤</span><span data-i18n="tabStats">Stats</span></button>
+<button class="tab" data-view="settings" onclick="switchTab('settings')"><span class="ic">⚙</span><span data-i18n="tabSettings">Settings</span></button>
+</div>
+
+<script>
+const I18N = {
+ar:{
+recentSignals:"الإشارات الأخيرة", openTrades:"الصفقات المفتوحة", closedTrades:"سجل الصفقات",
+performance:"الأداء", grpEngine:"محرك BOSWaves", pivotLen:"طول القمة/القاع", impulseATR:"قوة الاندفاع (ATR)",
+baseCandles:"شموع التكوين", atrLen:"فترة ATR", minZoneATR:"أقل ارتفاع للمنطقة", maxZoneATR:"أعلى ارتفاع للمنطقة",
+maxBlocks:"أقصى عدد للمناطق", removeOverlap:"حذف المناطق المتداخلة", invalidation:"إبطال المنطقة",
+grpFilter:"فلتر ADX", adxLen:"فترة ADX", adxThresh:"أقل قيمة ADX",
+grpRisk:"المخاطرة والصفقة", riskPct:"نسبة المخاطرة %", leverage:"الرافعة المالية", rrRatio:"نسبة العائد/المخاطرة",
+capital:"رصيد الحساب (USDT)", grpTelegram:"تنبيهات تيليجرام", tgEnable:"تفعيل", tgToken:"توكن البوت",
+tgChat:"معرف المحادثة", tgTest:"إرسال رسالة تجريبية", saveSettings:"حفظ الإعدادات", resetAll:"إعادة تعيين كل شيء",
+tabLive:"مباشر", tabOpen:"مفتوحة", tabHistory:"السجل", tabStats:"إحصائيات", tabSettings:"إعدادات",
+noSignals:"لا توجد إشارات بعد", noOpen:"لا توجد صفقات مفتوحة", noHistory:"لا توجد صفقات مغلقة بعد",
+entry:"الدخول", sl:"وقف الخسارة", tp:"الهدف", rr:"العائد/المخاطرة", opened:"وقت الفتح",
+closedAt:"وقت الإغلاق", reason:"السبب", tpHit:"تحقق الهدف", slHit:"ضرب وقف الخسارة", manual:"إغلاق يدوي",
+trades:"عدد الصفقات", wins:"صفقات رابحة", losses:"صفقات خاسرة", winRate:"نسبة النجاح",
+profitFactor:"معامل الربح", netProfit:"صافي الربح", grossProfit:"إجمالي الربح", grossLoss:"إجمالي الخسارة",
+avgWin:"متوسط الربح", avgLoss:"متوسط الخسارة", bestTrade:"أكبر ربح", worstTrade:"أكبر خسارة",
+maxDD:"أقصى تراجع", avgRR:"متوسط R:R", openCount:"صفقات مفتوحة", closedCount:"صفقات مغلقة",
+long:"شراء", short:"بيع", waitingData:"جاري تحميل بيانات", connected:"متصل", disconnected:"غير متصل",
+adxPass:"الفلتر: تجاوز", adxFail:"الفلتر: لم يتجاوز", settingsSaved:"تم حفظ الإعدادات",
+tgTestSent:"تم إرسال الرسالة التجريبية", tgTestFail:"فشل الإرسال - تحقق من التوكن والمعرف",
+confirmReset:"سيتم حذف جميع الصفقات والسجل. متابعة؟"
+},
+en:{
+recentSignals:"Recent Signals", openTrades:"Open Trades", closedTrades:"Trade History",
+performance:"Performance", grpEngine:"BOSWaves Engine", pivotLen:"Pivot Length", impulseATR:"Impulse Size (ATR)",
+baseCandles:"Formation Candles", atrLen:"ATR Length", minZoneATR:"Min Zone (ATR)", maxZoneATR:"Max Zone (ATR)",
+maxBlocks:"Max Blocks", removeOverlap:"Remove Overlapping", invalidation:"Invalidation",
+grpFilter:"ADX Filter", adxLen:"ADX Length", adxThresh:"Min ADX",
+grpRisk:"Risk & Trade", riskPct:"Risk % / Trade", leverage:"Leverage", rrRatio:"Target R:R",
+capital:"Account Balance (USDT)", grpTelegram:"Telegram Alerts", tgEnable:"Enable", tgToken:"Bot Token",
+tgChat:"Chat ID", tgTest:"Send Test Message", saveSettings:"Save Settings", resetAll:"Reset Everything",
+tabLive:"Live", tabOpen:"Open", tabHistory:"History", tabStats:"Stats", tabSettings:"Settings",
+noSignals:"No signals yet", noOpen:"No open trades", noHistory:"No closed trades yet",
+entry:"Entry", sl:"Stop Loss", tp:"Target", rr:"R:R", opened:"Opened",
+closedAt:"Closed", reason:"Reason", tpHit:"Target Hit", slHit:"Stop Loss Hit", manual:"Manual Close",
+trades:"Total Trades", wins:"Wins", losses:"Losses", winRate:"Win Rate",
+profitFactor:"Profit Factor", netProfit:"Net Profit", grossProfit:"Gross Profit", grossLoss:"Gross Loss",
+avgWin:"Avg Win", avgLoss:"Avg Loss", bestTrade:"Best Trade", worstTrade:"Worst Trade",
+maxDD:"Max Drawdown", avgRR:"Avg R:R", openCount:"Open Trades", closedCount:"Closed Trades",
+long:"LONG", short:"SHORT", waitingData:"Loading data", connected:"Connected", disconnected:"Disconnected",
+adxPass:"Filter: Passed", adxFail:"Filter: Blocked", settingsSaved:"Settings saved",
+tgTestSent:"Test message sent", tgTestFail:"Failed to send - check token and chat id",
+confirmReset:"This deletes all trades and history. Continue?"
+}
+};
+let LANG = localStorage.getItem("bw_lang") || "ar";
+
+const TF_LIST = [
+{key:"1",label:"1m"},{key:"3",label:"3m"},{key:"5",label:"5m"},{key:"15",label:"15m"},
+{key:"30",label:"30m"},{key:"60",label:"1H"},{key:"240",label:"4H"},{key:"D",label:"1D"}
+];
+const SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","AVAXUSDT","LINKUSDT","TONUSDT"];
+
+const DEFAULT_SETTINGS = {
+pivotLen:8, impulseATR:1.10, baseCandles:4, atrLen:14, minZoneATR:0.12, maxZoneATR:1.20,
+maxBlocks:6, removeOverlap:true, invalidation:"Close",
+adxLen:14, adxThresh:20,
+riskPct:0.35, leverage:50, rr:2.0, capital:1000,
+tgEnable:false, tgToken:"", tgChat:""
+};
+
+let settings = loadSettings();
+let currentSymbol = localStorage.getItem("bw_symbol") || "BTCUSDT";
+let currentTF = localStorage.getItem("bw_tf") || "15";
+let engines = {};
+let activeTab = "live";
+let wsTicker = null;
+let wsReconnectTimer = null;
+
+function loadSettings(){
+try{
+const raw = localStorage.getItem("bw_settings");
+if(raw) return Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw));
+}catch(e){}
+return Object.assign({}, DEFAULT_SETTINGS);
+}
+function persistSettings(){ localStorage.setItem("bw_settings", JSON.stringify(settings)); }
+
+function t(key){ return (I18N[LANG] && I18N[LANG][key]) || key; }
+
+function applyI18n(){
+document.documentElement.lang = LANG;
+document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
+document.getElementById("langBtn").textContent = LANG === "ar" ? "EN" : "AR";
+document.querySelectorAll("[data-i18n]").forEach(el=>{
+const k = el.getAttribute("data-i18n");
+el.textContent = t(k);
+});
+}
+function toggleLang(){
+LANG = LANG === "ar" ? "en" : "ar";
+localStorage.setItem("bw_lang", LANG);
+applyI18n();
+renderAll();
+}
+
+function fmtPrice(v){
+if(v === null || v === undefined || isNaN(v)) return "--";
+const av = Math.abs(v);
+let dec = 2;
+if(av < 1) dec = 6; else if(av < 10) dec = 4; else if(av < 100) dec = 3;
+return v.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+function fmtPct(v){ if(v===null||v===undefined||isNaN(v)) return "--"; return v.toFixed(2)+"%"; }
+function fmtNum(v,d){ if(v===null||v===undefined||isNaN(v)) return "--"; return v.toFixed(d===undefined?2:d); }
+function fmtTime(ts){
+const d = new Date(ts);
+return d.toLocaleTimeString(LANG==="ar"?"ar-EG":"en-US",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+}
+function fmtDate(ts){
+const d = new Date(ts);
+return d.toLocaleDateString(LANG==="ar"?"ar-EG":"en-US",{year:"numeric",month:"2-digit",day:"2-digit"});
+}
+
+/* ---------------- Wilder RMA / ATR / ADX ---------------- */
+
+function rmaSeries(values, len){
+const out = new Array(values.length).fill(null);
+if(values.length < len) return out;
+let sum = 0;
+for(let i=0;i<len;i++) sum += values[i];
+let prev = sum/len;
+out[len-1] = prev;
+for(let i=len;i<values.length;i++){
+prev = (prev*(len-1) + values[i]) / len;
+out[i] = prev;
+}
+return out;
+}
+
+function computeATRSeries(candles, len){
+const tr = candles.map((c,i)=>{
+if(i===0) return c.high - c.low;
+const prevClose = candles[i-1].close;
+return Math.max(c.high-c.low, Math.abs(c.high-prevClose), Math.abs(c.low-prevClose));
+});
+return rmaSeries(tr, len);
+}
+
+function computeADXSeries(candles, len){
+const n = candles.length;
+const plusDM = new Array(n).fill(0);
+const minusDM = new Array(n).fill(0);
+const tr = new Array(n).fill(0);
+for(let i=1;i<n;i++){
+const upMove = candles[i].high - candles[i-1].high;
+const downMove = candles[i-1].low - candles[i].low;
+plusDM[i] = (upMove > downMove && upMove > 0) ? upMove : 0;
+minusDM[i] = (downMove > upMove && downMove > 0) ? downMove : 0;
+const prevClose = candles[i-1].close;
+tr[i] = Math.max(candles[i].high-candles[i].low, Math.abs(candles[i].high-prevClose), Math.abs(candles[i].low-prevClose));
+}
+const smPlusDM = rmaSeries(plusDM, len);
+const smMinusDM = rmaSeries(minusDM, len);
+const smTR = rmaSeries(tr, len);
+const diPlus = new Array(n).fill(null);
+const diMinus = new Array(n).fill(null);
+const dx = new Array(n).fill(null);
+for(let i=0;i<n;i++){
+if(smTR[i] !== null && smTR[i] !== 0 && smPlusDM[i] !== null && smMinusDM[i] !== null){
+diPlus[i] = 100 * smPlusDM[i] / smTR[i];
+diMinus[i] = 100 * smMinusDM[i] / smTR[i];
+const sum = diPlus[i] + diMinus[i];
+dx[i] = sum > 0 ? 100 * Math.abs(diPlus[i]-diMinus[i]) / sum : 0;
+}
+}
+const dxClean = dx.map(v=> v===null ? 0 : v);
+const adxRaw = rmaSeries(dxClean.slice(dx.findIndex(v=>v!==null) < 0 ? 0 : 0), len);
+const firstDX = dx.findIndex(v=>v!==null);
+const adx = new Array(n).fill(null);
+if(firstDX >= 0){
+const sub = dx.slice(firstDX).map(v=>v===null?0:v);
+const smAdx = rmaSeries(sub, len);
+for(let i=0;i<sub.length;i++){
+adx[firstDX+i] = smAdx[i];
+}
+}
+return {adx, diPlus, diMinus};
+}
+
+/* ---------------- BOSWaves engine ---------------- */
+
+function clampf(v, lo, hi){ return Math.max(lo, Math.min(v, hi)); }
+
+class BOSWavesEngine{
+constructor(symbol, tfKey, cfg){
+this.symbol = symbol;
+this.tfKey = tfKey;
+this.cfg = cfg;
+this.candles = [];
+this.atr = [];
+this.adx = [];
+this.obs = [];
+this.processedPivotUpTo = -1;
+this.lastConfirmedIdx = -1;
+this.signals = [];
+this.lastPrice = null;
+}
+
+setCandles(candles){
+this.candles = candles;
+this.recomputeIndicators();
+}
+
+recomputeIndicators(){
+this.atr = computeATRSeries(this.candles, this.cfg.atrLen);
+const r = computeADXSeries(this.candles, this.cfg.adxLen);
+this.adx = r.adx;
+}
+
+zonesOverlap(topA,botA,topB,botB){ return botA <= topB && topA >= botB; }
+
+createOB(isBull, pivotIdx, confirmIdx){
+const cfg = this.cfg;
+const c = this.candles;
+const oldestIdx = pivotIdx;
+const newestIdx = Math.min(pivotIdx + cfg.baseCandles - 1, confirmIdx);
+let rawTop, rawBot;
+if(isBull){
+rawTop = Math.max(c[oldestIdx].open, c[oldestIdx].close);
+rawBot = c[oldestIdx].low;
+for(let i=oldestIdx;i<=newestIdx;i++){
+rawTop = Math.max(rawTop, Math.max(c[i].open, c[i].close));
+rawBot = Math.min(rawBot, c[i].low);
+}
+} else {
+rawTop = c[oldestIdx].high;
+rawBot = Math.min(c[oldestIdx].open, c[oldestIdx].close);
+for(let i=oldestIdx;i<=newestIdx;i++){
+rawTop = Math.max(rawTop, c[i].high);
+rawBot = Math.min(rawBot, Math.min(c[i].open, c[i].close));
+}
+}
+const pivotATR = Math.max(this.atr[pivotIdx] || 0, 0.00000001);
+const zoneH = rawTop - rawBot;
+const minH = pivotATR * cfg.minZoneATR;
+const maxH = pivotATR * cfg.maxZoneATR;
+if(zoneH < minH){
+const m = (rawTop+rawBot)/2;
+rawTop = m + minH/2;
+rawBot = m - minH/2;
+}
+if(rawTop - rawBot > maxH){
+const m = (rawTop+rawBot)/2;
+rawTop = m + maxH/2;
+rawBot = m - maxH/2;
+}
+return {
+isBull, top:rawTop, bottom:rawBot, mid:(rawTop+rawBot)/2,
+createdIdx:confirmIdx, pivotIdx,
+touches:0, armed:false, active:false, wasInside:false,
+broken:false
+};
+}
+
+detectNewPivots(){
+const cfg = this.cfg;
+const c = this.candles;
+const len = cfg.pivotLen;
+const n = c.length;
+const start = Math.max(this.processedPivotUpTo+1, len);
+for(let i=start; i<=n-1-len; i++){
+let isHigh = true, isLow = true;
+for(let k=i-len;k<=i+len;k++){
+if(k===i) continue;
+if(c[k].high >= c[i].high) isHigh = false;
+if(c[k].low <= c[i].low) isLow = false;
+}
+const confirmIdx = i + len;
+if(isLow){
+const atrAtPivot = this.atr[i];
+if(atrAtPivot && (c[confirmIdx].close - c[i].low) >= atrAtPivot*cfg.impulseATR){
+this.registerOB(this.createOB(true, i, confirmIdx));
+}
+}
+if(isHigh){
+const atrAtPivot = this.atr[i];
+if(atrAtPivot && (c[i].high - c[confirmIdx].close) >= atrAtPivot*cfg.impulseATR){
+this.registerOB(this.createOB(false, i, confirmIdx));
+}
+}
+this.processedPivotUpTo = i;
+}
+}
+
+registerOB(ob){
+const cfg = this.cfg;
+if(cfg.removeOverlap){
+for(let idx=this.obs.length-1; idx>=0; idx--){
+const old = this.obs[idx];
+if(old.isBull === ob.isBull && this.zonesOverlap(ob.top,ob.bottom,old.top,old.bottom)){
+this.obs.splice(idx,1);
+break;
+}
+}
+}
+if(this.obs.length >= cfg.maxBlocks){
+this.obs.shift();
+}
+this.obs.push(ob);
+}
+
+processConfirmedCandle(idx){
+const c = this.candles;
+const cfg = this.cfg;
+const bar = c[idx];
+const prevBar = idx>0 ? c[idx-1] : null;
+const fired = [];
+for(let i=this.obs.length-1;i>=0;i--){
+const ob = this.obs[i];
+if(ob.createdIdx > idx) continue;
+if(ob.broken) continue;
+const inside = bar.high >= ob.bottom && bar.low <= ob.top;
+if(inside && !ob.wasInside){
+ob.touches += 1;
+ob.armed = true;
+}
+let longConfirm = false, shortConfirm = false;
+if(inside && ob.isBull){
+longConfirm = bar.close > ob.mid && (!prevBar || prevBar.close <= ob.mid || bar.low <= ob.mid);
+}
+if(inside && !ob.isBull){
+shortConfirm = bar.close < ob.mid && (!prevBar || prevBar.close >= ob.mid || bar.high >= ob.mid);
+}
+let justFired = null;
+if(ob.armed){
+if(longConfirm){ ob.active = true; ob.armed = false; justFired = "long"; }
+if(shortConfirm){ ob.active = true; ob.armed = false; justFired = "short"; }
+}
+ob.wasInside = inside;
+const broken = cfg.invalidation === "Close"
+? (ob.isBull ? bar.close < ob.bottom : bar.close > ob.top)
+: (ob.isBull ? bar.low < ob.bottom : bar.high > ob.top);
+if(broken){
+ob.broken = true;
+this.obs.splice(i,1);
+continue;
+}
+if(justFired){
+fired.push({side:justFired, ob, barIdx:idx});
+}
+}
+return fired;
+}
+
+onNewClosedCandle(){
+this.detectNewPivots();
+const idx = this.candles.length - 1;
+if(idx <= this.lastConfirmedIdx) return [];
+const allFired = [];
+for(let i=this.lastConfirmedIdx+1;i<=idx;i++){
+const fired = this.processConfirmedCandle(i);
+const adxVal = this.adx[i];
+fired.forEach(f=>{
+const adxPass = adxVal !== null && adxVal !== undefined && adxVal > this.cfg.adxThresh;
+if(adxPass){
+allFired.push({...f, adx:adxVal, price:this.candles[i].close, time:this.candles[i].closeTime});
+}
+});
+}
+this.lastConfirmedIdx = idx;
+return allFired;
+}
+
+currentADX(){
+if(this.adx.length===0) return null;
+return this.adx[this.adx.length-1];
+}
+}
+
+/* ---------------- Trades / stats storage ---------------- */
+
+function tradeStoreKey(symbol, tfKey){ return "bw_trades_"+symbol+"_"+tfKey; }
+
+function loadTrades(symbol, tfKey){
+try{
+const raw = localStorage.getItem(tradeStoreKey(symbol,tfKey));
+if(raw) return JSON.parse(raw);
+}catch(e){}
+return {open:[], closed:[]};
+}
+function saveTrades(symbol, tfKey, data){
+localStorage.setItem(tradeStoreKey(symbol,tfKey), JSON.stringify(data));
+}
+
+function openTradeFromSignal(symbol, tfKey, sig){
+const cfg = settings;
+const isLong = sig.side === "long";
+const entry = sig.price;
+const sl = isLong ? sig.ob.bottom : sig.ob.top;
+const riskDist = Math.abs(entry - sl);
+if(riskDist <= 0) return null;
+const tp = isLong ? entry + riskDist*cfg.rr : entry - riskDist*cfg.rr;
+const trade = {
+id: symbol+"_"+tfKey+"_"+Date.now()+"_"+Math.floor(Math.random()*1000),
+symbol, tf:tfKey, side: isLong ? "long":"short",
+entry, sl, tp, rr: cfg.rr,
+adx: sig.adx,
+openTime: sig.time || Date.now(),
+status:"open"
+};
+const data = loadTrades(symbol, tfKey);
+data.open.push(trade);
+saveTrades(symbol, tfKey, data);
+return trade;
+}
+
+function closeTrade(symbol, tfKey, tradeId, exitPrice, reason){
+const data = loadTrades(symbol, tfKey);
+const idx = data.open.findIndex(t=>t.id===tradeId);
+if(idx === -1) return null;
+const trade = data.open[idx];
+data.open.splice(idx,1);
+const isLong = trade.side === "long";
+const riskDist = Math.abs(trade.entry - trade.sl);
+const pnlPct = isLong ? (exitPrice-trade.entry)/trade.entry*100 : (trade.entry-exitPrice)/trade.entry*100;
+const rMultiple = riskDist>0 ? (isLong ? (exitPrice-trade.entry) : (trade.entry-exitPrice))/riskDist : 0;
+trade.exitPrice = exitPrice;
+trade.closeTime = Date.now();
+trade.reason = reason;
+trade.pnlPct = pnlPct * (settings.leverage||1);
+trade.rMultiple = rMultiple;
+trade.status = "closed";
+data.closed.push(trade);
+saveTrades(symbol, tfKey, data);
+sendTelegramForTrade(trade);
+return trade;
+}
+
+function checkOpenTrades(symbol, tfKey, price){
+const data = loadTrades(symbol, tfKey);
+if(data.open.length===0) return;
+const stillOpen = [];
+data.open.forEach(trade=>{
+const isLong = trade.side==="long";
+let hitTP = isLong ? price >= trade.tp : price <= trade.tp;
+let hitSL = isLong ? price <= trade.sl : price >= trade.sl;
+if(hitTP){
+closeTrade(symbol, tfKey, trade.id, trade.tp, "tp");
+} else if(hitSL){
+closeTrade(symbol, tfKey, trade.id, trade.sl, "sl");
+} else {
+stillOpen.push(trade);
+}
+});
+}
+
+function computeStats(symbol, tfKey){
+const data = loadTrades(symbol, tfKey);
+const closed = data.closed;
+const wins = closed.filter(t=>t.pnlPct>0);
+const losses = closed.filter(t=>t.pnlPct<=0);
+const grossProfit = wins.reduce((s,t)=>s+t.pnlPct,0);
+const grossLoss = Math.abs(losses.reduce((s,t)=>s+t.pnlPct,0));
+const netProfit = grossProfit - grossLoss;
+const winRate = closed.length>0 ? wins.length/closed.length*100 : 0;
+const profitFactor = grossLoss>0 ? grossProfit/grossLoss : (grossProfit>0 ? Infinity : 0);
+const avgWin = wins.length>0 ? grossProfit/wins.length : 0;
+const avgLoss = losses.length>0 ? -grossLoss/losses.length : 0;
+const best = closed.reduce((m,t)=>Math.max(m,t.pnlPct), closed.length?closed[0].pnlPct:0);
+const worst = closed.reduce((m,t)=>Math.min(m,t.pnlPct), closed.length?closed[0].pnlPct:0);
+let equity = 0, peak = 0, maxDD = 0;
+closed.slice().sort((a,b)=>a.closeTime-b.closeTime).forEach(t=>{
+equity += t.pnlPct;
+peak = Math.max(peak, equity);
+maxDD = Math.max(maxDD, peak-equity);
+});
+const avgRR = closed.length>0 ? closed.reduce((s,t)=>s+(t.rMultiple||0),0)/closed.length : 0;
+return {
+total: closed.length + data.open.length,
+wins: wins.length, losses: losses.length, winRate,
+profitFactor, netProfit, grossProfit, grossLoss,
+avgWin, avgLoss, best, worst, maxDD, avgRR,
+openCount: data.open.length, closedCount: closed.length
+};
+}
+
+/* ---------------- Telegram ---------------- */
+
+function sendTelegramForTrade(trade){
+if(!settings.tgEnable || !settings.tgToken || !settings.tgChat) return;
+const isLong = trade.side==="long";
+const won = trade.pnlPct>0;
+const emoji = won ? "✅" : "🛑";
+const sideLabel = isLong ? "LONG" : "SHORT";
+const reasonLabel = trade.reason==="tp" ? "TARGET HIT" : "STOP LOSS";
+const msg = [
+emoji+" *BOSWaves "+reasonLabel+"*",
+"Symbol: `"+trade.symbol+"`",
+"TF: `"+TF_LIST.find(x=>x.key===trade.tf)?.label+"`",
+"Side: *"+sideLabel+"*",
+"Entry: `"+fmtPrice(trade.entry)+"`",
+"Exit: `"+fmtPrice(trade.exitPrice)+"`",
+"PnL: *"+(trade.pnlPct>=0?"+":"")+trade.pnlPct.toFixed(2)+"%*",
+"R: `"+trade.rMultiple.toFixed(2)+"`"
+].join("\n");
+sendTelegramRaw(msg);
+}
+
+function sendTelegramRaw(text){
+if(!settings.tgToken || !settings.tgChat) return Promise.resolve(false);
+const url = "https://api.telegram.org/bot"+settings.tgToken+"/sendMessage";
+return fetch(url,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify({chat_id: settings.tgChat, text: text, parse_mode:"Markdown"})
+}).then(r=>r.ok).catch(()=>false);
+}
+
+function testTelegram(){
+sendTelegramRaw("BOSWaves Signals: test message OK ✅").then(ok=>{
+alert(ok ? t("tgTestSent") : t("tgTestFail"));
+});
+}
+
+/* ---------------- Bybit data layer ---------------- */
+
+const BYBIT_REST = "https://api.bybit.com/v5/market/kline";
+
+async function fetchKlines(symbol, tfKey, limit){
+const url = BYBIT_REST+"?category=linear&symbol="+symbol+"&interval="+tfKey+"&limit="+(limit||300);
+const res = await fetch(url);
+const json = await res.json();
+if(!json.result || !json.result.list) return [];
+const list = json.result.list.slice().reverse();
+return list.map(row=>({
+time: parseInt(row[0]),
+open: parseFloat(row[1]),
+high: parseFloat(row[2]),
+low: parseFloat(row[3]),
+close: parseFloat(row[4]),
+volume: parseFloat(row[5]),
+closeTime: parseInt(row[0])
+}));
+}
+
+function tfKeyToMs(tfKey){
+if(tfKey==="D") return 86400000;
+return parseInt(tfKey)*60000;
+}
+
+function engineKey(symbol, tfKey){ return symbol+"_"+tfKey; }
+
+async function ensureEngine(symbol, tfKey){
+const key = engineKey(symbol, tfKey);
+if(engines[key]) return engines[key];
+const eng = new BOSWavesEngine(symbol, tfKey, settings);
+engines[key] = eng;
+const candles = await fetchKlines(symbol, tfKey, 400);
+if(candles.length>0){
+eng.setCandles(candles);
+eng.lastConfirmedIdx = -1;
+const fired = eng.onNewClosedCandle();
+fired.forEach(f=>handleSignal(symbol, tfKey, f));
+}
+return eng;
+}
+
+async function pollCandles(symbol, tfKey){
+const eng = engines[engineKey(symbol,tfKey)];
+if(!eng) return;
+const fresh = await fetchKlines(symbol, tfKey, 5);
+if(fresh.length===0) return;
+fresh.forEach(nc=>{
+const existingIdx = eng.candles.findIndex(c=>c.time===nc.time);
+if(existingIdx>=0){
+eng.candles[existingIdx] = nc;
+} else if(nc.time > eng.candles[eng.candles.length-1].time){
+eng.candles.push(nc);
+}
+});
+if(eng.candles.length > 600) eng.candles.splice(0, eng.candles.length-600);
+eng.recomputeIndicators();
+const fired = eng.onNewClosedCandle();
+fired.forEach(f=>handleSignal(symbol, tfKey, f));
+checkOpenTrades(symbol, tfKey, eng.candles[eng.candles.length-1].close);
+if(symbol===currentSymbol && tfKey===currentTF) renderAll();
+}
+
+function handleSignal(symbol, tfKey, sig){
+const trade = openTradeFromSignal(symbol, tfKey, sig);
+if(!trade) return;
+const feedKey = "bw_feed_"+symbol+"_"+tfKey;
+let feed = [];
+try{ feed = JSON.parse(localStorage.getItem(feedKey) || "[]"); }catch(e){}
+feed.unshift({...sig, ob:undefined, tradeId:trade.id});
+feed = feed.slice(0,50);
+localStorage.setItem(feedKey, JSON.stringify(feed));
+sendSignalTelegram(symbol, tfKey, trade);
+}
+
+function sendSignalTelegram(symbol, tfKey, trade){
+if(!settings.tgEnable) return;
+const isLong = trade.side==="long";
+const emoji = isLong ? "🟢" : "🔴";
+const msg = [
+emoji+" *BOSWaves SIGNAL*",
+"Symbol: `"+symbol+"`",
+"TF: `"+TF_LIST.find(x=>x.key===tfKey)?.label+"`",
+"Side: *"+(isLong?"LONG":"SHORT")+"*",
+"Entry: `"+fmtPrice(trade.entry)+"`",
+"SL: `"+fmtPrice(trade.sl)+"`",
+"TP: `"+fmtPrice(trade.tp)+"`",
+"R:R `"+trade.rr.toFixed(2)+"`",
+"ADX: `"+trade.adx.toFixed(1)+"`"
+].join("\n");
+sendTelegramRaw(msg);
+}
+
+/* ---------------- WebSocket live price ---------------- */
+
+function connectTicker(symbol){
+if(wsTicker){ try{ wsTicker.close(); }catch(e){} wsTicker=null; }
+if(wsReconnectTimer){ clearTimeout(wsReconnectTimer); wsReconnectTimer=null; }
+const dot = document.getElementById("connDot");
+dot.classList.add("off");
+try{
+wsTicker = new WebSocket("wss://stream.bybit.com/v5/public/linear");
+}catch(e){ return; }
+wsTicker.onopen = ()=>{
+dot.classList.remove("off");
+wsTicker.send(JSON.stringify({op:"subscribe", args:["tickers."+symbol]}));
+};
+wsTicker.onmessage = (ev)=>{
+try{
+const msg = JSON.parse(ev.data);
+if(msg.topic && msg.topic.indexOf("tickers.")===0 && msg.data && msg.data.lastPrice){
+const price = parseFloat(msg.data.lastPrice);
+onLivePrice(symbol, price);
+}
+}catch(e){}
+};
+wsTicker.onclose = ()=>{
+dot.classList.add("off");
+wsReconnectTimer = setTimeout(()=>connectTicker(currentSymbol), 3000);
+};
+wsTicker.onerror = ()=>{ try{ wsTicker.close(); }catch(e){} };
+}
+
+function onLivePrice(symbol, price){
+if(symbol !== currentSymbol) return;
+document.getElementById("livePx").textContent = fmtPrice(price);
+TF_LIST.forEach(tf=>{
+const eng = engines[engineKey(symbol, tf.key)];
+if(eng) checkOpenTrades(symbol, tf.key, price);
+});
+if(activeTab==="open" || activeTab==="history" || activeTab==="stats") renderAll();
+}
+
+/* ---------------- Polling loop for all timeframes ---------------- */
+
+let pollTimer = null;
+async function pollAllTimeframes(){
+for(const tf of TF_LIST){
+await ensureEngine(currentSymbol, tf.key);
+await pollCandles(currentSymbol, tf.key);
+}
+}
+function startPolling(){
+if(pollTimer) clearInterval(pollTimer);
+pollAllTimeframes();
+pollTimer = setInterval(pollAllTimeframes, 15000);
+}
+
+/* ---------------- UI rendering ---------------- */
+
+function switchTab(view){
+activeTab = view;
+document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+document.getElementById("view-"+view).classList.add("active");
+document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active", b.dataset.view===view));
+renderAll();
+}
+
+function buildSymbolSelect(){
+const sel = document.getElementById("symbolSel");
+sel.innerHTML = "";
+SYMBOLS.forEach(s=>{
+const opt = document.createElement("option");
+opt.value = s; opt.textContent = s;
+if(s===currentSymbol) opt.selected = true;
+sel.appendChild(opt);
+});
+}
+
+function buildAdxQuick(){
+const sel = document.getElementById("adxThreshQuick");
+sel.innerHTML = "";
+[15,18,20,22,25,28,30,35].forEach(v=>{
+const opt = document.createElement("option");
+opt.value = v; opt.textContent = "ADX>"+v;
+if(v===settings.adxThresh) opt.selected = true;
+sel.appendChild(opt);
+});
+}
+
+function buildTFRow(){
+const row = document.getElementById("tfRow");
+row.innerHTML = "";
+TF_LIST.forEach(tf=>{
+const btn = document.createElement("button");
+btn.className = "tf-btn"+(tf.key===currentTF ? " active":"");
+btn.textContent = tf.label;
+btn.onclick = ()=>{ currentTF = tf.key; localStorage.setItem("bw_tf", currentTF); buildTFRow(); renderAll(); };
+row.appendChild(btn);
+});
+}
+
+function onSymbolChange(){
+currentSymbol = document.getElementById("symbolSel").value;
+localStorage.setItem("bw_symbol", currentSymbol);
+connectTicker(currentSymbol);
+startPolling();
+renderAll();
+}
+function onAdxQuickChange(){
+settings.adxThresh = parseFloat(document.getElementById("adxThreshQuick").value);
+persistSettings();
+fillSettingsForm();
+}
+
+function renderLive(){
+document.getElementById("liveSymLabel").textContent = currentSymbol+" · "+(TF_LIST.find(x=>x.key===currentTF)||{}).label;
+const eng = engines[engineKey(currentSymbol,currentTF)];
+const adxVal = eng ? eng.currentADX() : null;
+document.getElementById("liveAdx").textContent = adxVal!==null && adxVal!==undefined ? adxVal.toFixed(1) : "--";
+const badge = document.getElementById("adxBadge");
+if(adxVal!==null && adxVal!==undefined){
+const pass = adxVal > settings.adxThresh;
+badge.textContent = pass ? t("adxPass") : t("adxFail");
+badge.className = "badge-sm "+(pass ? "badge-adx-pass":"badge-adx-fail");
+} else {
+badge.textContent = t("waitingData");
+badge.className = "badge-sm badge-adx-fail";
+}
+if(eng && eng.candles.length>0){
+document.getElementById("livePx").textContent = fmtPrice(eng.candles[eng.candles.length-1].close);
+}
+const feedKey = "bw_feed_"+currentSymbol+"_"+currentTF;
+let feed = [];
+try{ feed = JSON.parse(localStorage.getItem(feedKey) || "[]"); }catch(e){}
+const wrap = document.getElementById("signalsFeed");
+if(feed.length===0){
+wrap.innerHTML = '<div class="empty"><span class="ic">◈</span>'+t("noSignals")+'</div>';
+return;
+}
+wrap.innerHTML = feed.map(f=>{
+const isLong = f.side==="long";
+return '<div class="trade-card '+(isLong?"long":"short")+'">'
++'<div class="trade-top">'
++'<div><span class="side-badge '+(isLong?"long":"short")+'">'+(isLong?t("long"):t("short"))+'</span>'
++'<div class="trade-sym">'+currentSymbol+'</div></div>'
++'<div class="trade-time">'+fmtDate(f.time)+'<br>'+fmtTime(f.time)+'</div>'
++'</div>'
++'<div class="trade-grid">'
++'<div class="tg-item"><div class="tg-label">'+t("entry")+'</div><div class="tg-val mono">'+fmtPrice(f.price)+'</div></div>'
++'<div class="tg-item"><div class="tg-label">ADX</div><div class="tg-val mono">'+fmtNum(f.adx,1)+'</div></div>'
++'<div class="tg-item"><div class="tg-label">TF</div><div class="tg-val mono">'+(TF_LIST.find(x=>x.key===currentTF)||{}).label+'</div></div>'
++'</div>'
++'</div>';
+}).join("");
+}
+
+function renderOpen(){
+const data = loadTrades(currentSymbol, currentTF);
+const wrap = document.getElementById("openList");
+if(data.open.length===0){
+wrap.innerHTML = '<div class="empty"><span class="ic">◷</span>'+t("noOpen")+'</div>';
+return;
+}
+wrap.innerHTML = data.open.slice().reverse().map(tr=>{
+const isLong = tr.side==="long";
+return '<div class="trade-card '+(isLong?"long":"short")+'">'
++'<div class="trade-top">'
++'<div><span class="side-badge '+(isLong?"long":"short")+'">'+(isLong?t("long"):t("short"))+'</span>'
++'<div class="trade-sym">'+tr.symbol+'</div><div class="trade-tf">'+(TF_LIST.find(x=>x.key===tr.tf)||{}).label+'</div></div>'
++'<div class="trade-time">'+fmtDate(tr.openTime)+'<br>'+fmtTime(tr.openTime)+'</div>'
++'</div>'
++'<div class="trade-grid">'
++'<div class="tg-item"><div class="tg-label">'+t("entry")+'</div><div class="tg-val mono">'+fmtPrice(tr.entry)+'</div></div>'
++'<div class="tg-item"><div class="tg-label">'+t("sl")+'</div><div class="tg-val mono neg">'+fmtPrice(tr.sl)+'</div></div>'
++'<div class="tg-item"><div class="tg-label">'+t("tp")+'</div><div class="tg-val mono pos">'+fmtPrice(tr.tp)+'</div></div>'
++'</div>'
++'<div class="pnl-strip" style="background:rgba(63,208,255,.1);">'+t("rr")+': '+tr.rr.toFixed(2)+' &nbsp;·&nbsp; ADX '+fmtNum(tr.adx,1)+'</div>'
++'</div>';
+}).join("");
+}
+
+function renderHistory(){
+const data = loadTrades(currentSymbol, currentTF);
+const wrap = document.getElementById("historyList");
+if(data.closed.length===0){
+wrap.innerHTML = '<div class="empty"><span class="ic">☰</span>'+t("noHistory")+'</div>';
+return;
+}
+wrap.innerHTML = data.closed.slice().reverse().map(tr=>{
+const isLong = tr.side==="long";
+const won = tr.pnlPct>0;
+return '<div class="trade-card '+(isLong?"long":"short")+'">'
++'<div class="trade-top">'
++'<div><span class="side-badge '+(isLong?"long":"short")+'">'+(isLong?t("long"):t("short"))+'</span>'
++'<div class="trade-sym">'+tr.symbol+'</div><div class="trade-tf">'+(TF_LIST.find(x=>x.key===tr.tf)||{}).label+'</div></div>'
++'<div class="trade-time">'+fmtDate(tr.closeTime)+'<br>'+fmtTime(tr.closeTime)+'</div>'
++'</div>'
++'<div class="trade-grid">'
++'<div class="tg-item"><div class="tg-label">'+t("entry")+'</div><div class="tg-val mono">'+fmtPrice(tr.entry)+'</div></div>'
++'<div class="tg-item"><div class="tg-label">'+t("reason")+'</div><div class="tg-val mono">'+(tr.reason==="tp"?t("tpHit"):t("slHit"))+'</div></div>'
++'<div class="tg-item"><div class="tg-label">R</div><div class="tg-val mono">'+tr.rMultiple.toFixed(2)+'</div></div>'
++'</div>'
++'<div class="pnl-strip '+(won?"pos":"neg")+'">'+(won?"+":"")+tr.pnlPct.toFixed(2)+'%</div>'
++'</div>';
+}).join("");
+}
+
+function renderStats(){
+const s = computeStats(currentSymbol, currentTF);
+const grid = document.getElementById("statsGrid");
+const items = [
+[t("trades"), s.total, ""], [t("wins"), s.wins, "pos"], [t("losses"), s.losses, "neg"],
+[t("winRate"), fmtPct(s.winRate), s.winRate>=50?"pos":"neg"],
+[t("profitFactor"), isFinite(s.profitFactor)?s.profitFactor.toFixed(2):"∞", s.profitFactor>=1?"pos":"neg"],
+[t("netProfit"), (s.netProfit>=0?"+":"")+s.netProfit.toFixed(2)+"%", s.netProfit>=0?"pos":"neg"],
+[t("grossProfit"), "+"+s.grossProfit.toFixed(2)+"%", "pos"],
+[t("grossLoss"), "-"+s.grossLoss.toFixed(2)+"%", "neg"],
+[t("avgWin"), "+"+s.avgWin.toFixed(2)+"%", "pos"],
+[t("avgLoss"), s.avgLoss.toFixed(2)+"%", "neg"],
+[t("bestTrade"), "+"+s.best.toFixed(2)+"%", "pos"],
+[t("worstTrade"), s.worst.toFixed(2)+"%", "neg"],
+[t("maxDD"), s.maxDD.toFixed(2)+"%", "neg"],
+[t("avgRR"), s.avgRR.toFixed(2), "neu"],
+[t("openCount"), s.openCount, "neu"],
+[t("closedCount"), s.closedCount, "neu"]
+];
+grid.innerHTML = items.map(([label,val,cls])=>
+'<div class="stat"><div class="stat-label">'+label+'</div><div class="stat-val '+(cls||"")+'">'+val+'</div></div>'
+).join("");
+}
+
+function fillSettingsForm(){
+document.getElementById("s_pivotLen").value = settings.pivotLen;
+document.getElementById("s_impulseATR").value = settings.impulseATR;
+document.getElementById("s_baseCandles").value = settings.baseCandles;
+document.getElementById("s_atrLen").value = settings.atrLen;
+document.getElementById("s_minZoneATR").value = settings.minZoneATR;
+document.getElementById("s_maxZoneATR").value = settings.maxZoneATR;
+document.getElementById("s_maxBlocks").value = settings.maxBlocks;
+document.getElementById("s_removeOverlap").classList.toggle("on", !!settings.removeOverlap);
+document.getElementById("s_invalidation").value = settings.invalidation;
+document.getElementById("s_adxLen").value = settings.adxLen;
+document.getElementById("s_adxThresh").value = settings.adxThresh;
+document.getElementById("s_riskPct").value = settings.riskPct;
+document.getElementById("s_leverage").value = settings.leverage;
+document.getElementById("s_rr").value = settings.rr;
+document.getElementById("s_capital").value = settings.capital;
+document.getElementById("s_tgEnable").classList.toggle("on", !!settings.tgEnable);
+document.getElementById("s_tgToken").value = settings.tgToken;
+document.getElementById("s_tgChat").value = settings.tgChat;
+buildAdxQuick();
+}
+
+function toggleSwitch(id){
+const el = document.getElementById(id);
+el.classList.toggle("on");
+}
+
+function saveSettings(){
+settings.pivotLen = parseInt(document.getElementById("s_pivotLen").value)||8;
+settings.impulseATR = parseFloat(document.getElementById("s_impulseATR").value)||1.10;
+settings.baseCandles = parseInt(document.getElementById("s_baseCandles").value)||4;
+settings.atrLen = parseInt(document.getElementById("s_atrLen").value)||14;
+settings.minZoneATR = parseFloat(document.getElementById("s_minZoneATR").value)||0.12;
+settings.maxZoneATR = parseFloat(document.getElementById("s_maxZoneATR").value)||1.20;
+settings.maxBlocks = parseInt(document.getElementById("s_maxBlocks").value)||6;
+settings.removeOverlap = document.getElementById("s_removeOverlap").classList.contains("on");
+settings.invalidation = document.getElementById("s_invalidation").value;
+settings.adxLen = parseInt(document.getElementById("s_adxLen").value)||14;
+settings.adxThresh = parseFloat(document.getElementById("s_adxThresh").value)||20;
+settings.riskPct = parseFloat(document.getElementById("s_riskPct").value)||0.35;
+settings.leverage = parseFloat(document.getElementById("s_leverage").value)||50;
+settings.rr = parseFloat(document.getElementById("s_rr").value)||2.0;
+settings.capital = parseFloat(document.getElementById("s_capital").value)||1000;
+settings.tgEnable = document.getElementById("s_tgEnable").classList.contains("on");
+settings.tgToken = document.getElementById("s_tgToken").value.trim();
+settings.tgChat = document.getElementById("s_tgChat").value.trim();
+persistSettings();
+engines = {};
+alert(t("settingsSaved"));
+startPolling();
+}
+
+function resetAll(){
+if(!confirm(t("confirmReset"))) return;
+Object.keys(localStorage).forEach(k=>{
+if(k.indexOf("bw_trades_")===0 || k.indexOf("bw_feed_")===0) localStorage.removeItem(k);
+});
+engines = {};
+startPolling();
+renderAll();
+}
+
+function renderAll(){
+if(activeTab==="live") renderLive();
+if(activeTab==="open") renderOpen();
+if(activeTab==="history") renderHistory();
+if(activeTab==="stats") renderStats();
+}
+
+/* ---------------- Init ---------------- */
+
+function init(){
+applyI18n();
+buildSymbolSelect();
+buildTFRow();
+fillSettingsForm();
+connectTicker(currentSymbol);
+startPolling();
+setInterval(renderAll, 4000);
+}
+window.addEventListener("load", init);
+</script>
 </body>
 </html>
