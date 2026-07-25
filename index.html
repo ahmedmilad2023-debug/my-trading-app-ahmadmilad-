@@ -875,18 +875,21 @@ sendTelegramRaw(msg);
 
 function sendTelegramRaw(text){
 if(!settings.tgToken || !settings.tgChat) return Promise.resolve({ok:false, error:"missing_token_or_chat"});
-const url = "https://api.telegram.org/bot"+settings.tgToken+"/sendMessage";
-return fetch(url,{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body: JSON.stringify({chat_id: settings.tgChat, text: text, parse_mode:"Markdown"})
-}).then(r=>r.json().catch(()=>({}))
+const url = "https://api.telegram.org/bot"+settings.tgToken+"/sendMessage"
++"?chat_id="+encodeURIComponent(settings.tgChat)
++"&text="+encodeURIComponent(text)
++"&parse_mode=Markdown";
+return fetch(url,{method:"GET"}).then(r=>r.json().catch(()=>({}))
 .then(j=>({ok: !!(j && j.ok), error: j && j.description ? j.description : (r.ok?null:("HTTP "+r.status))}))
-).catch(e=>({ok:false, error:"network_error: "+(e && e.message ? e.message : e)}));
+).catch(e=>{
+return fetch(url,{method:"GET", mode:"no-cors"}).then(()=>({ok:true, error:null, unverified:true}))
+.catch(e2=>({ok:false, error:"network_error: "+(e2 && e2.message ? e2.message : e2)}));
+});
 }
 
 function testTelegram(){
 sendTelegramRaw("BOSWaves Signals: test message OK ✅").then(res=>{
+if(res.ok && res.unverified){ alert(t("tgTestSent")); return; }
 alert(res.ok ? t("tgTestSent") : (t("tgTestFail")+"\n\n"+(res.error||"")));
 });
 }
