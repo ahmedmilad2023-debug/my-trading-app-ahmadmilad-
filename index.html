@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0e14">
-<title>BOSWaves Signals</title>
-<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22BOSWaves%20Signals%22,%22short_name%22:%22BOSWaves%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230a0e14%22,%22theme_color%22:%22%230a0e14%22}">
+<title>BOSWaves Scanner</title>
+<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22BOSWaves%20Scanner%22,%22short_name%22:%22Scanner%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230a0e14%22,%22theme_color%22:%22%230a0e14%22}">
 <style>
 :root{
 --bg:#0a0e14;
@@ -23,58 +23,78 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font-family:var(--disp);height:100%;overflow-x:hidden;}
-body{padding-bottom:64px;}
+body{padding-bottom:12px;}
 .mono{font-family:var(--mono);}
-.topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0d1219,#0a0e14 90%);border-bottom:1px solid var(--line);padding:10px 12px 8px;}
-.topbar-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+#loadingScreen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+#loadingScreen .spinner{width:44px;height:44px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:spin 0.9s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loadingScreen .msg{font-size:13px;color:var(--dim);font-family:var(--mono);}
+.topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0d1219,#0a0e14 90%);border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;}
 .brand{display:flex;align-items:center;gap:8px;}
-.brand-dot{width:9px;height:9px;border-radius:50%;background:var(--bull);box-shadow:0 0 8px var(--bull);}
-.brand-dot.off{background:var(--bear);box-shadow:0 0 8px var(--bear);}
-.brand-name{font-weight:700;font-size:15px;letter-spacing:.3px;}
-.lang-btn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:12px;}
-.selectors{display:flex;gap:6px;margin-top:8px;overflow-x:auto;padding-bottom:2px;}
-.selectors::-webkit-scrollbar{display:none;}
-select,.pill-input{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-size:12px;font-family:var(--mono);white-space:nowrap;}
-.tf-row{display:flex;gap:5px;margin-top:8px;overflow-x:auto;}
-.tf-row::-webkit-scrollbar{display:none;}
-.tf-btn{flex:0 0 auto;background:var(--panel2);border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:20px;font-size:12px;font-family:var(--mono);}
-.tf-btn.active{background:var(--accent);color:#031018;border-color:var(--accent);font-weight:700;}
-.tabs{position:fixed;bottom:0;left:0;right:0;z-index:50;display:flex;background:#0d1219;border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));}
-.tab{flex:1;text-align:center;background:none;border:none;color:var(--dim);font-size:11px;padding:6px 2px;font-family:var(--disp);}
-.tab.active{color:var(--accent);}
-.tab .ic{display:block;font-size:17px;margin-bottom:2px;}
+.brand-name{font-weight:700;font-size:15px;}
+.icon-btn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.header-actions{display:flex;gap:8px;}
 .view{display:none;padding:12px;}
 .view.active{display:block;}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;}
-.card-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-.card-title{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.stat-grid.g3{grid-template-columns:1fr 1fr 1fr;}
-.stat{background:var(--panel2);border-radius:10px;padding:9px 10px;}
-.stat-label{font-size:10.5px;color:var(--dim);margin-bottom:3px;}
-.stat-val{font-size:16px;font-weight:700;font-family:var(--mono);}
-.pos{color:var(--bull);}
-.neg{color:var(--bear);}
-.neu{color:var(--accent);}
-.trade-card{border-radius:12px;padding:12px;margin-bottom:10px;border:1px solid var(--line);background:var(--panel);position:relative;overflow:hidden;}
-.trade-card.long{border-left:4px solid var(--bull);}
-.trade-card.short{border-left:4px solid var(--bear);}
-.trade-top{display:flex;justify-content:space-between;align-items:flex-start;}
-.side-badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:6px;letter-spacing:.4px;}
-.side-badge.long{background:rgba(0,255,136,.14);color:var(--bull);}
-.side-badge.short{background:rgba(255,51,85,.14);color:var(--bear);}
-.trade-sym{font-weight:700;font-size:14px;margin-top:4px;}
-.trade-tf{font-size:11px;color:var(--dim);font-family:var(--mono);}
-.trade-time{font-size:10.5px;color:var(--dim);text-align:left;font-family:var(--mono);}
-.trade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
-.tg-item{background:var(--panel2);border-radius:8px;padding:7px 8px;text-align:center;}
-.tg-label{font-size:9.5px;color:var(--dim);margin-bottom:2px;}
-.tg-val{font-size:12.5px;font-weight:700;font-family:var(--mono);}
-.pnl-strip{margin-top:8px;font-family:var(--mono);font-size:12px;text-align:center;padding:6px;border-radius:8px;}
-.pnl-strip.pos{background:rgba(0,255,136,.1);}
-.pnl-strip.neg{background:rgba(255,51,85,.1);}
-.empty{text-align:center;color:var(--dim);padding:40px 10px;font-size:13px;}
-.empty .ic{font-size:34px;display:block;margin-bottom:8px;opacity:.5;}
+.scanbar{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;gap:8px;}
+.scanbar-left{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--bull);}
+.dot.scanning{background:var(--amber);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.scan-meta{font-size:10.5px;color:var(--dim);font-family:var(--mono);}
+.btn-scan{background:var(--panel2);border:1px solid var(--line);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:11.5px;font-family:var(--mono);}
+.chart-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:10px;}
+.chart-head{display:flex;justify-content:space-between;align-items:center;padding:2px 4px 8px;}
+.chart-sym{font-weight:700;font-size:13px;font-family:var(--mono);}
+.chart-tf{font-size:11px;color:var(--dim);font-family:var(--mono);}
+canvas#chartCanvas{width:100%;height:150px;display:block;border-radius:8px;}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.filter-tabs{display:flex;gap:6px;}
+.ftab{background:var(--panel2);border:1px solid var(--line);color:var(--dim);border-radius:8px;padding:6px 11px;font-size:12px;display:flex;align-items:center;gap:5px;}
+.ftab.active{color:var(--txt);border-color:var(--accent);}
+.ftab .cnt{font-size:10px;font-weight:800;background:var(--panel);border-radius:8px;padding:1px 6px;}
+.ftab.buy.active{color:var(--bull);border-color:var(--bull);}
+.ftab.sell.active{color:var(--bear);border-color:var(--bear);}
+select.sortsel{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:11.5px;font-family:var(--mono);}
+.sig-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:9px;position:relative;}
+.sig-card.buy{border-left:4px solid var(--bull);}
+.sig-card.sell{border-left:4px solid var(--bear);}
+.sig-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.sig-badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:6px;}
+.sig-badge.buy{background:rgba(0,255,136,.14);color:var(--bull);}
+.sig-badge.sell{background:rgba(255,51,85,.14);color:var(--bear);}
+.sig-sym{font-weight:700;font-size:14.5px;margin-top:5px;font-family:var(--mono);}
+.sig-tf{font-size:11px;color:var(--dim);font-family:var(--mono);}
+.sig-score{text-align:left;}
+.score-num{font-size:19px;font-weight:800;font-family:var(--mono);}
+.score-lbl{font-size:9.5px;color:var(--dim);}
+.result-badge{font-size:10px;padding:2px 7px;border-radius:5px;font-family:var(--mono);margin-top:4px;display:inline-block;}
+.result-win{background:rgba(0,255,136,.14);color:var(--bull);}
+.result-loss{background:rgba(255,51,85,.14);color:var(--bear);}
+.result-expired{background:rgba(124,135,152,.14);color:var(--dim);}
+.sig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
+.sg-item{background:var(--panel2);border-radius:8px;padding:7px 8px;text-align:center;}
+.sg-label{font-size:9.5px;color:var(--dim);margin-bottom:2px;}
+.sg-val{font-size:12.5px;font-weight:700;font-family:var(--mono);}
+.empty{text-align:center;color:var(--dim);padding:40px 16px;}
+.empty .ic{font-size:36px;display:block;margin-bottom:10px;opacity:.5;}
+.empty h3{font-size:14.5px;color:var(--txt);margin:0 0 6px;}
+.empty p{font-size:12.5px;margin:0 0 14px;}
+.criteria-list{text-align:right;font-size:11.5px;color:var(--dim);max-width:280px;margin:0 auto;}
+.criteria-item{display:flex;gap:7px;align-items:flex-start;padding:4px 0;}
+.criteria-item .dot2{color:var(--accent);margin-top:2px;}
+.scan-note{font-size:10.5px;color:var(--dim);opacity:.7;margin-top:10px;}
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:80;display:none;}
+.sheet-overlay.open{display:block;}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-radius:16px 16px 0 0;z-index:81;max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform .2s ease;padding:16px 16px calc(20px + env(safe-area-inset-bottom));border-top:1px solid var(--line);}
+.sheet.open{transform:translateY(0);}
+.sheet-handle{width:36px;height:4px;background:var(--line);border-radius:3px;margin:0 auto 14px;}
+.sheet-close{position:absolute;left:14px;top:14px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;width:30px;height:30px;}
+.reason-box{background:var(--panel2);border-radius:10px;padding:11px;font-size:12px;color:var(--dim);line-height:1.7;margin-top:10px;}
+.history-item{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.hi-left{display:flex;flex-direction:column;gap:2px;}
+.hi-sym{font-weight:700;font-size:13px;font-family:var(--mono);}
+.hi-time{font-size:10.5px;color:var(--dim);font-family:var(--mono);}
 .settings-group{margin-bottom:14px;}
 .settings-group h4{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px;}
 .field{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);gap:10px;}
@@ -88,280 +108,118 @@ select,.pill-input{background:var(--panel2);color:var(--txt);border:1px solid va
 .btn{display:block;width:100%;background:var(--accent);color:#031018;border:none;border-radius:10px;padding:11px;font-weight:700;font-size:13px;margin-top:6px;}
 .btn.secondary{background:var(--panel2);color:var(--txt);border:1px solid var(--line);}
 .btn.danger{background:rgba(255,51,85,.15);color:var(--bear);border:1px solid rgba(255,51,85,.3);}
-.livebar{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--panel);border-radius:12px;margin-bottom:10px;border:1px solid var(--line);}
-.livebar .px{font-family:var(--mono);font-size:19px;font-weight:700;}
-.livebar .adx{font-family:var(--mono);font-size:12px;color:var(--dim);}
-.badge-sm{font-size:10px;padding:2px 7px;border-radius:5px;font-family:var(--mono);}
-.badge-adx-pass{background:rgba(0,255,136,.14);color:var(--bull);}
-.badge-adx-fail{background:rgba(124,135,152,.14);color:var(--dim);}
-.section-label{font-size:11px;color:var(--dim);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px;}
+.symbol-chip-row{display:flex;flex-wrap:wrap;gap:7px;}
+.symbol-chip{background:var(--panel2);border:1px solid var(--line);color:var(--dim);border-radius:8px;padding:6px 10px;font-size:11.5px;font-family:var(--mono);}
+.symbol-chip.on{color:var(--accent);border-color:var(--accent);}
+.install-fab{position:fixed;bottom:16px;left:16px;background:var(--accent);color:#031018;border:none;border-radius:24px;padding:11px 16px;font-weight:700;font-size:12.5px;z-index:60;display:none;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+.install-fab.show{display:block;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;}
 ::-webkit-scrollbar{width:0;height:0;}
 </style>
 </head>
 <body>
 
+<div id="loadingScreen">
+<div class="spinner"></div>
+<div class="msg" id="loadingMsg">جاري الاتصال بـ Bybit API...</div>
+</div>
+
 <div class="topbar">
-<div class="topbar-row">
 <div class="brand">
-<div class="brand-dot off" id="connDot"></div>
-<div class="brand-name">BOSWaves <span class="mono" style="color:var(--dim);font-weight:400;">Signals</span></div>
+<div class="icon-btn" onclick="goToView('main')">◈</div>
+<div class="brand-name">BOSWaves <span class="mono" style="color:var(--dim);font-weight:400;">Scanner</span></div>
 </div>
-<button class="lang-btn" id="langBtn" onclick="toggleLang()">EN</button>
+<div class="header-actions">
+<button class="icon-btn" onclick="toggleNotifPermission()" id="notifBtn">🔔</button>
+<button class="icon-btn" onclick="goToView('history')">☰</button>
+<button class="icon-btn" onclick="goToView('settings')">⚙</button>
 </div>
-<div class="selectors">
-<select id="symbolSel" class="pill-input" onchange="onSymbolChange()"></select>
-<select id="adxThreshQuick" class="pill-input" onchange="onAdxQuickChange()"></select>
-</div>
-<div class="tf-row" id="tfRow"></div>
 </div>
 
-<div class="view active" id="view-live">
-<div class="livebar">
+<div class="view active" id="view-main">
+<div class="scanbar">
+<div class="scanbar-left">
+<div class="dot" id="scanDot"></div>
 <div>
-<div style="font-size:11px;color:var(--dim);" id="liveSymLabel">--</div>
-<div class="px" id="livePx">--</div>
-</div>
-<div style="text-align:left;">
-<div class="adx">ADX <span id="liveAdx">--</span></div>
-<div id="adxBadge" class="badge-sm badge-adx-fail">--</div>
+<div id="scanStatusText" data-i18n="idle">Idle</div>
+<div class="scan-meta" id="scanMeta">--</div>
 </div>
 </div>
-<div class="section-label" data-i18n="recentSignals">Recent Signals</div>
-<div id="signalsFeed"></div>
+<button class="btn-scan" onclick="manualScan()" data-i18n="scanNow">Scan Now</button>
 </div>
 
-<div class="view" id="view-open">
-<div class="section-label" data-i18n="openTrades">Open Trades</div>
-<div id="openList"></div>
+<div class="chart-card">
+<div class="chart-head">
+<div class="chart-sym" id="chartSymLabel">BTCUSDT</div>
+<div class="chart-tf" id="chartTfLabel">15m</div>
+</div>
+<canvas id="chartCanvas"></canvas>
+</div>
+
+<div class="toolbar">
+<div class="filter-tabs">
+<button class="ftab active" data-f="all" onclick="setFilter('all')" data-i18n="all">All<span class="cnt" id="cntAll">0</span></button>
+<button class="ftab buy" data-f="buy" onclick="setFilter('buy')" data-i18n="buy">Buy<span class="cnt" id="cntBuy">0</span></button>
+<button class="ftab sell" data-f="sell" onclick="setFilter('sell')" data-i18n="sell">Sell<span class="cnt" id="cntSell">0</span></button>
+</div>
+<select class="sortsel" id="sortSel" onchange="renderSignalList()">
+<option value="score" data-i18n="sortScore">Signal Score</option>
+<option value="sl" data-i18n="sortSL">Lowest SL%</option>
+</select>
+</div>
+
+<div id="signalList"></div>
 </div>
 
 <div class="view" id="view-history">
-<div class="section-label" data-i18n="closedTrades">Closed Trades</div>
+<div class="card-title section-label" style="font-size:12px;color:var(--dim);margin-bottom:10px;text-transform:uppercase;" data-i18n="historyTitle">Signal History</div>
 <div id="historyList"></div>
-</div>
-
-<div class="view" id="view-stats">
-<div class="card">
-<div class="card-h"><div class="card-title" data-i18n="performance">Performance</div></div>
-<div class="stat-grid g3" id="statsGrid"></div>
-</div>
+<button class="btn danger" onclick="clearHistory()" data-i18n="clearHistory">Clear History</button>
 </div>
 
 <div class="view" id="view-settings">
 <div class="card">
 <div class="settings-group">
-<h4 data-i18n="grpEngine">BOSWaves Engine</h4>
-<div class="field"><label data-i18n="pivotLen">Pivot Length</label><input type="number" id="s_pivotLen" min="2" max="50"></div>
-<div class="field"><label data-i18n="impulseATR">Impulse Size (ATR)</label><input type="number" step="0.05" id="s_impulseATR"></div>
-<div class="field"><label data-i18n="baseCandles">Formation Candles</label><input type="number" id="s_baseCandles" min="2" max="10"></div>
-<div class="field"><label data-i18n="atrLen">ATR Length</label><input type="number" id="s_atrLen"></div>
-<div class="field"><label data-i18n="minZoneATR">Min Zone (ATR)</label><input type="number" step="0.01" id="s_minZoneATR"></div>
-<div class="field"><label data-i18n="maxZoneATR">Max Zone (ATR)</label><input type="number" step="0.05" id="s_maxZoneATR"></div>
-<div class="field"><label data-i18n="maxBlocks">Max Blocks</label><input type="number" id="s_maxBlocks" min="1" max="20"></div>
-<div class="field"><label data-i18n="removeOverlap">Remove Overlap</label><div class="switch" id="s_removeOverlap" onclick="toggleSwitch('s_removeOverlap')"><div class="knob"></div></div></div>
-<div class="field"><label data-i18n="invalidation">Invalidation</label>
-<select id="s_invalidation"><option value="Close">Close</option><option value="Wick">Wick</option></select>
-</div>
+<h4 data-i18n="grpSymbols">Scanned Symbols</h4>
+<div class="symbol-chip-row" id="symbolChips"></div>
 </div>
 <div class="settings-group">
-<h4 data-i18n="grpFilter">ADX Filter</h4>
-<div class="field"><label data-i18n="adxLen">ADX Length</label><input type="number" id="s_adxLen"></div>
+<h4 data-i18n="grpScan">Scan Settings</h4>
+<div class="field"><label data-i18n="scanTF">Timeframe</label>
+<select id="s_tf"></select>
+</div>
+<div class="field"><label data-i18n="scanInterval">Scan Interval (sec)</label><input type="number" id="s_interval" min="10" max="300"></div>
 <div class="field"><label data-i18n="adxThresh">Min ADX</label><input type="number" id="s_adxThresh"></div>
-</div>
-<div class="settings-group">
-<h4 data-i18n="grpMode">Signal Mode</h4>
-<div class="field"><label data-i18n="signalMode">Signal Mode</label>
-<select id="s_signalMode" onchange="onModeChange()">
-<option value="aggressive" data-i18n="modeAggressive">Aggressive</option>
-<option value="balanced" data-i18n="modeBalanced">Balanced</option>
-<option value="conservative" data-i18n="modeConservative">Conservative</option>
-</select>
-</div>
 <div class="field"><label data-i18n="minScore">Minimum Signal Score</label><input type="number" id="s_minScore" min="0" max="100"></div>
-<div style="font-size:11.5px;color:var(--dim);line-height:1.6;padding-top:4px;" id="modeDesc"></div>
+<div class="field"><label data-i18n="rrRatio">Target R:R</label><input type="number" step="0.1" id="s_rr"></div>
 </div>
 <div class="settings-group">
-<h4 data-i18n="grpRisk">Risk &amp; Trade</h4>
-<div class="field"><label data-i18n="riskPct">Risk % / Trade</label><input type="number" step="0.05" id="s_riskPct"></div>
-<div class="field"><label data-i18n="leverage">Leverage</label><input type="number" id="s_leverage"></div>
-<div class="field"><label data-i18n="rrRatio">Target R:R</label><input type="number" step="0.1" id="s_rr"></div>
-<div class="field"><label data-i18n="capital">Account Balance (USDT)</label><input type="number" id="s_capital"></div>
+<h4 data-i18n="grpNotif">Notifications</h4>
+<div class="field"><label data-i18n="notifEnable">Browser Notifications</label><div class="switch" id="s_notifEnable" onclick="toggleSwitch('s_notifEnable')"><div class="knob"></div></div></div>
 </div>
 <div class="settings-group">
 <h4 data-i18n="grpTelegram">Telegram Alerts</h4>
 <div class="field"><label data-i18n="tgEnable">Enable</label><div class="switch" id="s_tgEnable" onclick="toggleSwitch('s_tgEnable')"><div class="knob"></div></div></div>
-<div class="field"><label data-i18n="tgToken">Bot Token</label><input type="password" id="s_tgToken" placeholder="123:ABC..."></div>
-<div class="field"><label data-i18n="tgChat">Chat ID</label><input type="text" id="s_tgChat" placeholder="-100..."></div>
+<div class="field"><label data-i18n="tgToken">Bot Token</label><input type="password" id="s_tgToken"></div>
+<div class="field"><label data-i18n="tgChat">Chat ID</label><input type="text" id="s_tgChat"></div>
 <button class="btn secondary" onclick="testTelegram()" data-i18n="tgTest">Send Test Message</button>
 <button class="btn secondary" onclick="resetTelegramDefaults()" data-i18n="tgRestore">Restore Built-in Token/Chat ID</button>
-<div style="font-size:11px;color:var(--dim);line-height:1.6;padding-top:8px;" data-i18n="sleepNote">Keep this tab open and the screen on for the most reliable delivery. If the phone is manually locked, the browser may pause and the app will catch up and resend as soon as it's reopened.</div>
 </div>
 <button class="btn" onclick="saveSettings()" data-i18n="saveSettings">Save Settings</button>
 <button class="btn danger" onclick="resetAll()" data-i18n="resetAll">Reset Everything</button>
 </div>
 </div>
 
-<div class="tabs">
-<button class="tab active" data-view="live" onclick="switchTab('live')"><span class="ic">◈</span><span data-i18n="tabLive">Live</span></button>
-<button class="tab" data-view="open" onclick="switchTab('open')"><span class="ic">◷</span><span data-i18n="tabOpen">Open</span></button>
-<button class="tab" data-view="history" onclick="switchTab('history')"><span class="ic">☰</span><span data-i18n="tabHistory">History</span></button>
-<button class="tab" data-view="stats" onclick="switchTab('stats')"><span class="ic">▤</span><span data-i18n="tabStats">Stats</span></button>
-<button class="tab" data-view="settings" onclick="switchTab('settings')"><span class="ic">⚙</span><span data-i18n="tabSettings">Settings</span></button>
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
+<div class="sheet" id="detailSheet">
+<button class="sheet-close" onclick="closeSheet()">✕</button>
+<div class="sheet-handle"></div>
+<div id="sheetContent"></div>
 </div>
 
+<button class="install-fab" id="installFab" onclick="installPWA()" data-i18n="installBtn">Install App</button>
+
 <script>
-const I18N = {
-ar:{
-recentSignals:"الإشارات الأخيرة", openTrades:"الصفقات المفتوحة", closedTrades:"سجل الصفقات",
-performance:"الأداء", grpEngine:"محرك BOSWaves", pivotLen:"طول القمة/القاع", impulseATR:"قوة الاندفاع (ATR)",
-baseCandles:"شموع التكوين", atrLen:"فترة ATR", minZoneATR:"أقل ارتفاع للمنطقة", maxZoneATR:"أعلى ارتفاع للمنطقة",
-maxBlocks:"أقصى عدد للمناطق", removeOverlap:"حذف المناطق المتداخلة", invalidation:"إبطال المنطقة",
-grpFilter:"فلتر ADX", adxLen:"فترة ADX", adxThresh:"أقل قيمة ADX",
-grpRisk:"المخاطرة والصفقة", riskPct:"نسبة المخاطرة %", leverage:"الرافعة المالية", rrRatio:"نسبة العائد/المخاطرة",
-capital:"رصيد الحساب (USDT)", grpTelegram:"تنبيهات تيليجرام", tgEnable:"تفعيل", tgToken:"توكن البوت",
-tgChat:"معرف المحادثة", tgTest:"إرسال رسالة تجريبية", saveSettings:"حفظ الإعدادات", resetAll:"إعادة تعيين كل شيء",
-tabLive:"مباشر", tabOpen:"مفتوحة", tabHistory:"السجل", tabStats:"إحصائيات", tabSettings:"إعدادات",
-noSignals:"لا توجد إشارات بعد", noOpen:"لا توجد صفقات مفتوحة", noHistory:"لا توجد صفقات مغلقة بعد",
-entry:"الدخول", sl:"وقف الخسارة", tp:"الهدف", rr:"العائد/المخاطرة", opened:"وقت الفتح",
-closedAt:"وقت الإغلاق", reason:"السبب", tpHit:"تحقق الهدف", slHit:"ضرب وقف الخسارة", manual:"إغلاق يدوي",
-trades:"عدد الصفقات", wins:"صفقات رابحة", losses:"صفقات خاسرة", winRate:"نسبة النجاح",
-profitFactor:"معامل الربح", netProfit:"صافي الربح", grossProfit:"إجمالي الربح", grossLoss:"إجمالي الخسارة",
-avgWin:"متوسط الربح", avgLoss:"متوسط الخسارة", bestTrade:"أكبر ربح", worstTrade:"أكبر خسارة",
-maxDD:"أقصى تراجع", avgRR:"متوسط R:R", openCount:"صفقات مفتوحة", closedCount:"صفقات مغلقة",
-long:"شراء", short:"بيع", waitingData:"جاري تحميل بيانات", connected:"متصل", disconnected:"غير متصل",
-adxPass:"الفلتر: تجاوز", adxFail:"الفلتر: لم يتجاوز", settingsSaved:"تم حفظ الإعدادات",
-tgTestSent:"تم إرسال الرسالة التجريبية", tgTestFail:"فشل الإرسال - تحقق من التوكن والمعرف",
-confirmReset:"سيتم حذف جميع الصفقات والسجل. متابعة؟",
-grpMode:"وضع الإشارة", signalMode:"وضع الإشارة", minScore:"أقل درجة للإشارة",
-modeAggressive:"هجومي", modeBalanced:"متوازن", modeConservative:"محافظ",
-modeDescAggressive:"يعتمد فقط على BOSWaves + ADX، يعطي أكبر عدد ممكن من الإشارات، مناسب للسكالبينج.",
-modeDescBalanced:"BOSWaves + ADX + تأكيد إضافي واحد (بنية السوق أو قوة الاتجاه). الوضع الافتراضي.",
-modeDescConservative:"يعتمد على جميع التأكيدات المتاحة، يعطي أقل عدد من الإشارات لكن أعلى جودة.",
-zone:"المنطقة", score:"الدرجة", signalType:"نوع الإشارة", duration:"مدة الصفقة",
-winPoints:"نقاط الربح", lossPoints:"نقاط الخسارة", winRateLbl:"نسبة النجاح", lossRateLbl:"نسبة الخسارة",
-avgHold:"متوسط مدة الصفقة", sharpe:"معامل شارب", consecWins:"أطول سلسلة أرباح", consecLosses:"أطول سلسلة خسائر",
-zoneInvalid:"إبطال المنطقة", tabBacktest:"باك تست", btTitle:"اختبار الاستراتيجية على بيانات تاريخية",
-btSymbol:"العملة", btTF:"الفريم", btPeriod:"الفترة", btCustomFrom:"من تاريخ", btCustomTo:"إلى تاريخ",
-btRun:"تشغيل الاختبار", btRunning:"جارٍ تحميل البيانات وتشغيل الاختبار...", btNoResults:"لم يتم تشغيل أي اختبار بعد",
-p7:"7 أيام", p30:"30 يوماً", p90:"90 يوماً", p180:"180 يوماً", p365:"سنة", pCustom:"مخصص",
-btBuySignals:"إشارات شراء", btSellSignals:"إشارات بيع", btEquity:"منحنى رأس المال",
-btTrades:"صفقات الباك تست", btEntry:"دخول", btExit:"خروج", btNoData:"لا توجد بيانات كافية لهذه الفترة",
-sleepNote:"اترك الصفحة مفتوحة والشاشة مضاءة لأفضل موثوقية. لو قفلت الهاتف يدويًا قد يوقف المتصفح التطبيق مؤقتًا، وسيلحق كل الإشارات فور إعادة فتحه.",
-tgRestore:"استرجاع التوكن والمعرف الأساسيين", tgRestored:"تم استرجاع بيانات تيليجرام الافتراضية وحفظها"
-},
-en:{
-recentSignals:"Recent Signals", openTrades:"Open Trades", closedTrades:"Trade History",
-performance:"Performance", grpEngine:"BOSWaves Engine", pivotLen:"Pivot Length", impulseATR:"Impulse Size (ATR)",
-baseCandles:"Formation Candles", atrLen:"ATR Length", minZoneATR:"Min Zone (ATR)", maxZoneATR:"Max Zone (ATR)",
-maxBlocks:"Max Blocks", removeOverlap:"Remove Overlapping", invalidation:"Invalidation",
-grpFilter:"ADX Filter", adxLen:"ADX Length", adxThresh:"Min ADX",
-grpRisk:"Risk & Trade", riskPct:"Risk % / Trade", leverage:"Leverage", rrRatio:"Target R:R",
-capital:"Account Balance (USDT)", grpTelegram:"Telegram Alerts", tgEnable:"Enable", tgToken:"Bot Token",
-tgChat:"Chat ID", tgTest:"Send Test Message", saveSettings:"Save Settings", resetAll:"Reset Everything",
-tabLive:"Live", tabOpen:"Open", tabHistory:"History", tabStats:"Stats", tabSettings:"Settings",
-noSignals:"No signals yet", noOpen:"No open trades", noHistory:"No closed trades yet",
-entry:"Entry", sl:"Stop Loss", tp:"Target", rr:"R:R", opened:"Opened",
-closedAt:"Closed", reason:"Reason", tpHit:"Target Hit", slHit:"Stop Loss Hit", manual:"Manual Close",
-trades:"Total Trades", wins:"Wins", losses:"Losses", winRate:"Win Rate",
-profitFactor:"Profit Factor", netProfit:"Net Profit", grossProfit:"Gross Profit", grossLoss:"Gross Loss",
-avgWin:"Avg Win", avgLoss:"Avg Loss", bestTrade:"Best Trade", worstTrade:"Worst Trade",
-maxDD:"Max Drawdown", avgRR:"Avg R:R", openCount:"Open Trades", closedCount:"Closed Trades",
-long:"LONG", short:"SHORT", waitingData:"Loading data", connected:"Connected", disconnected:"Disconnected",
-adxPass:"Filter: Passed", adxFail:"Filter: Blocked", settingsSaved:"Settings saved",
-tgTestSent:"Test message sent", tgTestFail:"Failed to send - check token and chat id",
-confirmReset:"This deletes all trades and history. Continue?",
-grpMode:"Signal Mode", signalMode:"Signal Mode", minScore:"Minimum Signal Score",
-modeAggressive:"Aggressive", modeBalanced:"Balanced", modeConservative:"Conservative",
-modeDescAggressive:"Only BOSWaves + ADX. Maximum number of signals - best for scalping.",
-modeDescBalanced:"BOSWaves + ADX + one extra confirmation (structure or trend strength). Default mode.",
-modeDescConservative:"Requires every available confirmation. Fewest signals, highest quality.",
-zone:"Zone", score:"Score", signalType:"Signal Type", duration:"Duration",
-winPoints:"Win Points", lossPoints:"Loss Points", winRateLbl:"Win Rate", lossRateLbl:"Loss Rate",
-avgHold:"Avg Holding Time", sharpe:"Sharpe Ratio", consecWins:"Max Consecutive Wins", consecLosses:"Max Consecutive Losses",
-zoneInvalid:"Zone Invalidated", tabBacktest:"Backtest", btTitle:"Test the strategy on historical data",
-btSymbol:"Symbol", btTF:"Timeframe", btPeriod:"Period", btCustomFrom:"From", btCustomTo:"To",
-btRun:"Run Backtest", btRunning:"Loading data and running backtest...", btNoResults:"No backtest run yet",
-p7:"7 days", p30:"30 days", p90:"90 days", p180:"180 days", p365:"1 year", pCustom:"Custom",
-btBuySignals:"Buy Signals", btSellSignals:"Sell Signals", btEquity:"Equity Curve",
-btTrades:"Backtest Trades", btEntry:"Entry", btExit:"Exit", btNoData:"Not enough data for this period",
-sleepNote:"Keep this tab open and the screen on for the most reliable delivery. If the phone is manually locked, the browser may pause the app; it will catch up and resend as soon as it's reopened.",
-tgRestore:"Restore Built-in Token/Chat ID", tgRestored:"Telegram defaults restored and saved"
-}
-};
-let LANG = localStorage.getItem("bw_lang") || "ar";
-
-const TF_LIST = [
-{key:"1",label:"1m"},{key:"3",label:"3m"},{key:"5",label:"5m"},{key:"15",label:"15m"},
-{key:"30",label:"30m"},{key:"60",label:"1H"},{key:"240",label:"4H"},{key:"D",label:"1D"}
-];
-const SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","AVAXUSDT","LINKUSDT","TONUSDT"];
-
-const DEFAULT_SETTINGS = {
-pivotLen:8, impulseATR:1.10, baseCandles:4, atrLen:14, minZoneATR:0.12, maxZoneATR:1.20,
-maxBlocks:6, removeOverlap:true, invalidation:"Close",
-adxLen:14, adxThresh:20,
-riskPct:0.35, leverage:50, rr:2.0, capital:1000,
-tgEnable:true, tgToken:"8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ", tgChat:"-1003970108966",
-signalMode:"balanced", minScore:70
-};
-const MODE_SCORE_DEFAULTS = { aggressive:55, balanced:70, conservative:85 };
-const SCORE_WEIGHTS = { boswaves:40, adx:20, structure:15, trend:15, volatility:10 };
-
-let settings = loadSettings();
-let currentSymbol = localStorage.getItem("bw_symbol") || "BTCUSDT";
-let currentTF = localStorage.getItem("bw_tf") || "15";
-let engines = {};
-let activeTab = "live";
-let wsTicker = null;
-let wsReconnectTimer = null;
-
-function loadSettings(){
-try{
-const raw = localStorage.getItem("bw_settings");
-if(raw) return Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw));
-}catch(e){}
-return Object.assign({}, DEFAULT_SETTINGS);
-}
-function persistSettings(){ localStorage.setItem("bw_settings", JSON.stringify(settings)); }
-
-function t(key){ return (I18N[LANG] && I18N[LANG][key]) || key; }
-
-function applyI18n(){
-document.documentElement.lang = LANG;
-document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
-document.getElementById("langBtn").textContent = LANG === "ar" ? "EN" : "AR";
-document.querySelectorAll("[data-i18n]").forEach(el=>{
-const k = el.getAttribute("data-i18n");
-el.textContent = t(k);
-});
-}
-function toggleLang(){
-LANG = LANG === "ar" ? "en" : "ar";
-localStorage.setItem("bw_lang", LANG);
-applyI18n();
-renderAll();
-}
-
-function fmtPrice(v){
-if(v === null || v === undefined || isNaN(v)) return "--";
-const av = Math.abs(v);
-let dec = 2;
-if(av < 1) dec = 6; else if(av < 10) dec = 4; else if(av < 100) dec = 3;
-return v.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec});
-}
-function fmtPct(v){ if(v===null||v===undefined||isNaN(v)) return "--"; return v.toFixed(2)+"%"; }
-function fmtNum(v,d){ if(v===null||v===undefined||isNaN(v)) return "--"; return v.toFixed(d===undefined?2:d); }
-function fmtTime(ts){
-const d = new Date(ts);
-return d.toLocaleTimeString(LANG==="ar"?"ar-EG":"en-US",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-}
-function fmtDate(ts){
-const d = new Date(ts);
-return d.toLocaleDateString(LANG==="ar"?"ar-EG":"en-US",{year:"numeric",month:"2-digit",day:"2-digit"});
-}
-
-/* ---------------- Wilder RMA / ATR / ADX ---------------- */
-
 function rmaSeries(values, len){
 const out = new Array(values.length).fill(null);
 if(values.length < len) return out;
@@ -656,14 +514,7 @@ trend: trendStrength ? SCORE_WEIGHTS.trend : 0,
 volatility: volatilityOk ? SCORE_WEIGHTS.volatility : 0
 };
 const score = parts.boswaves+parts.adx+parts.structure+parts.trend+parts.volatility;
-let modeOk = adxPass;
-const mode = cfg.signalMode || "balanced";
-if(modeOk){
-if(mode==="aggressive") modeOk = true;
-else if(mode==="balanced") modeOk = structureAligned || trendStrength;
-else if(mode==="conservative") modeOk = structureAligned && trendStrength && volatilityOk;
-}
-const passed = modeOk && score >= (cfg.minScore||0);
+const passed = adxPass && score >= (cfg.minScore||0);
 let signalType = raw.bosNow==="choch" ? "CHoCH" : (raw.bosNow==="bos" ? "BOS" : "Order Block Retest");
 const reasonParts = [];
 reasonParts.push(LANG==="ar" ? "منطقة BOSWaves + إعادة اختبار" : "BOSWaves zone + retest");
@@ -673,8 +524,7 @@ if(trendStrength) reasonParts.push(LANG==="ar"?"اتجاه قوي":"strong trend
 if(volatilityOk) reasonParts.push(LANG==="ar"?"تذبذب طبيعي":"normal volatility");
 return {
 passed, score, parts, adx:adxVal, signalType,
-reason: reasonParts.join(" + "),
-mode
+reason: reasonParts.join(" + ")
 };
 }
 
@@ -692,7 +542,7 @@ f.ob.signaledSide = f.side;
 allFired.push({
 side:f.side, ob:f.ob, barIdx:i,
 adx:evalRes.adx, score:evalRes.score, scoreParts:evalRes.parts,
-signalType:evalRes.signalType, reason:evalRes.reason, mode:evalRes.mode,
+signalType:evalRes.signalType, reason:evalRes.reason,
 price:this.candles[i].close, time:this.candles[i].closeTime
 });
 }
@@ -707,213 +557,163 @@ if(this.adx.length===0) return null;
 return this.adx[this.adx.length-1];
 }
 }
+const I18N = {
+ar:{
+idle:"خامل", scanning:"جاري الفحص...", scanNow:"فحص الآن",
+all:"الكل", buy:"شراء", sell:"بيع",
+sortScore:"قوة الإشارة", sortSL:"أقل SL%",
+historyTitle:"سجل الإشارات", clearHistory:"مسح السجل",
+grpSymbols:"العملات المفحوصة", grpScan:"إعدادات الفحص", scanTF:"الفريم الزمني",
+scanInterval:"فترة الفحص (ثانية)", adxThresh:"أقل قيمة ADX", minScore:"أقل درجة للإشارة",
+rrRatio:"نسبة العائد/المخاطرة", grpNotif:"التنبيهات", notifEnable:"تنبيهات المتصفح",
+grpTelegram:"تنبيهات تيليجرام", tgEnable:"تفعيل", tgToken:"توكن البوت", tgChat:"معرف المحادثة",
+tgTest:"إرسال رسالة تجريبية", tgRestore:"استرجاع التوكن والمعرف الأساسيين",
+tgTestSent:"تم إرسال الرسالة التجريبية", tgTestFail:"فشل الإرسال - تحقق من التوكن والمعرف",
+tgRestored:"تم استرجاع بيانات تيليجرام الافتراضية", saveSettings:"حفظ الإعدادات",
+resetAll:"إعادة تعيين كل شيء", confirmReset:"سيتم حذف كل الإشارات والسجل. متابعة؟",
+installBtn:"تثبيت التطبيق", noSignals:"لا توجد إشارات متاحة", scanningMsg:"جاري فحص العملات...",
+scanningDesc:"يتم تحليل الأنماط والشروط لكل العملات المدعومة",
+noSignalsTitle:"لا توجد إشارات متاحة", noSignalsDesc:"لم تتحقق الشروط الكاملة لأي إشارة حالياً",
+critScore:"Signal Score \u2265 {score}/100", critADX:"ADX > {adx} (وجود زخم)",
+critOB:"Order Block محدد", critSL:"وقف الخسارة تلقائي بناءً على المنطقة",
+scanEvery:"يتم الفحص التلقائي كل {sec} ثانية",
+entry:"الدخول", sl:"وقف الخسارة", tp:"الهدف", adx:"ADX", score:"الدرجة", slPct:"SL%",
+result:"النتيجة", win:"رابحة", loss:"خاسرة", expired:"أُبطلت", pending:"جارية",
+reasonTitle:"سبب الدخول", zone:"المنطقة", signalType:"نوع الإشارة",
+connOK:"جاري الاتصال بـ Bybit API...", lastScan:"آخر فحص", nextScan:"القادم خلال",
+scanned:"تم فحص", filtered:"مستبعد"
+},
+en:{
+idle:"Idle", scanning:"Scanning...", scanNow:"Scan Now",
+all:"All", buy:"Buy", sell:"Sell",
+sortScore:"Signal Score", sortSL:"Lowest SL%",
+historyTitle:"Signal History", clearHistory:"Clear History",
+grpSymbols:"Scanned Symbols", grpScan:"Scan Settings", scanTF:"Timeframe",
+scanInterval:"Scan Interval (sec)", adxThresh:"Min ADX", minScore:"Minimum Signal Score",
+rrRatio:"Target R:R", grpNotif:"Notifications", notifEnable:"Browser Notifications",
+grpTelegram:"Telegram Alerts", tgEnable:"Enable", tgToken:"Bot Token", tgChat:"Chat ID",
+tgTest:"Send Test Message", tgRestore:"Restore Built-in Token/Chat ID",
+tgTestSent:"Test message sent", tgTestFail:"Failed to send - check token and chat id",
+tgRestored:"Telegram defaults restored", saveSettings:"Save Settings",
+resetAll:"Reset Everything", confirmReset:"This deletes all signals and history. Continue?",
+installBtn:"Install App", noSignals:"No signals available", scanningMsg:"Scanning coins...",
+scanningDesc:"Analyzing patterns and conditions for all supported symbols",
+noSignalsTitle:"No signals available", noSignalsDesc:"No signal currently meets all conditions",
+critScore:"Signal Score \u2265 {score}/100", critADX:"ADX > {adx} (momentum present)",
+critOB:"Order Block defined", critSL:"Stop loss automatic based on zone",
+scanEvery:"Auto-scan runs every {sec} seconds",
+entry:"Entry", sl:"Stop Loss", tp:"Target", adx:"ADX", score:"Score", slPct:"SL%",
+result:"Result", win:"Win", loss:"Loss", expired:"Expired", pending:"Pending",
+reasonTitle:"Entry Reason", zone:"Zone", signalType:"Signal Type",
+connOK:"Connecting to Bybit API...", lastScan:"Last scan", nextScan:"Next in",
+scanned:"scanned", filtered:"filtered out"
+}
+};
+let LANG = localStorage.getItem("sc_lang") || "ar";
 
-/* ---------------- Trades / stats storage ---------------- */
+const TF_LIST = [
+{key:"1",label:"1m"},{key:"3",label:"3m"},{key:"5",label:"5m"},{key:"15",label:"15m"},
+{key:"30",label:"30m"},{key:"60",label:"1H"},{key:"240",label:"4H"},{key:"D",label:"1D"}
+];
+const ALL_SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","AVAXUSDT","LINKUSDT","TONUSDT"];
 
-function tradeStoreKey(symbol, tfKey){ return "bw_trades_"+symbol+"_"+tfKey; }
+const DEFAULT_SETTINGS = {
+enabledSymbols: ALL_SYMBOLS.slice(),
+timeframe:"15", scanIntervalSec:30,
+pivotLen:8, impulseATR:1.10, baseCandles:4, atrLen:14, minZoneATR:0.12, maxZoneATR:1.20,
+maxBlocks:6, removeOverlap:true, invalidation:"Close",
+adxLen:14, adxThresh:15, minScore:60, rr:2.0,
+notifEnable:false,
+tgEnable:true, tgToken:"8701817759:AAFNCDD0p4kh0JdSR1WfVRMFvulDVT7gDCQ", tgChat:"-1003970108966"
+};
+const SCORE_WEIGHTS = { boswaves:40, adx:20, structure:15, trend:15, volatility:10 };
 
-function loadTrades(symbol, tfKey){
+let settings = loadSettings();
+let engines = {};
+let currentFilter = "all";
+let chartSymbol = "BTCUSDT";
+let chartTF = settings.timeframe;
+let scanTimer = null;
+let scanning = false;
+let lastFullScan = null;
+let totalScanned = 0;
+let filteredOut = 0;
+let deferredInstallPrompt = null;
+
+function loadSettings(){
 try{
-const raw = localStorage.getItem(tradeStoreKey(symbol,tfKey));
+const raw = localStorage.getItem("sc_settings");
+if(raw) return Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw));
+}catch(e){}
+return Object.assign({}, DEFAULT_SETTINGS);
+}
+function persistSettings(){ localStorage.setItem("sc_settings", JSON.stringify(settings)); }
+
+function t(key){ return (I18N[LANG] && I18N[LANG][key]) || key; }
+function tf(key, params){
+let s = t(key);
+if(params) Object.keys(params).forEach(k=>{ s = s.replace("{"+k+"}", params[k]); });
+return s;
+}
+
+function applyI18n(){
+document.documentElement.lang = LANG;
+document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
+document.querySelectorAll("[data-i18n]").forEach(el=>{
+const k = el.getAttribute("data-i18n");
+const cntEl = el.querySelector(".cnt");
+el.textContent = t(k);
+if(cntEl) el.appendChild(cntEl);
+});
+document.getElementById("loadingMsg").textContent = t("connOK");
+}
+
+function fmtPrice(v){
+if(v === null || v === undefined || isNaN(v)) return "--";
+const av = Math.abs(v);
+let dec = 2;
+if(av < 1) dec = 6; else if(av < 10) dec = 4; else if(av < 100) dec = 3;
+return v.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+function fmtTime(ts){
+return new Date(ts).toLocaleTimeString(LANG==="ar"?"ar-EG":"en-US",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+}
+function fmtDate(ts){
+return new Date(ts).toLocaleDateString(LANG==="ar"?"ar-EG":"en-US",{year:"numeric",month:"2-digit",day:"2-digit"});
+}
+
+function clampf(v, lo, hi){ return Math.max(lo, Math.min(v, hi)); }
+function clampf2(v, lo, hi, fallback){ if(isNaN(v)) return fallback; return Math.max(lo, Math.min(v, hi)); }
+
+/* ---------------- History storage ---------------- */
+
+function loadHistory(){
+try{
+const raw = localStorage.getItem("sc_history");
 if(raw) return JSON.parse(raw);
 }catch(e){}
-return {open:[], closed:[]};
+return [];
 }
-function saveTrades(symbol, tfKey, data){
-localStorage.setItem(tradeStoreKey(symbol,tfKey), JSON.stringify(data));
-}
+function saveHistory(h){ localStorage.setItem("sc_history", JSON.stringify(h)); }
 
-function openTradeFromSignal(symbol, tfKey, sig){
-const cfg = settings;
-const isLong = sig.side === "long";
-const data = loadTrades(symbol, tfKey);
-if(data.open.some(t=>t.side===sig.side)) return null;
-const entry = sig.price;
-const sl = isLong ? sig.ob.bottom : sig.ob.top;
-const riskDist = Math.abs(entry - sl);
-if(riskDist <= 0) return null;
-const tp = isLong ? entry + riskDist*cfg.rr : entry - riskDist*cfg.rr;
-const openTime = sig.time || Date.now();
-const trade = {
-id: symbol+"_"+tfKey+"_"+Date.now()+"_"+Math.floor(Math.random()*1000),
-symbol, tf:tfKey, side: isLong ? "long":"short",
-entry, sl, tp, rr: cfg.rr,
-adx: sig.adx, score: sig.score, mode: sig.mode,
-signalType: sig.signalType, reason: sig.reason,
-zoneId: sig.ob.id,
-openTime, openDate: fmtDate(openTime), openTimeStr: fmtTime(openTime),
-status:"open"
-};
-data.open.push(trade);
-saveTrades(symbol, tfKey, data);
-return trade;
+function addHistorySignal(sig){
+const h = loadHistory();
+h.unshift(sig);
+if(h.length > 300) h.length = 300;
+saveHistory(h);
 }
-
-function closeTrade(symbol, tfKey, tradeId, exitPrice, reason){
-const data = loadTrades(symbol, tfKey);
-const idx = data.open.findIndex(t=>t.id===tradeId);
-if(idx === -1) return null;
-const trade = data.open[idx];
-data.open.splice(idx,1);
-const isLong = trade.side === "long";
-const riskDist = Math.abs(trade.entry - trade.sl);
-const pnlPct = isLong ? (exitPrice-trade.entry)/trade.entry*100 : (trade.entry-exitPrice)/trade.entry*100;
-const rMultiple = riskDist>0 ? (isLong ? (exitPrice-trade.entry) : (trade.entry-exitPrice))/riskDist : 0;
-const closeTime = Date.now();
-trade.exitPrice = exitPrice;
-trade.closeTime = closeTime;
-trade.closeDate = fmtDate(closeTime);
-trade.closeTimeStr = fmtTime(closeTime);
-trade.reason = reason;
-trade.pnlPct = pnlPct * (settings.leverage||1);
-trade.rMultiple = rMultiple;
-trade.winPoints = isLong ? Math.max(0, exitPrice-trade.entry) : Math.max(0, trade.entry-exitPrice);
-trade.lossPoints = isLong ? Math.max(0, trade.entry-exitPrice) : Math.max(0, exitPrice-trade.entry);
-trade.durationMs = closeTime - trade.openTime;
-trade.status = "closed";
-data.closed.push(trade);
-saveTrades(symbol, tfKey, data);
-const eng = engines[engineKey(symbol,tfKey)];
-if(eng) eng.unlockZone(trade.zoneId);
-sendTelegramForTrade(trade);
-return trade;
-}
-
-function checkOpenTrades(symbol, tfKey, price){
-const data = loadTrades(symbol, tfKey);
-if(data.open.length===0) return;
-const eng = engines[engineKey(symbol,tfKey)];
-data.open.slice().forEach(trade=>{
-const isLong = trade.side==="long";
-const hitTP = isLong ? price >= trade.tp : price <= trade.tp;
-const hitSL = isLong ? price <= trade.sl : price >= trade.sl;
-const ob = eng ? eng.findObById(trade.zoneId) : null;
-const zoneBroken = eng && !ob;
-if(hitTP){
-closeTrade(symbol, tfKey, trade.id, trade.tp, "tp");
-} else if(hitSL){
-closeTrade(symbol, tfKey, trade.id, trade.sl, "sl");
-} else if(zoneBroken){
-closeTrade(symbol, tfKey, trade.id, price, "zone_invalid");
-}
-});
-}
-
-function formatDuration(ms){
-if(!ms || ms<0) return "--";
-const mins = Math.floor(ms/60000);
-const h = Math.floor(mins/60);
-const m = mins%60;
-if(h>0) return h+"h "+m+"m";
-return m+"m";
-}
-
-function computeStats(symbol, tfKey){
-const data = loadTrades(symbol, tfKey);
-const closed = data.closed.slice().sort((a,b)=>a.closeTime-b.closeTime);
-const wins = closed.filter(t=>t.pnlPct>0);
-const losses = closed.filter(t=>t.pnlPct<=0);
-const grossProfit = wins.reduce((s,t)=>s+t.pnlPct,0);
-const grossLoss = Math.abs(losses.reduce((s,t)=>s+t.pnlPct,0));
-const netProfit = grossProfit - grossLoss;
-const winRate = closed.length>0 ? wins.length/closed.length*100 : 0;
-const lossRate = closed.length>0 ? losses.length/closed.length*100 : 0;
-const profitFactor = grossLoss>0 ? grossProfit/grossLoss : (grossProfit>0 ? Infinity : 0);
-const avgWin = wins.length>0 ? grossProfit/wins.length : 0;
-const avgLoss = losses.length>0 ? -grossLoss/losses.length : 0;
-const best = closed.reduce((m,t)=>Math.max(m,t.pnlPct), closed.length?closed[0].pnlPct:0);
-const worst = closed.reduce((m,t)=>Math.min(m,t.pnlPct), closed.length?closed[0].pnlPct:0);
-let equity = 0, peak = 0, maxDD = 0;
-closed.forEach(t=>{
-equity += t.pnlPct;
-peak = Math.max(peak, equity);
-maxDD = Math.max(maxDD, peak-equity);
-});
-const avgRR = closed.length>0 ? closed.reduce((s,t)=>s+(t.rMultiple||0),0)/closed.length : 0;
-const avgHoldMs = closed.length>0 ? closed.reduce((s,t)=>s+(t.durationMs||0),0)/closed.length : 0;
-const returns = closed.map(t=>t.pnlPct);
-const meanRet = returns.length>0 ? returns.reduce((a,b)=>a+b,0)/returns.length : 0;
-const variance = returns.length>1 ? returns.reduce((s,r)=>s+Math.pow(r-meanRet,2),0)/(returns.length-1) : 0;
-const stdev = Math.sqrt(variance);
-const sharpe = stdev>0 ? meanRet/stdev : 0;
-let curWinStreak=0, curLossStreak=0, maxWinStreak=0, maxLossStreak=0;
-closed.forEach(t=>{
-if(t.pnlPct>0){ curWinStreak++; curLossStreak=0; maxWinStreak=Math.max(maxWinStreak,curWinStreak); }
-else { curLossStreak++; curWinStreak=0; maxLossStreak=Math.max(maxLossStreak,curLossStreak); }
-});
-return {
-total: closed.length + data.open.length,
-wins: wins.length, losses: losses.length, winRate, lossRate,
-profitFactor, netProfit, grossProfit, grossLoss,
-avgWin, avgLoss, best, worst, maxDD, avgRR, avgHoldMs,
-sharpe, maxWinStreak, maxLossStreak,
-openCount: data.open.length, closedCount: closed.length
-};
-}
-
-/* ---------------- Telegram ---------------- */
-
-function sendTelegramForTrade(trade){
-if(!settings.tgEnable || !settings.tgToken || !settings.tgChat) return;
-const isLong = trade.side==="long";
-const won = trade.pnlPct>0;
-const emoji = won ? "✅" : (trade.reason==="zone_invalid" ? "⚠️" : "🛑");
-const sideLabel = isLong ? "LONG" : "SHORT";
-const reasonLabel = trade.reason==="tp" ? "TARGET HIT" : (trade.reason==="sl" ? "STOP LOSS" : "ZONE INVALIDATED");
-const msg = [
-emoji+" *BOSWaves "+reasonLabel+"*",
-"Symbol: `"+trade.symbol+"`",
-"TF: `"+(TF_LIST.find(x=>x.key===trade.tf)||{}).label+"`",
-"Side: *"+sideLabel+"*",
-"Entry: `"+fmtPrice(trade.entry)+"`",
-"SL: `"+fmtPrice(trade.sl)+"`",
-"TP: `"+fmtPrice(trade.tp)+"`",
-"Exit: `"+fmtPrice(trade.exitPrice)+"`",
-"PnL: *"+(trade.pnlPct>=0?"+":"")+trade.pnlPct.toFixed(2)+"%*",
-"R: `"+trade.rMultiple.toFixed(2)+"`",
-"Closed: `"+trade.closeDate+" "+trade.closeTimeStr+"`"
-].join("\n");
-sendTelegramRaw(msg);
-}
-
-function sendTelegramRaw(text){
-if(!settings.tgToken || !settings.tgChat) return Promise.resolve({ok:false, error:"missing_token_or_chat"});
-const url = "https://api.telegram.org/bot"+settings.tgToken+"/sendMessage"
-+"?chat_id="+encodeURIComponent(settings.tgChat)
-+"&text="+encodeURIComponent(text)
-+"&parse_mode=Markdown";
-return fetch(url,{method:"GET"}).then(r=>r.json().catch(()=>({}))
-.then(j=>({ok: !!(j && j.ok), error: j && j.description ? j.description : (r.ok?null:("HTTP "+r.status))}))
-).catch(e=>{
-return fetch(url,{method:"GET", mode:"no-cors"}).then(()=>({ok:true, error:null, unverified:true}))
-.catch(e2=>({ok:false, error:"network_error: "+(e2 && e2.message ? e2.message : e2)}));
-});
-}
-
-function testTelegram(){
-sendTelegramRaw("BOSWaves Signals: test message OK ✅").then(res=>{
-if(res.ok && res.unverified){ alert(t("tgTestSent")); return; }
-alert(res.ok ? t("tgTestSent") : (t("tgTestFail")+"\n\n"+(res.error||"")));
-});
-}
-
-function resetTelegramDefaults(){
-settings.tgToken = DEFAULT_SETTINGS.tgToken;
-settings.tgChat = DEFAULT_SETTINGS.tgChat;
-settings.tgEnable = DEFAULT_SETTINGS.tgEnable;
-persistSettings();
-fillSettingsForm();
-alert(t("tgRestored"));
+function updateHistorySignal(id, patch){
+const h = loadHistory();
+const idx = h.findIndex(s=>s.id===id);
+if(idx>=0){ Object.assign(h[idx], patch); saveHistory(h); }
 }
 
 /* ---------------- Bybit data layer ---------------- */
 
 const BYBIT_REST = "https://api.bybit.com/v5/market/kline";
 
-async function fetchKlines(symbol, tfKey, limit, startMs, endMs){
-let url = BYBIT_REST+"?category=linear&symbol="+symbol+"&interval="+tfKey+"&limit="+(limit||300);
-if(startMs) url += "&start="+Math.floor(startMs);
-if(endMs) url += "&end="+Math.floor(endMs);
+async function fetchKlines(symbol, tfKey, limit){
+const url = BYBIT_REST+"?category=linear&symbol="+symbol+"&interval="+tfKey+"&limit="+(limit||300);
 const res = await fetch(url);
 const json = await res.json();
 if(!json.result || !json.result.list) return [];
@@ -929,34 +729,6 @@ closeTime: parseInt(row[0])
 }));
 }
 
-async function fetchKlinesRange(symbol, tfKey, fromMs, toMs){
-const stepMs = tfKeyToMs(tfKey);
-let all = [];
-let cursor = fromMs;
-let guard = 0;
-while(cursor < toMs && guard < 400){
-const batch = await fetchKlines(symbol, tfKey, 1000, cursor, toMs);
-if(batch.length===0) break;
-all = all.concat(batch);
-const lastTime = batch[batch.length-1].time;
-if(lastTime <= cursor) break;
-cursor = lastTime + stepMs;
-guard++;
-if(batch.length < 1000) break;
-}
-const seen = new Set();
-const dedup = [];
-all.sort((a,b)=>a.time-b.time).forEach(c=>{
-if(!seen.has(c.time)){ seen.add(c.time); dedup.push(c); }
-});
-return dedup.filter(c=>c.time>=fromMs && c.time<=toMs);
-}
-
-function tfKeyToMs(tfKey){
-if(tfKey==="D") return 86400000;
-return parseInt(tfKey)*60000;
-}
-
 function engineKey(symbol, tfKey){ return symbol+"_"+tfKey; }
 
 async function ensureEngine(symbol, tfKey){
@@ -968,423 +740,515 @@ const candles = await fetchKlines(symbol, tfKey, 400);
 if(candles.length>0){
 eng.setCandles(candles);
 eng.lastConfirmedIdx = -1;
-const fired = eng.onNewClosedCandle();
-fired.forEach(f=>handleSignal(symbol, tfKey, f));
+eng.onNewClosedCandle();
 }
 return eng;
 }
 
-async function pollCandles(symbol, tfKey){
-const eng = engines[engineKey(symbol,tfKey)];
-if(!eng) return;
+/* ---------------- Scan cycle ---------------- */
+
+async function runScanCycle(manual){
+if(scanning) return;
+scanning = true;
+updateScanStatus(true);
+const tfKey = settings.timeframe;
+let scannedCount = 0;
+let filteredCount = 0;
+const newSignals = [];
+for(const symbol of settings.enabledSymbols){
+try{
+const eng = await ensureEngine(symbol, tfKey);
 const fresh = await fetchKlines(symbol, tfKey, 5);
-if(fresh.length===0) return;
+if(fresh.length>0){
 fresh.forEach(nc=> eng.appendOrUpdateCandle(nc));
 eng.trimHistory(600);
 eng.recomputeIndicators();
 const fired = eng.onNewClosedCandle();
-fired.forEach(f=>handleSignal(symbol, tfKey, f));
-checkOpenTrades(symbol, tfKey, eng.candles[eng.candles.length-1].close);
-if(symbol===currentSymbol && tfKey===currentTF) renderAll();
+fired.forEach(sig=>{
+const trade = createSignalRecord(symbol, tfKey, sig);
+newSignals.push(trade);
+});
+}
+checkPendingResults(symbol, tfKey, eng);
+scannedCount++;
+if(eng.currentADX()===null || eng.currentADX()<=settings.adxThresh) filteredCount++;
+}catch(e){
+filteredCount++;
+}
+}
+totalScanned = scannedCount;
+filteredOut = filteredCount;
+lastFullScan = Date.now();
+scanning = false;
+updateScanStatus(false);
+newSignals.forEach(trade=>{
+notifyNewSignal(trade);
+telegramNewSignal(trade);
+});
+renderSignalList();
+renderChart();
+renderHistoryList();
+hideLoadingScreen();
 }
 
-function handleSignal(symbol, tfKey, sig){
-const trade = openTradeFromSignal(symbol, tfKey, sig);
-if(!trade) return;
-const feedKey = "bw_feed_"+symbol+"_"+tfKey;
-let feed = [];
-try{ feed = JSON.parse(localStorage.getItem(feedKey) || "[]"); }catch(e){}
-feed.unshift({side:sig.side, price:sig.price, time:sig.time, adx:sig.adx, score:sig.score, signalType:sig.signalType, reason:sig.reason, tradeId:trade.id});
-feed = feed.slice(0,50);
-localStorage.setItem(feedKey, JSON.stringify(feed));
-sendSignalTelegram(symbol, tfKey, trade);
+
+function createSignalRecord(symbol, tfKey, sig){
+const cfg = settings;
+const isBuy = sig.side === "long";
+const entry = sig.price;
+const slPrice = isBuy ? sig.ob.bottom : sig.ob.top;
+const riskDist = Math.abs(entry - slPrice);
+const tpPrice = isBuy ? entry + riskDist*cfg.rr : entry - riskDist*cfg.rr;
+const stopLossPercent = entry>0 ? (riskDist/entry*100) : 0;
+const rec = {
+id: symbol+"_"+tfKey+"_"+Date.now()+"_"+Math.floor(Math.random()*1000),
+symbol, timeframe:tfKey, direction: isBuy?"BUY":"SELL",
+signalScore: sig.score, adx: sig.adx, zoneId: sig.ob.id,
+signalType: sig.signalType, reason: sig.reason,
+entryPrice: entry, stopLoss: slPrice, takeProfit: tpPrice, stopLossPercent,
+createdAt: sig.time || Date.now(),
+result: "pending"
+};
+addHistorySignal(rec);
+return rec;
 }
 
-function sendSignalTelegram(symbol, tfKey, trade){
+function checkPendingResults(symbol, tfKey, eng){
+const h = loadHistory();
+const bar = eng.candles[eng.candles.length-1];
+if(!bar) return;
+h.filter(s=>s.symbol===symbol && s.timeframe===tfKey && s.result==="pending").forEach(sig=>{
+const isBuy = sig.direction === "BUY";
+const hitTP = isBuy ? bar.high >= sig.takeProfit : bar.low <= sig.takeProfit;
+const hitSL = isBuy ? bar.low <= sig.stopLoss : bar.high >= sig.stopLoss;
+const ob = eng.findObById(sig.zoneId);
+const zoneBroken = !ob;
+let patch = null;
+if(hitTP) patch = {result:"win", closedAt:Date.now(), exitPrice:sig.takeProfit};
+else if(hitSL) patch = {result:"loss", closedAt:Date.now(), exitPrice:sig.stopLoss};
+else if(zoneBroken) patch = {result:"expired", closedAt:Date.now(), exitPrice:bar.close};
+if(patch){
+updateHistorySignal(sig.id, patch);
+const updated = Object.assign({}, sig, patch);
+notifySignalClosed(updated);
+telegramSignalClosed(updated);
+}
+});
+}
+
+/* ---------------- Notifications ---------------- */
+
+function notifyNewSignal(sig){
+if(!settings.notifEnable) return;
+if(!("Notification" in window) || Notification.permission !== "granted") return;
+const title = (sig.direction==="BUY"?"🟢 ":"🔴 ")+sig.symbol+" "+sig.direction;
+new Notification(title, {body: t("entry")+": "+fmtPrice(sig.entryPrice)+" | "+t("score")+": "+sig.signalScore, tag: sig.id});
+}
+function notifySignalClosed(sig){
+if(!settings.notifEnable) return;
+if(!("Notification" in window) || Notification.permission !== "granted") return;
+const resultLabel = sig.result==="win" ? t("win") : (sig.result==="loss" ? t("loss") : t("expired"));
+new Notification(sig.symbol+" "+resultLabel, {body: sig.direction+" @ "+fmtPrice(sig.entryPrice), tag: sig.id+"_closed"});
+}
+
+function toggleNotifPermission(){
+if(!("Notification" in window)){ alert("Notifications not supported"); return; }
+if(Notification.permission === "granted"){
+settings.notifEnable = !settings.notifEnable;
+persistSettings();
+document.getElementById("notifBtn").style.color = settings.notifEnable ? "var(--accent)" : "";
+return;
+}
+Notification.requestPermission().then(perm=>{
+if(perm==="granted"){
+settings.notifEnable = true;
+persistSettings();
+document.getElementById("notifBtn").style.color = "var(--accent)";
+}
+});
+}
+
+/* ---------------- Telegram ---------------- */
+
+function sendTelegramRaw(text){
+if(!settings.tgToken || !settings.tgChat) return Promise.resolve({ok:false, error:"missing_token_or_chat"});
+const url = "https://api.telegram.org/bot"+settings.tgToken+"/sendMessage"
++"?chat_id="+encodeURIComponent(settings.tgChat)
++"&text="+encodeURIComponent(text)
++"&parse_mode=Markdown";
+return fetch(url,{method:"GET"}).then(r=>r.json().catch(()=>({}))
+.then(j=>({ok: !!(j && j.ok), error: j && j.description ? j.description : (r.ok?null:("HTTP "+r.status))}))
+).catch(e=>{
+return fetch(url,{method:"GET", mode:"no-cors"}).then(()=>({ok:true, error:null, unverified:true}))
+.catch(e2=>({ok:false, error:"network_error: "+(e2 && e2.message ? e2.message : e2)}));
+});
+}
+
+function telegramNewSignal(sig){
 if(!settings.tgEnable) return;
-const isLong = trade.side==="long";
-const emoji = isLong ? "🟢" : "🔴";
+const emoji = sig.direction==="BUY" ? "🟢" : "🔴";
 const msg = [
-emoji+" *BOSWaves SIGNAL OPENED*",
-"Symbol: `"+symbol+"`",
-"TF: `"+(TF_LIST.find(x=>x.key===tfKey)||{}).label+"`",
-"Side: *"+(isLong?"LONG":"SHORT")+"*",
-"Type: `"+trade.signalType+"`",
-"Entry: `"+fmtPrice(trade.entry)+"`",
-"SL: `"+fmtPrice(trade.sl)+"`",
-"TP: `"+fmtPrice(trade.tp)+"`",
-"R:R `"+trade.rr.toFixed(2)+"`",
-"ADX: `"+trade.adx.toFixed(1)+"`",
-"Score: `"+trade.score+"/100`",
-"Zone #"+trade.zoneId,
-"Opened: `"+trade.openDate+" "+trade.openTimeStr+"`"
+emoji+" *NEW SIGNAL*",
+"Symbol: `"+sig.symbol+"`",
+"TF: `"+(TF_LIST.find(x=>x.key===sig.timeframe)||{}).label+"`",
+"Side: *"+sig.direction+"*",
+"Type: `"+sig.signalType+"`",
+"Entry: `"+fmtPrice(sig.entryPrice)+"`",
+"SL: `"+fmtPrice(sig.stopLoss)+"` ("+sig.stopLossPercent.toFixed(2)+"%)",
+"TP: `"+fmtPrice(sig.takeProfit)+"`",
+"ADX: `"+sig.adx.toFixed(1)+"`",
+"Score: `"+sig.signalScore+"/100`"
+].join("\n");
+sendTelegramRaw(msg);
+}
+function telegramSignalClosed(sig){
+if(!settings.tgEnable) return;
+const resultLabel = sig.result==="win" ? "TARGET HIT ✅" : (sig.result==="loss" ? "STOP LOSS 🛑" : "ZONE INVALID ⚠️");
+const msg = [
+"*"+resultLabel+"*",
+"Symbol: `"+sig.symbol+"`",
+"TF: `"+(TF_LIST.find(x=>x.key===sig.timeframe)||{}).label+"`",
+"Side: *"+sig.direction+"*",
+"Entry: `"+fmtPrice(sig.entryPrice)+"`",
+"Exit: `"+fmtPrice(sig.exitPrice)+"`"
 ].join("\n");
 sendTelegramRaw(msg);
 }
 
-/* ---------------- WebSocket live price ---------------- */
-
-function connectTicker(symbol){
-if(wsTicker){ try{ wsTicker.close(); }catch(e){} wsTicker=null; }
-if(wsReconnectTimer){ clearTimeout(wsReconnectTimer); wsReconnectTimer=null; }
-const dot = document.getElementById("connDot");
-dot.classList.add("off");
-try{
-wsTicker = new WebSocket("wss://stream.bybit.com/v5/public/linear");
-}catch(e){ return; }
-wsTicker.onopen = ()=>{
-dot.classList.remove("off");
-wsTicker.send(JSON.stringify({op:"subscribe", args:["tickers."+symbol]}));
-};
-wsTicker.onmessage = (ev)=>{
-try{
-const msg = JSON.parse(ev.data);
-if(msg.topic && msg.topic.indexOf("tickers.")===0 && msg.data && msg.data.lastPrice){
-const price = parseFloat(msg.data.lastPrice);
-onLivePrice(symbol, price);
-}
-}catch(e){}
-};
-wsTicker.onclose = ()=>{
-dot.classList.add("off");
-wsReconnectTimer = setTimeout(()=>connectTicker(currentSymbol), 3000);
-};
-wsTicker.onerror = ()=>{ try{ wsTicker.close(); }catch(e){} };
-}
-
-function onLivePrice(symbol, price){
-if(symbol !== currentSymbol) return;
-document.getElementById("livePx").textContent = fmtPrice(price);
-TF_LIST.forEach(tf=>{
-const eng = engines[engineKey(symbol, tf.key)];
-if(eng) checkOpenTrades(symbol, tf.key, price);
-});
-if(activeTab==="open" || activeTab==="history" || activeTab==="stats") renderAll();
-}
-
-/* ---------------- Polling loop for all timeframes ---------------- */
-
-let pollTimer = null;
-let pollFailStreak = 0;
-async function pollAllTimeframes(){
-for(const tf of TF_LIST){
-try{
-await ensureEngine(currentSymbol, tf.key);
-await pollCandles(currentSymbol, tf.key);
-pollFailStreak = 0;
-}catch(e){
-pollFailStreak++;
-}
-}
-}
-function startPolling(){
-if(pollTimer) clearInterval(pollTimer);
-pollAllTimeframes();
-pollTimer = setInterval(pollAllTimeframes, 15000);
-}
-
-/* ---------------- UI rendering ---------------- */
-
-function switchTab(view){
-activeTab = view;
-document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
-document.getElementById("view-"+view).classList.add("active");
-document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active", b.dataset.view===view));
-renderAll();
-}
-
-function buildSymbolSelect(){
-const sel = document.getElementById("symbolSel");
-sel.innerHTML = "";
-SYMBOLS.forEach(s=>{
-const opt = document.createElement("option");
-opt.value = s; opt.textContent = s;
-if(s===currentSymbol) opt.selected = true;
-sel.appendChild(opt);
+function testTelegram(){
+sendTelegramRaw("BOSWaves Scanner: test message OK ✅").then(res=>{
+if(res.ok && res.unverified){ alert(t("tgTestSent")); return; }
+alert(res.ok ? t("tgTestSent") : (t("tgTestFail")+"\n\n"+(res.error||"")));
 });
 }
-
-function buildAdxQuick(){
-const sel = document.getElementById("adxThreshQuick");
-sel.innerHTML = "";
-[15,18,20,22,25,28,30,35].forEach(v=>{
-const opt = document.createElement("option");
-opt.value = v; opt.textContent = "ADX>"+v;
-if(v===settings.adxThresh) opt.selected = true;
-sel.appendChild(opt);
-});
-}
-
-function buildTFRow(){
-const row = document.getElementById("tfRow");
-row.innerHTML = "";
-TF_LIST.forEach(tf=>{
-const btn = document.createElement("button");
-btn.className = "tf-btn"+(tf.key===currentTF ? " active":"");
-btn.textContent = tf.label;
-btn.onclick = ()=>{ currentTF = tf.key; localStorage.setItem("bw_tf", currentTF); buildTFRow(); renderAll(); };
-row.appendChild(btn);
-});
-}
-
-function onSymbolChange(){
-currentSymbol = document.getElementById("symbolSel").value;
-localStorage.setItem("bw_symbol", currentSymbol);
-connectTicker(currentSymbol);
-startPolling();
-renderAll();
-}
-function onAdxQuickChange(){
-settings.adxThresh = parseFloat(document.getElementById("adxThreshQuick").value);
+function resetTelegramDefaults(){
+settings.tgToken = DEFAULT_SETTINGS.tgToken;
+settings.tgChat = DEFAULT_SETTINGS.tgChat;
+settings.tgEnable = DEFAULT_SETTINGS.tgEnable;
 persistSettings();
 fillSettingsForm();
+alert(t("tgRestored"));
 }
 
-function renderLive(){
-document.getElementById("liveSymLabel").textContent = currentSymbol+" · "+(TF_LIST.find(x=>x.key===currentTF)||{}).label;
-const eng = engines[engineKey(currentSymbol,currentTF)];
-const adxVal = eng ? eng.currentADX() : null;
-document.getElementById("liveAdx").textContent = adxVal!==null && adxVal!==undefined ? adxVal.toFixed(1) : "--";
-const badge = document.getElementById("adxBadge");
-if(adxVal!==null && adxVal!==undefined){
-const pass = adxVal > settings.adxThresh;
-badge.textContent = pass ? t("adxPass") : t("adxFail");
-badge.className = "badge-sm "+(pass ? "badge-adx-pass":"badge-adx-fail");
-} else {
-badge.textContent = t("waitingData");
-badge.className = "badge-sm badge-adx-fail";
+/* ---------------- Rendering ---------------- */
+
+function goToView(name){
+document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+document.getElementById("view-"+name).classList.add("active");
+if(name==="history") renderHistoryList();
+if(name==="settings") fillSettingsForm();
 }
-if(eng && eng.candles.length>0){
-document.getElementById("livePx").textContent = fmtPrice(eng.candles[eng.candles.length-1].close);
+
+function setFilter(f){
+currentFilter = f;
+document.querySelectorAll(".ftab").forEach(b=>b.classList.toggle("active", b.dataset.f===f));
+renderSignalList();
 }
-const feedKey = "bw_feed_"+currentSymbol+"_"+currentTF;
-let feed = [];
-try{ feed = JSON.parse(localStorage.getItem(feedKey) || "[]"); }catch(e){}
-const wrap = document.getElementById("signalsFeed");
-if(feed.length===0){
-wrap.innerHTML = '<div class="empty"><span class="ic">◈</span>'+t("noSignals")+'</div>';
+
+function updateScanStatus(isScanning){
+const dot = document.getElementById("scanDot");
+const txt = document.getElementById("scanStatusText");
+dot.classList.toggle("scanning", isScanning);
+txt.textContent = isScanning ? t("scanning") : t("idle");
+const meta = document.getElementById("scanMeta");
+const parts = [];
+if(lastFullScan) parts.push(t("lastScan")+" "+fmtTime(lastFullScan));
+parts.push(totalScanned+" "+t("scanned"));
+if(filteredOut>0) parts.push(filteredOut+" "+t("filtered"));
+meta.textContent = parts.join(" · ");
+}
+
+function manualScan(){ runScanCycle(true); }
+
+function getActiveSignals(){
+return loadHistory().filter(s=>s.result==="pending");
+}
+
+function renderSignalList(){
+const active = getActiveSignals();
+const buyCount = active.filter(s=>s.direction==="BUY").length;
+const sellCount = active.filter(s=>s.direction==="SELL").length;
+document.getElementById("cntAll").textContent = active.length;
+document.getElementById("cntBuy").textContent = buyCount;
+document.getElementById("cntSell").textContent = sellCount;
+let list = active.slice();
+if(currentFilter==="buy") list = list.filter(s=>s.direction==="BUY");
+else if(currentFilter==="sell") list = list.filter(s=>s.direction==="SELL");
+const sortBy = document.getElementById("sortSel").value;
+if(sortBy==="score") list.sort((a,b)=>b.signalScore-a.signalScore);
+else list.sort((a,b)=>a.stopLossPercent-b.stopLossPercent);
+const wrap = document.getElementById("signalList");
+if(list.length===0){
+wrap.innerHTML = renderEmptyState();
 return;
 }
-wrap.innerHTML = feed.map(f=>{
-const isLong = f.side==="long";
-return '<div class="trade-card '+(isLong?"long":"short")+'">'
-+'<div class="trade-top">'
-+'<div><span class="side-badge '+(isLong?"long":"short")+'">'+(isLong?t("long"):t("short"))+'</span>'
-+'<div class="trade-sym">'+currentSymbol+'</div></div>'
-+'<div class="trade-time">'+fmtDate(f.time)+'<br>'+fmtTime(f.time)+'</div>'
+wrap.innerHTML = list.map(sig=>{
+const isBuy = sig.direction==="BUY";
+return '<div class="sig-card '+(isBuy?"buy":"sell")+'" onclick="openSheet(\''+sig.id+'\')">'
++'<div class="sig-top">'
++'<div><span class="sig-badge '+(isBuy?"buy":"sell")+'">'+sig.direction+'</span>'
++'<div class="sig-sym">'+sig.symbol+'</div>'
++'<div class="sig-tf">'+(TF_LIST.find(x=>x.key===sig.timeframe)||{}).label+'</div></div>'
++'<div class="sig-score"><div class="score-num">'+sig.signalScore+'</div><div class="score-lbl">'+t("score")+'</div></div>'
 +'</div>'
-+'<div class="trade-grid">'
-+'<div class="tg-item"><div class="tg-label">'+t("entry")+'</div><div class="tg-val mono">'+fmtPrice(f.price)+'</div></div>'
-+'<div class="tg-item"><div class="tg-label">ADX</div><div class="tg-val mono">'+fmtNum(f.adx,1)+'</div></div>'
-+'<div class="tg-item"><div class="tg-label">'+t("score")+'</div><div class="tg-val mono">'+(f.score!==undefined?f.score:"--")+'</div></div>'
++'<div class="sig-grid">'
++'<div class="sg-item"><div class="sg-label">'+t("entry")+'</div><div class="sg-val">'+fmtPrice(sig.entryPrice)+'</div></div>'
++'<div class="sg-item"><div class="sg-label">'+t("sl")+'</div><div class="sg-val" style="color:var(--bear);">'+fmtPrice(sig.stopLoss)+'</div></div>'
++'<div class="sg-item"><div class="sg-label">'+t("tp")+'</div><div class="sg-val" style="color:var(--bull);">'+fmtPrice(sig.takeProfit)+'</div></div>'
 +'</div>'
-+'<div class="pnl-strip" style="background:rgba(63,208,255,.1);">'+(f.signalType||"")+' &nbsp;·&nbsp; '+(TF_LIST.find(x=>x.key===currentTF)||{}).label+'</div>'
 +'</div>';
 }).join("");
 }
 
-function renderOpen(){
-const data = loadTrades(currentSymbol, currentTF);
-const wrap = document.getElementById("openList");
-if(data.open.length===0){
-wrap.innerHTML = '<div class="empty"><span class="ic">◷</span>'+t("noOpen")+'</div>';
-return;
+function renderEmptyState(){
+if(scanning){
+return '<div class="empty"><div class="spinner" style="margin:0 auto 14px;width:34px;height:34px;"></div>'
++'<h3>'+t("scanningMsg")+'</h3><p>'+t("scanningDesc")+'</p></div>';
 }
-wrap.innerHTML = data.open.slice().reverse().map(tr=>{
-const isLong = tr.side==="long";
-return '<div class="trade-card '+(isLong?"long":"short")+'">'
-+'<div class="trade-top">'
-+'<div><span class="side-badge '+(isLong?"long":"short")+'">'+(isLong?t("long"):t("short"))+'</span>'
-+'<div class="trade-sym">'+tr.symbol+'</div><div class="trade-tf">'+(TF_LIST.find(x=>x.key===tr.tf)||{}).label+'</div></div>'
-+'<div class="trade-time">'+fmtDate(tr.openTime)+'<br>'+fmtTime(tr.openTime)+'</div>'
+return '<div class="empty"><span class="ic">📭</span><h3>'+t("noSignalsTitle")+'</h3><p>'+t("noSignalsDesc")+'</p>'
++'<div class="criteria-list">'
++'<div class="criteria-item"><span class="dot2">●</span><span>'+tf("critScore",{score:settings.minScore})+'</span></div>'
++'<div class="criteria-item"><span class="dot2">●</span><span>'+tf("critADX",{adx:settings.adxThresh})+'</span></div>'
++'<div class="criteria-item"><span class="dot2">●</span><span>'+t("critOB")+'</span></div>'
++'<div class="criteria-item"><span class="dot2">●</span><span>'+t("critSL")+'</span></div>'
 +'</div>'
-+'<div class="trade-grid">'
-+'<div class="tg-item"><div class="tg-label">'+t("entry")+'</div><div class="tg-val mono">'+fmtPrice(tr.entry)+'</div></div>'
-+'<div class="tg-item"><div class="tg-label">'+t("sl")+'</div><div class="tg-val mono neg">'+fmtPrice(tr.sl)+'</div></div>'
-+'<div class="tg-item"><div class="tg-label">'+t("tp")+'</div><div class="tg-val mono pos">'+fmtPrice(tr.tp)+'</div></div>'
-+'</div>'
-+'<div class="pnl-strip" style="background:rgba(63,208,255,.1);">'+t("rr")+': '+tr.rr.toFixed(2)+' &nbsp;·&nbsp; ADX '+fmtNum(tr.adx,1)+' &nbsp;·&nbsp; '+t("score")+' '+(tr.score!==undefined?tr.score:"--")+' &nbsp;·&nbsp; '+t("zone")+' #'+tr.zoneId+'</div>'
-+'<div style="font-size:10.5px;color:var(--dim);margin-top:4px;">'+(tr.signalType||"")+(tr.reason?(" · "+tr.reason):"")+'</div>'
++'<div class="scan-note">'+tf("scanEvery",{sec:settings.scanIntervalSec})+'</div>'
 +'</div>';
-}).join("");
 }
 
-function renderHistory(){
-const data = loadTrades(currentSymbol, currentTF);
+function renderHistoryList(){
+const h = loadHistory();
 const wrap = document.getElementById("historyList");
-if(data.closed.length===0){
-wrap.innerHTML = '<div class="empty"><span class="ic">☰</span>'+t("noHistory")+'</div>';
+if(h.length===0){
+wrap.innerHTML = '<div class="empty"><span class="ic">☰</span><p>'+t("noSignals")+'</p></div>';
 return;
 }
-wrap.innerHTML = data.closed.slice().reverse().map(tr=>{
-const isLong = tr.side==="long";
-const won = tr.pnlPct>0;
-return '<div class="trade-card '+(isLong?"long":"short")+'">'
-+'<div class="trade-top">'
-+'<div><span class="side-badge '+(isLong?"long":"short")+'">'+(isLong?t("long"):t("short"))+'</span>'
-+'<div class="trade-sym">'+tr.symbol+'</div><div class="trade-tf">'+(TF_LIST.find(x=>x.key===tr.tf)||{}).label+'</div></div>'
-+'<div class="trade-time">'+fmtDate(tr.closeTime)+'<br>'+fmtTime(tr.closeTime)+'</div>'
-+'</div>'
-+'<div class="trade-grid">'
-+'<div class="tg-item"><div class="tg-label">'+t("entry")+'</div><div class="tg-val mono">'+fmtPrice(tr.entry)+'</div></div>'
-+'<div class="tg-item"><div class="tg-label">'+t("reason")+'</div><div class="tg-val mono">'+(tr.reason==="tp"?t("tpHit"):t("slHit"))+'</div></div>'
-+'<div class="tg-item"><div class="tg-label">R</div><div class="tg-val mono">'+tr.rMultiple.toFixed(2)+'</div></div>'
-+'</div>'
-+'<div class="pnl-strip '+(won?"pos":"neg")+'">'+(won?"+":"")+tr.pnlPct.toFixed(2)+'%</div>'
+wrap.innerHTML = h.map(sig=>{
+const badgeClass = sig.result==="win" ? "result-win" : (sig.result==="loss" ? "result-loss" : (sig.result==="expired" ? "result-expired" : ""));
+const badgeText = sig.result==="win" ? t("win") : (sig.result==="loss" ? t("loss") : (sig.result==="expired" ? t("expired") : t("pending")));
+return '<div class="history-item" onclick="openSheet(\''+sig.id+'\')">'
++'<div class="hi-left"><div class="hi-sym">'+sig.symbol+' · '+sig.direction+'</div>'
++'<div class="hi-time">'+fmtDate(sig.createdAt)+' '+fmtTime(sig.createdAt)+'</div></div>'
++'<div class="result-badge '+badgeClass+'">'+badgeText+'</div>'
 +'</div>';
 }).join("");
 }
 
-function renderStats(){
-const s = computeStats(currentSymbol, currentTF);
-const grid = document.getElementById("statsGrid");
-const items = [
-[t("trades"), s.total, ""], [t("wins"), s.wins, "pos"], [t("losses"), s.losses, "neg"],
-[t("winRate"), fmtPct(s.winRate), s.winRate>=50?"pos":"neg"],
-[t("profitFactor"), isFinite(s.profitFactor)?s.profitFactor.toFixed(2):"∞", s.profitFactor>=1?"pos":"neg"],
-[t("netProfit"), (s.netProfit>=0?"+":"")+s.netProfit.toFixed(2)+"%", s.netProfit>=0?"pos":"neg"],
-[t("grossProfit"), "+"+s.grossProfit.toFixed(2)+"%", "pos"],
-[t("grossLoss"), "-"+s.grossLoss.toFixed(2)+"%", "neg"],
-[t("avgWin"), "+"+s.avgWin.toFixed(2)+"%", "pos"],
-[t("avgLoss"), s.avgLoss.toFixed(2)+"%", "neg"],
-[t("bestTrade"), "+"+s.best.toFixed(2)+"%", "pos"],
-[t("worstTrade"), s.worst.toFixed(2)+"%", "neg"],
-[t("maxDD"), s.maxDD.toFixed(2)+"%", "neg"],
-[t("avgRR"), s.avgRR.toFixed(2), "neu"],
-[t("openCount"), s.openCount, "neu"],
-[t("closedCount"), s.closedCount, "neu"]
-];
-grid.innerHTML = items.map(([label,val,cls])=>
-'<div class="stat"><div class="stat-label">'+label+'</div><div class="stat-val '+(cls||"")+'">'+val+'</div></div>'
-).join("");
+function clearHistory(){
+if(!confirm(t("confirmReset"))) return;
+saveHistory([]);
+renderHistoryList();
+renderSignalList();
+}
+
+function openSheet(id){
+const sig = loadHistory().find(s=>s.id===id);
+if(!sig) return;
+chartSymbol = sig.symbol;
+chartTF = sig.timeframe;
+renderChart();
+const isBuy = sig.direction==="BUY";
+const resultBadge = sig.result==="pending" ? "" :
+('<div class="result-badge '+(sig.result==="win"?"result-win":sig.result==="loss"?"result-loss":"result-expired")+'" style="margin-bottom:10px;">'
++(sig.result==="win"?t("win"):sig.result==="loss"?t("loss"):t("expired"))+'</div>');
+document.getElementById("sheetContent").innerHTML =
+'<div style="text-align:center;margin-bottom:6px;">'
++'<span class="sig-badge '+(isBuy?"buy":"sell")+'">'+sig.direction+'</span>'
++'<div class="sig-sym" style="margin-top:8px;font-size:16px;">'+sig.symbol+' · '+(TF_LIST.find(x=>x.key===sig.timeframe)||{}).label+'</div>'
++'</div>'
++resultBadge
++'<div class="sig-grid">'
++'<div class="sg-item"><div class="sg-label">'+t("entry")+'</div><div class="sg-val">'+fmtPrice(sig.entryPrice)+'</div></div>'
++'<div class="sg-item"><div class="sg-label">'+t("sl")+'</div><div class="sg-val" style="color:var(--bear);">'+fmtPrice(sig.stopLoss)+'</div></div>'
++'<div class="sg-item"><div class="sg-label">'+t("tp")+'</div><div class="sg-val" style="color:var(--bull);">'+fmtPrice(sig.takeProfit)+'</div></div>'
++'<div class="sg-item"><div class="sg-label">'+t("adx")+'</div><div class="sg-val">'+sig.adx.toFixed(1)+'</div></div>'
++'<div class="sg-item"><div class="sg-label">'+t("score")+'</div><div class="sg-val">'+sig.signalScore+'/100</div></div>'
++'<div class="sg-item"><div class="sg-label">'+t("slPct")+'</div><div class="sg-val">'+sig.stopLossPercent.toFixed(2)+'%</div></div>'
++'</div>'
++'<div class="reason-box"><b>'+t("reasonTitle")+':</b><br>'+sig.reason+'<br><span style="color:var(--dim);">'+t("zone")+' #'+sig.zoneId+' · '+t("signalType")+': '+sig.signalType+'</span></div>';
+document.getElementById("sheetOverlay").classList.add("open");
+document.getElementById("detailSheet").classList.add("open");
+}
+function closeSheet(){
+document.getElementById("sheetOverlay").classList.remove("open");
+document.getElementById("detailSheet").classList.remove("open");
+}
+
+/* ---------------- Candlestick chart (canvas) ---------------- */
+
+function renderChart(){
+document.getElementById("chartSymLabel").textContent = chartSymbol;
+document.getElementById("chartTfLabel").textContent = (TF_LIST.find(x=>x.key===chartTF)||{}).label || chartTF;
+const eng = engines[engineKey(chartSymbol, chartTF)];
+const canvas = document.getElementById("chartCanvas");
+const ctx = canvas.getContext("2d");
+const dpr = window.devicePixelRatio || 1;
+const cssW = canvas.clientWidth || 320;
+const cssH = 150;
+canvas.width = cssW*dpr;
+canvas.height = cssH*dpr;
+ctx.setTransform(dpr,0,0,dpr,0,0);
+ctx.clearRect(0,0,cssW,cssH);
+if(!eng || eng.candles.length===0){
+ctx.fillStyle = "#7c8798";
+ctx.font = "12px monospace";
+ctx.fillText("--", cssW/2-10, cssH/2);
+return;
+}
+const candles = eng.candles.slice(-60);
+const highs = candles.map(c=>c.high);
+const lows = candles.map(c=>c.low);
+const maxP = Math.max(...highs);
+const minP = Math.min(...lows);
+const range = Math.max(maxP-minP, 0.0000001);
+const padTop = 8, padBot = 8;
+const usableH = cssH - padTop - padBot;
+const candleW = cssW / candles.length;
+candles.forEach((c,i)=>{
+const x = i*candleW + candleW/2;
+const yHigh = padTop + (1-(c.high-minP)/range)*usableH;
+const yLow = padTop + (1-(c.low-minP)/range)*usableH;
+const yOpen = padTop + (1-(c.open-minP)/range)*usableH;
+const yClose = padTop + (1-(c.close-minP)/range)*usableH;
+const up = c.close >= c.open;
+ctx.strokeStyle = up ? "#00ff88" : "#ff3355";
+ctx.fillStyle = up ? "#00ff88" : "#ff3355";
+ctx.lineWidth = 1;
+ctx.beginPath();
+ctx.moveTo(x, yHigh);
+ctx.lineTo(x, yLow);
+ctx.stroke();
+const bodyTop = Math.min(yOpen,yClose);
+const bodyH = Math.max(Math.abs(yClose-yOpen), 1);
+ctx.fillRect(x-candleW*0.32, bodyTop, candleW*0.64, bodyH);
+});
+}
+
+/* ---------------- Settings UI ---------------- */
+
+function buildSymbolChips(){
+const wrap = document.getElementById("symbolChips");
+wrap.innerHTML = "";
+ALL_SYMBOLS.forEach(sym=>{
+const chip = document.createElement("button");
+chip.className = "symbol-chip"+(settings.enabledSymbols.includes(sym) ? " on" : "");
+chip.textContent = sym.replace("USDT","");
+chip.onclick = ()=>{
+const idx = settings.enabledSymbols.indexOf(sym);
+if(idx>=0) settings.enabledSymbols.splice(idx,1);
+else settings.enabledSymbols.push(sym);
+chip.classList.toggle("on");
+};
+wrap.appendChild(chip);
+});
+}
+
+function buildTFSelect(){
+const sel = document.getElementById("s_tf");
+sel.innerHTML = "";
+TF_LIST.forEach(x=>{
+const opt = document.createElement("option");
+opt.value = x.key; opt.textContent = x.label;
+if(x.key===settings.timeframe) opt.selected = true;
+sel.appendChild(opt);
+});
 }
 
 function fillSettingsForm(){
-document.getElementById("s_pivotLen").value = settings.pivotLen;
-document.getElementById("s_impulseATR").value = settings.impulseATR;
-document.getElementById("s_baseCandles").value = settings.baseCandles;
-document.getElementById("s_atrLen").value = settings.atrLen;
-document.getElementById("s_minZoneATR").value = settings.minZoneATR;
-document.getElementById("s_maxZoneATR").value = settings.maxZoneATR;
-document.getElementById("s_maxBlocks").value = settings.maxBlocks;
-document.getElementById("s_removeOverlap").classList.toggle("on", !!settings.removeOverlap);
-document.getElementById("s_invalidation").value = settings.invalidation;
-document.getElementById("s_adxLen").value = settings.adxLen;
+buildSymbolChips();
+buildTFSelect();
+document.getElementById("s_interval").value = settings.scanIntervalSec;
 document.getElementById("s_adxThresh").value = settings.adxThresh;
-document.getElementById("s_riskPct").value = settings.riskPct;
-document.getElementById("s_leverage").value = settings.leverage;
+document.getElementById("s_minScore").value = settings.minScore;
 document.getElementById("s_rr").value = settings.rr;
-document.getElementById("s_capital").value = settings.capital;
+document.getElementById("s_notifEnable").classList.toggle("on", !!settings.notifEnable);
 document.getElementById("s_tgEnable").classList.toggle("on", !!settings.tgEnable);
 document.getElementById("s_tgToken").value = settings.tgToken;
 document.getElementById("s_tgChat").value = settings.tgChat;
-document.getElementById("s_signalMode").value = settings.signalMode;
-document.getElementById("s_minScore").value = settings.minScore;
-updateModeDesc();
-buildAdxQuick();
-}
-
-function updateModeDesc(){
-const mode = document.getElementById("s_signalMode").value;
-const key = "modeDesc"+mode.charAt(0).toUpperCase()+mode.slice(1);
-document.getElementById("modeDesc").textContent = t(key);
-}
-
-function onModeChange(){
-const mode = document.getElementById("s_signalMode").value;
-document.getElementById("s_minScore").value = MODE_SCORE_DEFAULTS[mode] !== undefined ? MODE_SCORE_DEFAULTS[mode] : 70;
-updateModeDesc();
 }
 
 function toggleSwitch(id){
-const el = document.getElementById(id);
-el.classList.toggle("on");
+document.getElementById(id).classList.toggle("on");
 }
 
 function saveSettings(){
-settings.pivotLen = parseInt(document.getElementById("s_pivotLen").value)||8;
-settings.impulseATR = parseFloat(document.getElementById("s_impulseATR").value)||1.10;
-settings.baseCandles = parseInt(document.getElementById("s_baseCandles").value)||4;
-settings.atrLen = parseInt(document.getElementById("s_atrLen").value)||14;
-settings.minZoneATR = parseFloat(document.getElementById("s_minZoneATR").value)||0.12;
-settings.maxZoneATR = parseFloat(document.getElementById("s_maxZoneATR").value)||1.20;
-settings.maxBlocks = parseInt(document.getElementById("s_maxBlocks").value)||6;
-settings.removeOverlap = document.getElementById("s_removeOverlap").classList.contains("on");
-settings.invalidation = document.getElementById("s_invalidation").value;
-settings.adxLen = parseInt(document.getElementById("s_adxLen").value)||14;
-settings.adxThresh = parseFloat(document.getElementById("s_adxThresh").value)||20;
-settings.riskPct = parseFloat(document.getElementById("s_riskPct").value)||0.35;
-settings.leverage = parseFloat(document.getElementById("s_leverage").value)||50;
-settings.rr = parseFloat(document.getElementById("s_rr").value)||2.0;
-settings.capital = parseFloat(document.getElementById("s_capital").value)||1000;
+settings.timeframe = document.getElementById("s_tf").value;
+settings.scanIntervalSec = clampf2(parseInt(document.getElementById("s_interval").value),10,300,30);
+settings.adxThresh = clampf2(parseFloat(document.getElementById("s_adxThresh").value),0,60,15);
+settings.minScore = clampf2(parseFloat(document.getElementById("s_minScore").value),0,100,60);
+settings.rr = clampf2(parseFloat(document.getElementById("s_rr").value),0.2,10,2);
+settings.notifEnable = document.getElementById("s_notifEnable").classList.contains("on");
 settings.tgEnable = document.getElementById("s_tgEnable").classList.contains("on");
 settings.tgToken = document.getElementById("s_tgToken").value.trim();
 settings.tgChat = document.getElementById("s_tgChat").value.trim();
-settings.signalMode = document.getElementById("s_signalMode").value;
-settings.minScore = clampf2(parseFloat(document.getElementById("s_minScore").value), 0, 100, 70);
+if(settings.enabledSymbols.length===0) settings.enabledSymbols = ALL_SYMBOLS.slice();
 persistSettings();
 engines = {};
-alert(t("settingsSaved"));
-startPolling();
+chartTF = settings.timeframe;
+restartScanLoop();
+alert(t("saveSettings"));
 }
 
 function resetAll(){
 if(!confirm(t("confirmReset"))) return;
-Object.keys(localStorage).forEach(k=>{
-if(k.indexOf("bw_trades_")===0 || k.indexOf("bw_feed_")===0) localStorage.removeItem(k);
-});
+saveHistory([]);
 engines = {};
-startPolling();
-renderAll();
+renderHistoryList();
+renderSignalList();
 }
 
-function renderAll(){
-if(activeTab==="live") renderLive();
-if(activeTab==="open") renderOpen();
-if(activeTab==="history") renderHistory();
-if(activeTab==="stats") renderStats();
+/* ---------------- PWA install ---------------- */
+
+window.addEventListener("beforeinstallprompt", (e)=>{
+e.preventDefault();
+deferredInstallPrompt = e;
+document.getElementById("installFab").classList.add("show");
+});
+function installPWA(){
+if(!deferredInstallPrompt) return;
+deferredInstallPrompt.prompt();
+deferredInstallPrompt.userChoice.then(()=>{
+deferredInstallPrompt = null;
+document.getElementById("installFab").classList.remove("show");
+});
 }
 
-/* ---------------- Wake Lock + background catch-up ---------------- */
+/* ---------------- Loading screen / scan loop ---------------- */
 
-let wakeLockRef = null;
-
-async function requestWakeLock(){
-try{
-if("wakeLock" in navigator){
-wakeLockRef = await navigator.wakeLock.request("screen");
-wakeLockRef.addEventListener("release", ()=>{ wakeLockRef = null; });
+let loadingHidden = false;
+function hideLoadingScreen(){
+if(loadingHidden) return;
+loadingHidden = true;
+const el = document.getElementById("loadingScreen");
+el.style.opacity = "0";
+el.style.transition = "opacity .3s";
+setTimeout(()=>{ el.style.display = "none"; }, 300);
 }
-}catch(e){ wakeLockRef = null; }
-}
 
-function catchUpNow(){
-connectTicker(currentSymbol);
-pollAllTimeframes();
+function restartScanLoop(){
+if(scanTimer) clearInterval(scanTimer);
+runScanCycle(false);
+scanTimer = setInterval(()=>runScanCycle(false), settings.scanIntervalSec*1000);
 }
 
 document.addEventListener("visibilitychange", ()=>{
-if(document.visibilityState === "visible"){
-requestWakeLock();
-catchUpNow();
-}
+if(document.visibilityState==="visible") runScanCycle(false);
 });
-window.addEventListener("focus", catchUpNow);
-window.addEventListener("pageshow", catchUpNow);
-
-/* ---------------- Init ---------------- */
 
 function init(){
 applyI18n();
-buildSymbolSelect();
-buildTFRow();
+buildSymbolChips();
+buildTFSelect();
 fillSettingsForm();
-connectTicker(currentSymbol);
-startPolling();
-requestWakeLock();
-setInterval(renderAll, 4000);
+updateScanStatus(false);
+renderSignalList();
+renderChart();
+restartScanLoop();
+setTimeout(hideLoadingScreen, 2000);
+setInterval(()=>{ updateScanStatus(scanning); }, 3000);
 }
 window.addEventListener("load", init);
+
 </script>
 </body>
 </html>
