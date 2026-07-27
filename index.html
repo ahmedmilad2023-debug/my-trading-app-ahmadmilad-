@@ -176,6 +176,14 @@ input:focus,select:focus{outline:2px solid var(--up); outline-offset:1px;}
           <button class="btn primary" id="btnScanToggle" data-i="startScan">تشغيل الفحص</button>
         </div>
       </div>
+      <div id="dataStatusBanner" class="hidden" style="background:var(--down-dim); border:1px solid var(--down); color:var(--down); padding:10px 14px; border-radius:10px; font-size:12.5px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <span id="dataStatusText"></span>
+        <button class="btn sm" id="btnRetryData">إعادة المحاولة</button>
+      </div>
+      <div class="section-title" data-i="marketSnapshot">أسعار السوق الآن</div>
+      <div class="grid cols-4" id="marketSnapshot"></div>
+      <div class="section-title" data-i="perfTitle">أداء الاستراتيجية</div>
+      <div class="stat-sub" style="margin:-6px 0 12px;" data-i="scanNoteEmpty">لا توجد صفقات مكتملة بعد — الجداول أدناه تعرض إحصاءات الصفقات المغلقة فقط، ستمتلئ تدريجياً بعد ظهور إشارات وإغلاقها.</div>
       <div class="grid cols-4" id="kpiRow"></div>
       <div class="section-title" data-i="perTf">الأداء حسب الفريم</div>
       <div class="card"><table id="tfTable"><thead><tr>
@@ -291,8 +299,9 @@ const I18N = {
     tgTestFail:"فشل الإرسال — تحقّق من التوكن ومعرف الدردشة", scanStarted:"تم تشغيل الفحص",
     scanStopped:"تم إيقاف الفحص", resetDone:"تم حذف جميع البيانات المحلية", entry:"دخول", sl:"وقف الخسارة",
     rr:"عائد/مخاطرة", closedFull:"مغلقة (TP3)", closedSl:"وقف خسارة", closedPartial:"وقف عند التعادل/TP1",
-    lastScanPrefix:"آخر فحص: "
-  },
+    lastScanPrefix:"آخر فحص: ", marketSnapshot:"أسعار السوق الآن", perfTitle:"أداء الاستراتيجية",
+    dataOk:"متصل بـ Binance بنجاح", dataFail:"تعذّر الاتصال بـ Binance — قد يكون محجوباً في شبكتك/منطقتك، أو مشكلة اتصال مؤقتة. جرّب VPN أو تحقق من الإنترنت.",
+    scanNoteEmpty:"لا توجد صفقات مكتملة بعد — الجداول أدناه تعرض إحصاءات الصفقات المغلقة فقط، ستمتلئ تدريجياً بعد ظهور إشارات وإغلاقها."
   en:{
     brandName:"Confluence Signals", navDash:"Dashboard", navSignals:"Signals", navTrades:"Trade Log",
     navBacktest:"Backtest", navSettings:"Settings", scanOff:"Scanner idle", scanOn:"Scanner running",
@@ -315,7 +324,9 @@ const I18N = {
     tgTestFail:"Failed to send — check your token and chat ID", scanStarted:"Scanner started",
     scanStopped:"Scanner stopped", resetDone:"All local data deleted", entry:"Entry", sl:"Stop Loss",
     rr:"R:R", closedFull:"Closed (TP3)", closedSl:"Stopped out", closedPartial:"Stopped at BE/TP1",
-    lastScanPrefix:"Last scan: "
+    lastScanPrefix:"Last scan: ", marketSnapshot:"Live Market Prices", perfTitle:"Strategy Performance",
+    dataOk:"Connected to Binance", dataFail:"Could not reach Binance — it may be blocked on your network/region, or a temporary connection issue. Try a VPN or check your internet.",
+    scanNoteEmpty:"No closed trades yet — the tables below only show stats for closed trades, they'll fill in as signals appear and close."
   }
 };
 let LANG = localStorage.getItem('cs_lang') || 'ar';
@@ -360,11 +371,55 @@ function persist(){
 async function fetchKlines(symbol, interval, limit=300){
   const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
   const res = await fetch(url);
-  if(!res.ok) throw new Error('binance_fetch_failed');
+  if(!res.ok) throw new Error('binance_fetch_failed_'+res.status);
   const raw = await res.json();
+  setDataStatus(true);
   return raw.map(k=>({
     time: k[0], open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:+k[5]
   }));
+}
+
+function setDataStatus(ok, detail){
+  const banner = document.getElementById('dataStatusBanner');
+  const text = document.getElementById('dataStatusText');
+  if(ok){ banner.classList.add('hidden'); return; }
+  banner.classList.remove('hidden');
+  text.textContent = t('dataFail') + (detail? ' ('+detail+')' : '');
+}
+
+async function fetchLivePrices(){
+  try{
+    const symbolsParam = encodeURIComponent(JSON.stringify(SETTINGS.symbols));
+    const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${symbolsParam}`);
+    if(!res.ok) throw new Error('status_'+res.status);
+    const data = await res.json();
+    setDataStatus(true);
+    return data;
+  }catch(e){
+    setDataStatus(false, e.message);
+    return null;
+  }
+}
+
+async function renderMarketSnapshot(){
+  const wrap = document.getElementById('marketSnapshot');
+  const data = await fetchLivePrices();
+  if(!data){
+    wrap.innerHTML = SETTINGS.symbols.map(s=>`<div class="card"><h3>${s}</h3><div class="stat-num" style="color:var(--mute);font-size:16px;">—</div></div>`).join('');
+    return;
+  }
+  const bySym = {}; data.forEach(d=>bySym[d.symbol]=d);
+  wrap.innerHTML = SETTINGS.symbols.map(s=>{
+    const d = bySym[s];
+    if(!d) return `<div class="card"><h3>${s}</h3><div class="stat-num" style="color:var(--mute);font-size:16px;">—</div></div>`;
+    const chg = parseFloat(d.priceChangePercent);
+    const price = parseFloat(d.lastPrice);
+    const dp = price >= 100 ? 2 : price >= 1 ? 4 : 6;
+    return `<div class="card"><h3>${s}</h3>
+      <div class="stat-num">${price.toFixed(dp)}</div>
+      <div class="stat-sub ${chg>=0?'up':'down'}">${chg>=0?'+':''}${chg.toFixed(2)}% (24h)</div>
+    </div>`;
+  }).join('');
 }
 
 /* ============================== Math helpers ============================== */
@@ -627,7 +682,7 @@ async function scanOnce(){
             if(trade){ await sendTelegram(formatSignalMessage(sym, tf, sig)); }
           }
         }
-      }catch(e){ console.warn('scan error', sym, tf, e.message); }
+      }catch(e){ console.warn('scan error', sym, tf, e.message); setDataStatus(false, e.message); }
     }
   }
   persist();
@@ -914,10 +969,14 @@ document.getElementById('btnRunBacktest').addEventListener('click', async ()=>{
 });
 
 /* ============================== Init ============================== */
+document.getElementById('btnRetryData').addEventListener('click', renderMarketSnapshot);
+
 function init(){
   applyI18n();
   initSettingsUI();
   renderAll();
+  renderMarketSnapshot();
+  setInterval(renderMarketSnapshot, 30000);
 }
 init();
 </script>
