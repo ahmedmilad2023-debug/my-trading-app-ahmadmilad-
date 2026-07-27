@@ -1,439 +1,925 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0b0e11">
-    <meta name="description" content="AI Trading Signals - Professional Crypto Futures Analysis">
-    <title>AI Trading Signals | إصدار كامل 2.0</title>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkFJIHRyYWRpbmcgU2lnbmFscyIsCiAgInNob3J0X25hbWUiOiAiU2lnbmFsQUkiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBiMGUxMSIsCiAgInRoZW1lX2NvbG9yIjogIiMwYjBlMTEiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWwsPHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48dGV4dCB5PScuOWVtJyBmb250LXNpemU9JzkwJz7ph4w8L3RleHQ+PC9zdmc+IiwKICAgICAgInNpemVzIjogIjE5MngxOTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==">
-    <link rel="stylesheet" href="https://unpkg.com/lightweight-charts@4.0.1/dist/lightweight-charts.css">
-    <script src="https://unpkg.com/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-        body { background: #0b0e11; color: #eaecef; overflow-x: hidden; padding: 10px; }
-        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0b0e11; } ::-webkit-scrollbar-thumb { background: #2b3139; border-radius: 4px; }
-        #pwa-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #1e2329; padding: 12px 20px; border-top: 1px solid #2b3139; z-index: 9999; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-        #pwa-banner.show { display: flex; }
-        #pwa-banner button { background: #1e80ff; border: none; color: white; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; }
-        #pwa-banner .close { background: transparent; color: #848e9c; padding: 0 10px; font-size: 24px; line-height: 1; }
-        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; flex-wrap: wrap; gap: 10px; }
-        .app-title { font-size: 22px; font-weight: 700; color: #f0b90b; display: flex; align-items: center; gap: 8px; }
-        .app-title span { font-size: 14px; color: #848e9c; font-weight: 400; }
-        .header-controls { display: flex; gap: 8px; flex-wrap: wrap; }
-        .header-controls button { background: #1e2329; border: 1px solid #2b3139; color: #eaecef; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
-        .header-controls button:hover { background: #2b3139; }
-        .header-controls .btn-active { border-color: #0ecb81; color: #0ecb81; }
-        .selector-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
-        .selector-row select { background: #0b0e11; border: 1px solid #2b3139; color: #eaecef; padding: 6px 12px; border-radius: 8px; font-size: 14px; cursor: pointer; outline: none; }
-        .selector-row select:focus { border-color: #1e80ff; }
-        .symbol-btn { background: #0b0e11; border: 1px solid #2b3139; color: #eaecef; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: 0.2s; }
-        .symbol-btn:hover, .symbol-btn.active { border-color: #f0b90b; color: #f0b90b; }
-        .tabs { display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid #2b3139; flex-wrap: wrap; }
-        .tab { background: transparent; border: none; color: #848e9c; padding: 8px 16px; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; transition: 0.2s; }
-        .tab.active { color: #eaecef; border-bottom-color: #f0b90b; }
-        .tab:hover { color: #eaecef; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .grid-main { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
-        @media (max-width: 768px) { .grid-main { grid-template-columns: 1fr; } }
-        .card { background: #1e2329; border-radius: 8px; padding: 12px; border: 1px solid #2b3139; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
-        .card-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .chart-container { position: relative; height: 400px; width: 100%; background: #0b0e11; border-radius: 8px; overflow: hidden; display: block; }
-        #tradeChart { width: 100%; height: 100%; display: block; }
-        .chart-overlay { position: absolute; top: 10px; left: 10px; display: flex; gap: 12px; font-size: 12px; color: #848e9c; pointer-events: none; z-index: 10; }
-        .chart-overlay .price { color: #eaecef; font-weight: bold; font-size: 16px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-top: 6px; }
-        .stat-item { background: #0b0e11; padding: 8px; border-radius: 4px; text-align: center; }
-        .stat-item .label { font-size: 11px; color: #848e9c; }
-        .stat-item .value { font-size: 15px; font-weight: 600; margin-top: 2px; }
-        .value.green { color: #0ecb81; } .value.red { color: #f6465d; } .value.orange { color: #f0b90b; } .value.blue { color: #1e80ff; }
-        .signal-item { background: #0b0e11; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #848e9c; }
-        .signal-item.long { border-left-color: #0ecb81; } .signal-item.short { border-left-color: #f6465d; }
-        .signal-item .header { display: flex; justify-content: space-between; font-size: 13px; }
-        .signal-item .details { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #848e9c; margin-top: 6px; }
-        .signal-item .details span { background: #1e2329; padding: 2px 8px; border-radius: 4px; }
-        .signal-item .reason { font-size: 12px; color: #848e9c; margin-top: 4px; opacity: 0.8; }
-        .score-badge { padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; }
-        .score-badge.excellent { background: #0ecb81; color: #000; } .score-badge.good { background: #f0b90b; color: #000; } .score-badge.medium { background: #1e80ff; color: #fff; }
-        .trade-log-table { width: 100%; font-size: 12px; border-collapse: collapse; }
-        .trade-log-table th { text-align: left; color: #848e9c; padding: 6px 4px; border-bottom: 1px solid #2b3139; font-weight: 500; }
-        .trade-log-table td { padding: 6px 4px; border-bottom: 1px solid #2b3139; }
-        .trade-log-table .win { color: #0ecb81; } .trade-log-table .loss { color: #f6465d; } .trade-log-table .open { color: #1e80ff; }
-        .log-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-        .log-filters select, .log-filters input { background: #0b0e11; border: 1px solid #2b3139; color: #eaecef; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-        .tg-section, .bt-section { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
-        .tg-section input, .bt-section select { background: #0b0e11; border: 1px solid #2b3139; color: #eaecef; padding: 6px 10px; border-radius: 4px; flex: 1; min-width: 120px; }
-        .tg-section button, .bt-section button { background: #1e80ff; border: none; color: white; padding: 6px 16px; border-radius: 4px; cursor: pointer; font-weight: 500; }
-        .tg-section button:disabled { opacity: 0.5; }
-        .settings-group { margin-top: 12px; border-top: 1px solid #2b3139; padding-top: 12px; }
-        .settings-group label { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 6px; }
-        .settings-group input[type="number"] { background: #0b0e11; border: 1px solid #2b3139; color: #eaecef; padding: 4px 8px; border-radius: 4px; width: 60px; }
-        #equityCanvas { width: 100%; height: 200px; background: #0b0e11; border-radius: 8px; margin-top: 10px; }
-        @media (max-width: 480px) { .app-title { font-size: 18px; } .chart-container { height: 250px; } .stats-grid { grid-template-columns: repeat(3, 1fr); } }
-        .hidden { display: none !important; } .mt-8 { margin-top: 8px; } .mb-8 { margin-bottom: 8px; } .flex-between { display: flex; justify-content: space-between; align-items: center; } .text-center { text-align: center; } .text-muted { color: #848e9c; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Confluence Signals — AI Trading Signals</title>
+<meta name="theme-color" content="#0a0e16">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>◆</text></svg>">
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{
+  --bg:#0a0e16; --panel:#0f1522; --panel2:#131b2b; --line:#1e2a3d;
+  --txt:#e7edf5; --sub:#7c8aa3; --mute:#4b5a72;
+  --up:#17c98d; --up-dim:#0f3a30; --down:#ff5566; --down-dim:#3a1420;
+  --gold:#f0b90b; --violet:#8b7cf6;
+  --mono:'JetBrains Mono','Roboto Mono',ui-monospace,monospace;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  background:radial-gradient(1200px 600px at 80% -10%, #0f1a2b 0%, var(--bg) 55%);
+  color:var(--txt); font-family:var(--sans); font-size:14px; -webkit-font-smoothing:antialiased;
+  min-height:100%;
+}
+::-webkit-scrollbar{width:8px;height:8px;} ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+button,input,select{font-family:inherit; color:inherit;}
+a{color:inherit;}
+
+/* ---- Shell ---- */
+.app{display:flex; min-height:100vh;}
+.sidebar{
+  width:220px; flex:none; background:linear-gradient(180deg,var(--panel),#0c111c);
+  border-inline-end:1px solid var(--line); padding:20px 14px; display:flex; flex-direction:column; gap:6px;
+  position:sticky; top:0; height:100vh;
+}
+.brand{display:flex; align-items:center; gap:10px; padding:6px 8px 22px;}
+.brand-mark{
+  width:34px;height:34px;border-radius:10px; display:flex;align-items:center;justify-content:center;
+  background:conic-gradient(from 220deg, var(--up), var(--violet), var(--down), var(--up));
+  font-weight:800; color:#05070b; font-family:var(--mono);
+}
+.brand-name{font-weight:700; font-size:15px; letter-spacing:.2px;}
+.brand-sub{font-size:11px; color:var(--sub); font-family:var(--mono);}
+.nav-btn{
+  display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; border:none;
+  background:transparent; color:var(--sub); text-align:start; cursor:pointer; font-size:13.5px; font-weight:600;
+  transition:.15s;
+}
+.nav-btn:hover{background:var(--panel2); color:var(--txt);}
+.nav-btn.active{background:linear-gradient(90deg, var(--panel2), transparent); color:var(--txt); box-shadow:inset 3px 0 0 var(--up);}
+[dir=rtl] .nav-btn.active{box-shadow:inset -3px 0 0 var(--up);}
+.nav-ico{width:18px;text-align:center;opacity:.9;}
+.sidebar-foot{margin-top:auto; font-size:11px; color:var(--mute); padding:8px; font-family:var(--mono);}
+.scan-dot{width:7px;height:7px;border-radius:50%; background:var(--mute); display:inline-block; margin-inline-end:6px;}
+.scan-dot.live{background:var(--up); box-shadow:0 0 8px var(--up); animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.main{flex:1; min-width:0; padding:22px 26px 60px; max-width:1400px;}
+.topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:12px; flex-wrap:wrap;}
+.topbar h1{font-size:19px; font-weight:800;}
+.topbar-actions{display:flex; gap:8px; align-items:center;}
+.pill{
+  font-family:var(--mono); font-size:11px; color:var(--sub); background:var(--panel2);
+  border:1px solid var(--line); padding:5px 10px; border-radius:100px; display:flex; align-items:center; gap:6px;
+}
+.btn{
+  background:var(--panel2); border:1px solid var(--line); color:var(--txt); padding:8px 14px; border-radius:9px;
+  cursor:pointer; font-weight:700; font-size:12.5px; transition:.15s;
+}
+.btn:hover{border-color:var(--up); color:var(--up);}
+.btn.primary{background:linear-gradient(135deg,var(--up),#0aa46f); color:#03150e; border:none;}
+.btn.primary:hover{filter:brightness(1.08); color:#03150e;}
+.btn.danger:hover{border-color:var(--down); color:var(--down);}
+.btn.sm{padding:5px 10px; font-size:11.5px;}
+.lang-toggle{display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden;}
+.lang-toggle button{border:none; background:var(--panel2); padding:7px 11px; font-size:11.5px; font-weight:700; cursor:pointer; color:var(--sub);}
+.lang-toggle button.on{background:var(--up); color:#03150e;}
+
+.grid{display:grid; gap:14px;}
+.grid.cols-4{grid-template-columns:repeat(4,1fr);}
+.grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.grid.cols-2{grid-template-columns:repeat(2,1fr);}
+@media(max-width:1000px){.grid.cols-4{grid-template-columns:repeat(2,1fr);} .grid.cols-3{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.app{flex-direction:column;} .sidebar{width:100%;height:auto;position:relative;flex-direction:row;overflow-x:auto;} .grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:1fr;}}
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px;}
+.card h3{font-size:12.5px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px;}
+.stat-num{font-family:var(--mono); font-size:26px; font-weight:700;}
+.stat-sub{font-size:11.5px; color:var(--sub); margin-top:4px;}
+.up{color:var(--up);} .down{color:var(--down);} .gold{color:var(--gold);}
+
+table{width:100%; border-collapse:collapse; font-size:12.5px;}
+th{text-align:start; color:var(--sub); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.3px; padding:8px 10px; border-bottom:1px solid var(--line);}
+td{padding:9px 10px; border-bottom:1px solid var(--line); font-family:var(--mono);}
+tr:hover td{background:var(--panel2);}
+.badge{display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800; font-family:var(--mono);}
+.badge.buy{background:var(--up-dim); color:var(--up);}
+.badge.sell{background:var(--down-dim); color:var(--down);}
+.grade{font-weight:800; font-family:var(--mono);}
+.grade.Aplus{color:var(--gold);} .grade.A{color:var(--up);} .grade.B{color:#c9d24a;} .grade.C{color:var(--mute);}
+
+/* Confidence gauge - signature element */
+.gauge{position:relative; width:64px; height:64px; flex:none;}
+.gauge svg{transform:rotate(-90deg);}
+.gauge-val{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:800; font-size:15px;}
+
+.signal-card{display:flex; gap:14px; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px;}
+.signal-main{flex:1; min-width:0;}
+.signal-top{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;}
+.sym{font-weight:800; font-size:15px;}
+.tf-chip{font-family:var(--mono); font-size:10.5px; background:var(--panel2); border:1px solid var(--line); padding:2px 7px; border-radius:6px; color:var(--sub);}
+.reasons{font-size:11.5px; color:var(--sub); line-height:1.6;}
+.levels{display:flex; gap:16px; margin-top:8px; font-family:var(--mono); font-size:11.5px; flex-wrap:wrap;}
+.levels span b{display:block; color:var(--sub); font-weight:600; font-size:10px; font-family:var(--sans);}
+
+.settings-row{display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line); gap:16px;}
+.settings-row:last-child{border:none;}
+.settings-row label{font-weight:700; font-size:13px;}
+.settings-row .hint{font-size:11.5px; color:var(--sub); margin-top:3px;}
+input[type=text],input[type=password],input[type=number],select{
+  background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:12.5px; min-width:220px;
+}
+input:focus,select:focus{outline:2px solid var(--up); outline-offset:1px;}
+.chip-select{display:flex; gap:6px; flex-wrap:wrap; max-width:420px;}
+.chip{border:1px solid var(--line); background:var(--panel2); padding:6px 11px; border-radius:100px; font-size:11.5px; cursor:pointer; font-family:var(--mono);}
+.chip.on{background:var(--up-dim); border-color:var(--up); color:var(--up);}
+.switch{position:relative; width:42px; height:24px; background:var(--panel2); border:1px solid var(--line); border-radius:100px; cursor:pointer; flex:none;}
+.switch .dot{position:absolute; top:2px; inset-inline-start:2px; width:18px; height:18px; border-radius:50%; background:var(--mute); transition:.15s;}
+.switch.on{background:var(--up-dim); border-color:var(--up);}
+.switch.on .dot{background:var(--up); inset-inline-start:20px;}
+
+.empty{text-align:center; padding:50px 20px; color:var(--sub);}
+.empty .big{font-size:34px; margin-bottom:10px;}
+
+.toast{position:fixed; bottom:20px; inset-inline-end:20px; background:var(--panel2); border:1px solid var(--up); color:var(--txt);
+  padding:12px 18px; border-radius:10px; font-size:13px; z-index:99; box-shadow:0 10px 30px rgba(0,0,0,.4); max-width:340px;}
+.toast.err{border-color:var(--down);}
+#chartWrap{height:380px; border-radius:12px; overflow:hidden; border:1px solid var(--line);}
+.filters{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
+.section-title{font-size:15px; font-weight:800; margin:22px 0 12px;}
+.hidden{display:none !important;}
+.tabs{display:flex; gap:6px; margin-bottom:14px;}
+.tabs button{background:transparent;border:1px solid var(--line); padding:6px 13px; border-radius:8px; font-size:12px; font-weight:700; color:var(--sub); cursor:pointer;}
+.tabs button.on{background:var(--panel2); color:var(--txt); border-color:var(--up);}
+</style>
 </head>
 <body>
-<div id="pwa-banner"><div style="display:flex;align-items:center;gap:10px;"><span style="font-size:24px;">🤖</span><span>ثبّت التطبيق للوصول السريع</span></div><div style="display:flex;gap:8px;"><button id="installBtn">📲 تثبيت</button><button class="close" id="closeBanner">✕</button></div></div>
-
-<header class="app-header"><div class="app-title">🤖 AI Signals <span>Full Pro Scanner</span></div><div class="header-controls"><button id="btnRefresh">🔄 تحديث</button><button id="btnAlerts" class="btn-active">🔔 تنبيهات</button><button id="btnShare">📤 مشاركة</button></div></header>
-
-<div class="selector-row">
-    <select id="selSymbol">
-        <option value="BTCUSDT">BTC/USDT</option><option value="ETHUSDT">ETH/USDT</option><option value="BNBUSDT">BNB/USDT</option>
-        <option value="SOLUSDT">SOL/USDT</option><option value="XRPUSDT">XRP/USDT</option><option value="DOGEUSDT">DOGE/USDT</option>
-        <option value="ADAUSDT">ADA/USDT</option><option value="LINKUSDT">LINK/USDT</option><option value="AVAXUSDT">AVAX/USDT</option>
-        <option value="SUIUSDT">SUI/USDT</option>
-    </select>
-    <select id="selTF">
-        <option value="5m">5 دقائق</option><option value="15m" selected>15 دقيقة</option><option value="30m">30 دقيقة</option>
-        <option value="1h">1 ساعة</option><option value="4h">4 ساعات</option>
-    </select>
-    <div id="symbolQuick" style="display:flex;gap:4px;flex-wrap:wrap;">
-        <button class="symbol-btn active" data-sym="BTCUSDT">BTC</button><button class="symbol-btn" data-sym="ETHUSDT">ETH</button>
-        <button class="symbol-btn" data-sym="BNBUSDT">BNB</button><button class="symbol-btn" data-sym="SOLUSDT">SOL</button>
-        <button class="symbol-btn" data-sym="XRPUSDT">XRP</button><button class="symbol-btn" data-sym="DOGEUSDT">DOGE</button>
-        <button class="symbol-btn" data-sym="ADAUSDT">ADA</button><button class="symbol-btn" data-sym="LINKUSDT">LINK</button>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">CS</div>
+      <div>
+        <div class="brand-name" data-i="brandName">Confluence Signals</div>
+        <div class="brand-sub">v1.0 · self-hosted</div>
+      </div>
     </div>
-</div>
-
-<div class="tabs"><button class="tab active" data-tab="tab-live">📊 مباشر</button><button class="tab" data-tab="tab-stats">📈 الإحصائيات</button><button class="tab" data-tab="tab-backtest">🧪 باكتست</button><button class="tab" data-tab="tab-settings">⚙️ الإعدادات</button></div>
-
-<div class="tab-content active" id="tab-live">
-<div class="grid-main">
-<div>
-    <div class="card"><div class="chart-container"><div id="tradeChart"></div><div class="chart-overlay"><span id="currentPrice" class="price">--</span><span id="currentChange" style="color:#848e9c;">0.00%</span></div></div></div>
-    <div class="card mt-8"><div class="card-title"><span>📊 إحصائيات الفريم الحالي</span><span style="font-size:12px;color:#848e9c;" id="statFrameLabel">15m</span></div>
-    <div class="stats-grid" id="statsContainer">
-        <div class="stat-item"><div class="label">الصفقات</div><div class="value" id="sTotal">0</div></div>
-        <div class="stat-item"><div class="label">الرابحة</div><div class="value green" id="sWin">0</div></div>
-        <div class="stat-item"><div class="label">الخاسرة</div><div class="value red" id="sLoss">0</div></div>
-        <div class="stat-item"><div class="label">Win Rate</div><div class="value orange" id="sWinRate">0%</div></div>
-        <div class="stat-item"><div class="label">Profit Factor</div><div class="value orange" id="sPF">0</div></div>
-        <div class="stat-item"><div class="label">Sharpe</div><div class="value orange" id="sSharpe">0</div></div>
-        <div class="stat-item"><div class="label">Expectancy</div><div class="value blue" id="sExpectancy">0%</div></div>
-        <div class="stat-item"><div class="label">Max Drawdown</div><div class="value red" id="sMaxDD">0%</div></div>
-    </div></div>
-</div>
-<div>
-    <div class="card"><div class="card-title"><span>📡 إشارات مباشرة</span><span style="font-size:12px;color:#848e9c;" id="signalCount">0 إشارة</span></div>
-    <div id="signalList" style="max-height:300px;overflow-y:auto;"><div class="text-center text-muted" style="padding:20px;">بانتظار البيانات...</div></div></div>
-    <div class="card mt-8"><div class="card-title"><span>📋 سجل الصفقات</span><div style="display:flex;gap:6px;"><button id="clearLogBtn" style="background:transparent;border:1px solid #f6465d;color:#f6465d;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">مسح</button></div></div>
-    <div class="log-filters">
-        <select id="logFilterSymbol"><option value="all">كل العملات</option></select>
-        <select id="logFilterTF"><option value="all">كل الفريمات</option></select>
-        <select id="logFilterStatus"><option value="all">كل الحالات</option><option value="open">مفتوح</option><option value="win">رابح</option><option value="loss">خاسر</option></select>
-        <input type="date" id="logFilterDate" />
-        <button id="logFilterBtn" style="background:#0b0e11;border:1px solid #2b3139;color:#eaecef;padding:4px 10px;border-radius:4px;cursor:pointer;">تصفية</button>
+    <button class="nav-btn active" data-tab="dashboard"><span class="nav-ico">▤</span><span data-i="navDash">لوحة الإحصائيات</span></button>
+    <button class="nav-btn" data-tab="signals"><span class="nav-ico">⚡</span><span data-i="navSignals">الإشارات</span></button>
+    <button class="nav-btn" data-tab="trades"><span class="nav-ico">☰</span><span data-i="navTrades">سجل الصفقات</span></button>
+    <button class="nav-btn" data-tab="backtest"><span class="nav-ico">◷</span><span data-i="navBacktest">اختبار تاريخي</span></button>
+    <button class="nav-btn" data-tab="settings"><span class="nav-ico">⚙</span><span data-i="navSettings">الإعدادات</span></button>
+    <div class="sidebar-foot">
+      <div><span class="scan-dot" id="scanDot"></span><span id="scanStatusTxt" data-i="scanOff">الفحص متوقف</span></div>
+      <div id="lastScanTxt" style="margin-top:4px;"></div>
     </div>
-    <div style="max-height:200px;overflow-y:auto;"><table class="trade-log-table"><thead><tr><th>الزوج</th><th>الاتجاه</th><th>الدخول</th><th>الخروج</th><th>الربح</th><th>المدة</th></tr></thead><tbody id="logBody"><tr><td colspan="6" class="text-center text-muted">لا توجد صفقات</td></tr></tbody></table></div></div>
-</div>
-</div></div>
+  </aside>
 
-<div class="tab-content" id="tab-stats">
-<div class="card"><div class="card-title">📈 إحصائيات متقدمة (حسب الفريم)</div><div style="overflow-x:auto;" id="frameStatsTable"></div></div>
-<div class="card mt-8"><div class="card-title">📊 أداء العملات</div><div style="overflow-x:auto;" id="symbolStatsTable"></div></div>
-</div>
+  <main class="main">
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard">
+      <div class="topbar">
+        <h1 data-i="dashTitle">لوحة الإحصائيات</h1>
+        <div class="topbar-actions">
+          <div class="lang-toggle"><button id="langAr" class="on">AR</button><button id="langEn">EN</button></div>
+          <button class="btn primary" id="btnScanToggle" data-i="startScan">تشغيل الفحص</button>
+        </div>
+      </div>
+      <div class="grid cols-4" id="kpiRow"></div>
+      <div class="section-title" data-i="perTf">الأداء حسب الفريم</div>
+      <div class="card"><table id="tfTable"><thead><tr>
+        <th data-i="thTf">الفريم</th><th data-i="thTrades">صفقات</th><th data-i="thWin">Win Rate</th>
+        <th data-i="thPF">Profit Factor</th><th data-i="thSharpe">Sharpe</th><th data-i="thDD">Max DD</th><th data-i="thExp">Expectancy</th>
+      </tr></thead><tbody></tbody></table></div>
+      <div class="section-title" data-i="perSym">الأداء حسب العملة</div>
+      <div class="card"><table id="symTable"><thead><tr>
+        <th data-i="thSym">العملة</th><th data-i="thTrades">صفقات</th><th data-i="thWin">Win Rate</th>
+        <th data-i="thPF">Profit Factor</th><th data-i="thBestTf">أفضل فريم</th><th data-i="thLastSig">آخر إشارة</th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
 
-<div class="tab-content" id="tab-backtest">
-<div class="card"><div class="card-title">🧪 اختبار تاريخي (Backtest)</div>
-<div class="bt-section">
-    <select id="btSymbol"><option value="BTCUSDT">BTC/USDT</option><option value="ETHUSDT">ETH/USDT</option><option value="BNBUSDT">BNB/USDT</option><option value="SOLUSDT">SOL/USDT</option><option value="XRPUSDT">XRP/USDT</option></select>
-    <select id="btTF"><option value="5m">5 دقائق</option><option value="15m" selected>15 دقيقة</option><option value="1h">1 ساعة</option><option value="4h">4 ساعات</option></select>
-    <select id="btDays"><option value="7">7 أيام</option><option value="30" selected>30 يوم</option><option value="90">90 يوم</option><option value="180">180 يوم</option></select>
-    <button id="btnRunBacktest">🚀 تشغيل الاختبار</button>
-</div>
-<div id="btResults" class="mt-8" style="display:none;">
-    <div class="stats-grid" id="btStats"></div>
-    <canvas id="equityCanvas"></canvas>
-</div></div></div>
+    <!-- SIGNALS -->
+    <section id="tab-signals" class="hidden">
+      <div class="topbar"><h1 data-i="sigTitle">الإشارات الحية</h1>
+        <div class="pill"><span data-i="threshLbl">الحد الأدنى للثقة</span>: <span id="threshDisplay">70</span></div>
+      </div>
+      <div class="filters">
+        <select id="filterSymbol"><option value="" data-i="allSymbols">كل العملات</option></select>
+        <select id="filterTf"><option value="" data-i="allTf">كل الفريمات</option></select>
+        <select id="filterType"><option value="" data-i="allTypes">الكل</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
+        <input type="text" id="filterSearch" placeholder="بحث..." style="min-width:160px;">
+      </div>
+      <div id="signalsList"></div>
+    </section>
 
-<div class="tab-content" id="tab-settings">
-<div class="card"><div class="card-title">⚙️ الإعدادات العامة</div>
-<div class="tg-section"><input type="text" id="tgToken" placeholder="Telegram Bot Token" /><input type="text" id="tgChatId" placeholder="Telegram Chat ID" /><button id="tgTest">📨 اختبار</button><button id="tgSave" style="background:#f0b90b;">💾 حفظ</button></div>
-<div id="tgStatus" style="font-size:12px;color:#848e9c;margin-top:4px;"></div>
-<div class="settings-group"><div style="font-weight:500;margin-bottom:6px;">أوزان استراتيجية النقاط:</div>
-<label>هيكل السوق: <input type="number" id="wStructure" value="35" min="0" max="100" /></label>
-<label>السيولة: <input type="number" id="wLiquidity" value="30" min="0" max="100" /></label>
-<label>الاختراق (ARBM): <input type="number" id="wARBM" value="20" min="0" max="100" /></label>
-<label>الملف الحجمي: <input type="number" id="wVolume" value="15" min="0" max="100" /></label>
-<button id="saveWeights" style="background:#1e80ff;border:none;color:white;padding:6px 16px;border-radius:4px;cursor:pointer;margin-top:6px;">تحديث الأوزان</button></div>
-<div class="settings-group"><label><input type="checkbox" id="chkAutoTrade" checked> تفعيل الإشارات التلقائية</label><label><input type="checkbox" id="chkTrailing" checked> تفعيل وقف الخسارة المتحرك</label><label><input type="checkbox" id="chkNotifications" checked> إشعارات المتصفح</label></div>
-</div></div>
+    <!-- TRADES -->
+    <section id="tab-trades" class="hidden">
+      <div class="topbar"><h1 data-i="tradesTitle">سجل الصفقات</h1></div>
+      <div id="chartWrap"></div>
+      <div class="section-title" data-i="tradesTitle">سجل الصفقات</div>
+      <div class="card"><table id="tradesTable"><thead><tr>
+        <th data-i="thSym">العملة</th><th data-i="thTf">الفريم</th><th data-i="thType">النوع</th>
+        <th data-i="thOpen">وقت الفتح</th><th data-i="thClose">وقت الإغلاق</th><th data-i="thResult">النتيجة</th>
+        <th data-i="thPct">النسبة%</th><th data-i="thDur">المدة</th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- BACKTEST -->
+    <section id="tab-backtest" class="hidden">
+      <div class="topbar"><h1 data-i="btTitle">الاختبار التاريخي</h1></div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="grid cols-3">
+          <div><div class="settings-row" style="border:none;padding:6px 0;"><label data-i="btSymbol">العملة</label></div><select id="btSymbol"></select></div>
+          <div><div class="settings-row" style="border:none;padding:6px 0;"><label data-i="btTf">الفريم</label></div><select id="btTf"></select></div>
+          <div><div class="settings-row" style="border:none;padding:6px 0;"><label data-i="btBars">عدد الشموع</label></div><select id="btBars">
+            <option value="300">300</option><option value="500" selected>500</option><option value="1000">1000</option>
+          </select></div>
+        </div>
+        <button class="btn primary" style="margin-top:14px;" id="btnRunBacktest" data-i="btRun">تشغيل الاختبار</button>
+      </div>
+      <div id="btResults"></div>
+      <div id="btChartWrap" class="hidden" style="height:260px;margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid var(--line);"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="tab-settings" class="hidden">
+      <div class="topbar"><h1 data-i="setTitle">الإعدادات</h1></div>
+      <div class="card" style="margin-bottom:16px;">
+        <h3 data-i="setTelegram">تنبيهات Telegram</h3>
+        <div class="settings-row"><div><label>Bot Token</label><div class="hint" data-i="tgTokenHint">من BotFather — يُخزَّن محلياً في متصفحك فقط</div></div>
+          <input type="password" id="tgToken" placeholder="123456:ABC-..."></div>
+        <div class="settings-row"><div><label>Chat ID</label></div><input type="text" id="tgChatId" placeholder="-100..."></div>
+        <div class="settings-row"><div><label data-i="tgEnable">تفعيل تنبيهات Telegram</label></div><div class="switch" id="tgEnableSwitch"><div class="dot"></div></div></div>
+        <div class="settings-row"><div></div><button class="btn" id="btnTestTg" data-i="tgTest">إرسال رسالة تجريبية</button></div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <h3 data-i="setEngine">إعدادات المحرك</h3>
+        <div class="settings-row"><div><label data-i="setThreshold">الحد الأدنى لدرجة الثقة</label><div class="hint" data-i="setThresholdHint">لا تصدر إشارة إذا كانت الدرجة أقل من هذه القيمة</div></div>
+          <input type="number" id="cfgThreshold" min="0" max="100" value="70" style="min-width:90px;"></div>
+        <div class="settings-row"><div><label data-i="setInterval">فترة الفحص (بالدقائق)</label></div>
+          <input type="number" id="cfgInterval" min="1" max="60" value="5" style="min-width:90px;"></div>
+        <div class="settings-row"><div><label data-i="setSymbols">العملات المتابَعة</label></div>
+          <div class="chip-select" id="symbolChips"></div></div>
+        <div class="settings-row"><div><label data-i="setTfs">الفريمات المتابَعة</label></div>
+          <div class="chip-select" id="tfChips"></div></div>
+      </div>
+      <div class="card">
+        <h3 data-i="setData">مصدر البيانات</h3>
+        <div class="settings-row"><div><label data-i="setDataHint">Binance Public API (لا يتطلب مفتاح) — يعمل من المتصفح مباشرة</label></div></div>
+        <div class="settings-row"><div><label data-i="setLangLbl">اللغة</label></div>
+          <div class="lang-toggle"><button id="langAr2" class="on">AR</button><button id="langEn2">EN</button></div></div>
+        <div class="settings-row"><div><label data-i="setReset">إعادة ضبط البيانات المحلية</label><div class="hint" data-i="setResetHint">يحذف كل الصفقات والإشارات المخزّنة في هذا المتصفح</div></div>
+          <button class="btn danger" id="btnReset" data-i="setResetBtn">حذف الكل</button></div>
+      </div>
+    </section>
+  </main>
+</div>
 
 <script>
-// ================================================================
-// 1. التكوين والحالة (مع التخزين المؤقت)
-// ================================================================
-const CONFIG = { symbols: ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','DOGEUSDT','ADAUSDT','LINKUSDT','AVAXUSDT','SUIUSDT'], intervals: ['5m','15m','30m','1h','4h'], defaultSymbol: 'BTCUSDT', defaultInterval: '15m', candleLimit: 300, weights: { structure: 35, liquidity: 30, arbm: 20, volume: 15 } };
-const state = { symbol: CONFIG.defaultSymbol, interval: CONFIG.defaultInterval, candles: [], signals: [], trades: [], stats: { total:0, win:0, loss:0, winRate:0, pf:0, sharpe:0, expectancy:0, maxDD:0 }, tgToken: '', tgChatId: '', ws: null, chart: null, candleSeries: null, volSeries: null, isAlertsOn: true, isTrailing: true, isAutoTrade: true, isNotifications: true, processing: false, weights: { ...CONFIG.weights } };
-
-function loadState() {
-    const savedTrades = localStorage.getItem('ai_trades'); if (savedTrades) state.trades = JSON.parse(savedTrades);
-    state.tgToken = localStorage.getItem('tg_token') || ''; state.tgChatId = localStorage.getItem('tg_chat') || '';
-    const savedWeights = localStorage.getItem('ai_weights'); if (savedWeights) state.weights = JSON.parse(savedWeights);
-    const settings = localStorage.getItem('ai_settings'); if (settings) { const s = JSON.parse(settings); state.isTrailing = s.isTrailing !== undefined ? s.isTrailing : true; state.isAutoTrade = s.isAutoTrade !== undefined ? s.isAutoTrade : true; state.isNotifications = s.isNotifications !== undefined ? s.isNotifications : true; }
-}
-loadState();
-
-// ================================================================
-// 2. اتصال Binance (مع Fallback قوي)
-// ================================================================
-const BinanceAPI = {
-    restURL: 'https://api.binance.com/api/v3', wsURL: 'wss://stream.binance.com:9443/ws',
-    async fetchKlines(symbol, interval, limit = 300) {
-        try {
-            const url = `${this.restURL}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-            const res = await fetch(url); if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            const data = await res.json();
-            const candles = data.map(k => ({ time: k[0], open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5]) }));
-            localStorage.setItem('ai_cached_candles', JSON.stringify({ symbol, interval, candles, timestamp: Date.now() }));
-            return candles;
-        } catch (e) { console.error('Binance Fetch Error:', e); return null; }
-    },
-    subscribe(symbol, interval, callback) {
-        const stream = `${symbol.toLowerCase()}@kline_${interval}`;
-        if (state.ws) { state.ws.close(); state.ws = null; }
-        try {
-            const ws = new WebSocket(`${this.wsURL}/${stream}`);
-            ws.onmessage = (e) => { const msg = JSON.parse(e.data); if (msg.e === 'kline') { const k = msg.k; callback({ time: k.t, open: parseFloat(k.o), high: parseFloat(k.h), low: parseFloat(k.l), close: parseFloat(k.c), volume: parseFloat(k.v) }); } };
-            ws.onerror = (err) => { console.error('WebSocket Error:', err); };
-            state.ws = ws; return ws;
-        } catch (e) { console.error('WebSocket Init Error:', e); return null; }
-    }
+/* ============================== i18n ============================== */
+const I18N = {
+  ar:{
+    brandName:"Confluence Signals", navDash:"لوحة الإحصائيات", navSignals:"الإشارات", navTrades:"سجل الصفقات",
+    navBacktest:"اختبار تاريخي", navSettings:"الإعدادات", scanOff:"الفحص متوقف", scanOn:"الفحص يعمل",
+    dashTitle:"لوحة الإحصائيات", startScan:"تشغيل الفحص", stopScan:"إيقاف الفحص",
+    perTf:"الأداء حسب الفريم", perSym:"الأداء حسب العملة",
+    thTf:"الفريم", thTrades:"صفقات", thWin:"Win Rate", thPF:"Profit Factor", thSharpe:"Sharpe",
+    thDD:"Max DD", thExp:"Expectancy", thSym:"العملة", thBestTf:"أفضل فريم", thLastSig:"آخر إشارة",
+    sigTitle:"الإشارات الحية", threshLbl:"الحد الأدنى للثقة", allSymbols:"كل العملات", allTf:"كل الفريمات", allTypes:"الكل",
+    tradesTitle:"سجل الصفقات", thType:"النوع", thOpen:"وقت الفتح", thClose:"وقت الإغلاق", thResult:"النتيجة",
+    thPct:"النسبة%", thDur:"المدة",
+    btTitle:"الاختبار التاريخي", btSymbol:"العملة", btTf:"الفريم", btBars:"عدد الشموع", btRun:"تشغيل الاختبار",
+    setTitle:"الإعدادات", setTelegram:"تنبيهات Telegram", tgTokenHint:"من BotFather — يُخزَّن محلياً في متصفحك فقط",
+    tgEnable:"تفعيل تنبيهات Telegram", tgTest:"إرسال رسالة تجريبية",
+    setEngine:"إعدادات المحرك", setThreshold:"الحد الأدنى لدرجة الثقة", setThresholdHint:"لا تصدر إشارة إذا كانت الدرجة أقل من هذه القيمة",
+    setInterval:"فترة الفحص (بالدقائق)", setSymbols:"العملات المتابَعة", setTfs:"الفريمات المتابَعة",
+    setData:"مصدر البيانات", setDataHint:"Binance Public API (لا يتطلب مفتاح) — يعمل من المتصفح مباشرة",
+    setLangLbl:"اللغة", setReset:"إعادة ضبط البيانات المحلية", setResetHint:"يحذف كل الصفقات والإشارات المخزّنة في هذا المتصفح",
+    setResetBtn:"حذف الكل", noSignals:"لا توجد إشارات بعد. شغّل الفحص من لوحة الإحصائيات.",
+    noTrades:"لا توجد صفقات مسجلة بعد.", tgSaved:"تم الحفظ", tgTestOk:"تم إرسال الرسالة بنجاح ✅",
+    tgTestFail:"فشل الإرسال — تحقّق من التوكن ومعرف الدردشة", scanStarted:"تم تشغيل الفحص",
+    scanStopped:"تم إيقاف الفحص", resetDone:"تم حذف جميع البيانات المحلية", entry:"دخول", sl:"وقف الخسارة",
+    rr:"عائد/مخاطرة", closedFull:"مغلقة (TP3)", closedSl:"وقف خسارة", closedPartial:"وقف عند التعادل/TP1",
+    lastScanPrefix:"آخر فحص: "
+  },
+  en:{
+    brandName:"Confluence Signals", navDash:"Dashboard", navSignals:"Signals", navTrades:"Trade Log",
+    navBacktest:"Backtest", navSettings:"Settings", scanOff:"Scanner idle", scanOn:"Scanner running",
+    dashTitle:"Dashboard", startScan:"Start Scanning", stopScan:"Stop Scanning",
+    perTf:"Performance by Timeframe", perSym:"Performance by Symbol",
+    thTf:"Timeframe", thTrades:"Trades", thWin:"Win Rate", thPF:"Profit Factor", thSharpe:"Sharpe",
+    thDD:"Max DD", thExp:"Expectancy", thSym:"Symbol", thBestTf:"Best TF", thLastSig:"Last Signal",
+    sigTitle:"Live Signals", threshLbl:"Min. Confidence", allSymbols:"All Symbols", allTf:"All Timeframes", allTypes:"All",
+    tradesTitle:"Trade Log", thType:"Type", thOpen:"Opened", thClose:"Closed", thResult:"Result",
+    thPct:"P/L %", thDur:"Duration",
+    btTitle:"Backtest", btSymbol:"Symbol", btTf:"Timeframe", btBars:"Candles", btRun:"Run Backtest",
+    setTitle:"Settings", setTelegram:"Telegram Alerts", tgTokenHint:"From BotFather — stored locally in your browser only",
+    tgEnable:"Enable Telegram alerts", tgTest:"Send test message",
+    setEngine:"Engine Settings", setThreshold:"Minimum confidence score", setThresholdHint:"No signal is issued below this score",
+    setInterval:"Scan interval (minutes)", setSymbols:"Watched symbols", setTfs:"Watched timeframes",
+    setData:"Data Source", setDataHint:"Binance Public API (no key needed) — runs directly from your browser",
+    setLangLbl:"Language", setReset:"Reset local data", setResetHint:"Deletes all signals and trades stored in this browser",
+    setResetBtn:"Delete all", noSignals:"No signals yet. Start the scanner from the Dashboard.",
+    noTrades:"No trades logged yet.", tgSaved:"Saved", tgTestOk:"Message sent successfully ✅",
+    tgTestFail:"Failed to send — check your token and chat ID", scanStarted:"Scanner started",
+    scanStopped:"Scanner stopped", resetDone:"All local data deleted", entry:"Entry", sl:"Stop Loss",
+    rr:"R:R", closedFull:"Closed (TP3)", closedSl:"Stopped out", closedPartial:"Stopped at BE/TP1",
+    lastScanPrefix:"Last scan: "
+  }
 };
-
-// ================================================================
-// 3. محرك المؤشرات الأربعة (حسابات رياضية خالصة)
-// ================================================================
-function linReg(arr, len) { if (arr.length < len) return arr[arr.length-1]||0; const slice=arr.slice(-len); const n=slice.length; const sumX=n*(n-1)/2; const sumY=slice.reduce((a,b)=>a+b,0); const sumXY=slice.reduce((a,b,i)=>a+b*i,0); const sumX2=n*(n-1)*(2*n-1)/6; const slope=(n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX); const intercept=(sumY-slope*sumX)/n; return intercept+slope*(n-1); }
-function stdev(arr, len) { if (arr.length < len) return 0; const slice=arr.slice(-len); const mean=slice.reduce((a,b)=>a+b,0)/len; const sq=slice.reduce((a,b)=>a+(b-mean)**2,0); return Math.sqrt(sq/len); }
-function pivotHigh(highs, len) { const arr=highs.slice(-len*2-1); if(arr.length<len*2+1)return null; const pivot=arr[len]; for(let i=0;i<arr.length;i++){if(i===len)continue;if(arr[i]>pivot)return null;} return pivot; }
-function pivotLow(lows, len) { const arr=lows.slice(-len*2-1); if(arr.length<len*2+1)return null; const pivot=arr[len]; for(let i=0;i<arr.length;i++){if(i===len)continue;if(arr[i]<pivot)return null;} return pivot; }
-
-function calcARBM(candles, length=50, devMult=2.0, sqzLen=100, sqzPct=20) {
-    if(candles.length<length+10)return null; const close=candles.map(c=>c.close); const reg=linReg(close,length); const std=stdev(close,length);
-    const upper=reg+std*devMult; const lower=reg-std*devMult; const bw=upper-lower; let minBW=Infinity,maxBW=-Infinity;
-    candles.slice(-sqzLen).forEach(c=>{const v=c.high-c.low; if(v<minBW)minBW=v; if(v>maxBW)maxBW=v;});
-    const widthPct=maxBW-minBW>0.0001?((bw-minBW)/(maxBW-minBW))*100:100; const isSqueeze=widthPct<=sqzPct;
-    const lastClose=close[close.length-1]; const prevClose=close[close.length-2];
-    const bullBreak=lastClose>upper&&prevClose<=upper&&isSqueeze; const bearBreak=lastClose<lower&&prevClose>=lower&&isSqueeze;
-    return {upper,lower,reg,isSqueeze,bullBreak,bearBreak,bw};
-}
-function calcLiquidity(candles, swingLen=2, domThresh=60) {
-    if(candles.length<swingLen*2+5)return null; const highs=candles.map(c=>c.high); const lows=candles.map(c=>c.low);
-    const ph=pivotHigh(highs,swingLen); const pl=pivotLow(lows,swingLen); let bullVol=0,bearVol=0;
-    candles.slice(-12).forEach((c,i,arr)=>{if(i>0){if(c.close>=arr[i-1].close)bullVol+=c.volume;else bearVol+=c.volume;}});
-    const total=bullVol+bearVol; const bullDom=total>0?(bullVol/total)*100:50; const bearDom=total>0?(bearVol/total)*100:50;
-    let grade='C'; const maxDom=Math.max(bullDom,bearDom); if(maxDom>=85)grade='A+'; else if(maxDom>=75)grade='A'; else if(maxDom>=65)grade='B';
-    return {ph,pl,bullDom,bearDom,grade};
-}
-function calcVolumeProfile(candles, levels=25, vaPct=0.68) {
-    if(candles.length<20)return null; const last20=candles.slice(-20); const high=Math.max(...last20.map(c=>c.high)); const low=Math.min(...last20.map(c=>c.low)); const step=(high-low)/levels; if(step===0)return null;
-    const volProfile=new Array(levels).fill(0); last20.forEach(c=>{const idx=Math.min(Math.floor((c.close-low)/step),levels-1); volProfile[idx]+=c.volume;});
-    const maxVol=Math.max(...volProfile); const pocIdx=volProfile.indexOf(maxVol); const poc=low+(pocIdx+0.5)*step;
-    let totalVol=volProfile.reduce((a,b)=>a+b,0); let target=totalVol*vaPct; let sum=volProfile[pocIdx]; let left=pocIdx,right=pocIdx;
-    while(sum<target&&(left>0||right<levels-1)){let lv=left>0?volProfile[left-1]:0; let rv=right<levels-1?volProfile[right+1]:0; if(lv>=rv&&left>0){sum+=lv;left--;}else if(right<levels-1){sum+=rv;right++;}else break;}
-    const vah=low+(right+1)*step; const val=low+left*step; const isInValue=candles[candles.length-1].close>=val&&candles[candles.length-1].close<=vah;
-    return {poc,vah,val,isInValue,high,low};
-}
-function calcStructure(candles, length=5) {
-    if(candles.length<length*2+5)return null; const highs=candles.map(c=>c.high); const lows=candles.map(c=>c.low); const close=candles.map(c=>c.close);
-    const p=Math.floor(length/2); let bullCHoCH=false,bearCHoCH=false,bullBOS=false,bearBOS=false; let isBullFractal=true,isBearFractal=true;
-    for(let i=0;i<length;i++){if(i===p)continue; if(highs[highs.length-1-i]>highs[highs.length-1-p])isBullFractal=false; if(lows[lows.length-1-i]<lows[lows.length-1-p])isBearFractal=false;}
-    const lastClose=close[close.length-1]; const prevSwingHigh=Math.max(...highs.slice(-length*2,-length)); const prevSwingLow=Math.min(...lows.slice(-length*2,-length));
-    if(isBullFractal&&lastClose>prevSwingHigh)bullBOS=true; if(isBearFractal&&lastClose<prevSwingLow)bearBOS=true;
-    if(isBullFractal&&lastClose<prevSwingLow)bearCHoCH=true; if(isBearFractal&&lastClose>prevSwingHigh)bullCHoCH=true;
-    return {bullCHoCH,bearCHoCH,bullBOS,bearBOS,isBullFractal,isBearFractal};
+let LANG = localStorage.getItem('cs_lang') || 'ar';
+function t(key){ return (I18N[LANG] && I18N[LANG][key]) || key; }
+function applyI18n(){
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-i]').forEach(el=>{
+    const k = el.getAttribute('data-i'); if(I18N[LANG][k]) el.textContent = I18N[LANG][k];
+  });
+  document.getElementById('btnScanToggle').textContent = SCAN_TIMER ? t('stopScan') : t('startScan');
+  document.getElementById('scanStatusTxt').textContent = SCAN_TIMER ? t('scanOn') : t('scanOff');
+  ['langAr','langAr2'].forEach(id=>document.getElementById(id).classList.toggle('on', LANG==='ar'));
+  ['langEn','langEn2'].forEach(id=>document.getElementById(id).classList.toggle('on', LANG==='en'));
 }
 
-// ================================================================
-// 4. نظام النقاط وتوليد الإشارة
-// ================================================================
-function generateSignal(candles) {
-    if(candles.length<100)return null; const arbm=calcARBM(candles); const liq=calcLiquidity(candles); const vp=calcVolumeProfile(candles); const struct=calcStructure(candles); if(!arbm||!liq||!vp||!struct)return null;
-    const W=state.weights; let score=0; let reasons=[]; let direction=0;
-    if(struct.bullBOS){score+=W.structure; reasons.push('BOS صاعد'); direction=1;} else if(struct.bearBOS){score+=W.structure; reasons.push('BOS هابط'); direction=-1;} else if(struct.bullCHoCH){score+=W.structure*0.6; reasons.push('CHoCH صاعد'); if(direction===0)direction=1;} else if(struct.bearCHoCH){score+=W.structure*0.6; reasons.push('CHoCH هابط'); if(direction===0)direction=-1;} else return null;
-    if(liq.grade==='A+'){score+=W.liquidity; reasons.push('سيولة ممتازة (A+)');} else if(liq.grade==='A'){score+=W.liquidity*0.8; reasons.push('سيولة جيدة (A)');} else if(liq.grade==='B'){score+=W.liquidity*0.5; reasons.push('سيولة متوسطة (B)');} else return null;
-    if(arbm.bullBreak&&direction===1){score+=W.arbm; reasons.push('اختراق صاعد مع انكماش');} else if(arbm.bearBreak&&direction===-1){score+=W.arbm; reasons.push('اختراق هابط مع انكماش');} else if(arbm.isSqueeze){score+=W.arbm*0.4; reasons.push('انكماش');} else {score+=W.arbm*0.2; reasons.push('بدون انكماش');}
-    if(vp.isInValue){score+=W.volume*0.7; reasons.push('داخل منطقة القيمة');} if(vp.poc&&Math.abs(candles[candles.length-1].close-vp.poc)/vp.poc<0.015){score+=W.volume*0.3; reasons.push('اقتراب من POC');}
-    if(score>=70&&direction!==0){const lastClose=candles[candles.length-1].close; const atr=stdev(candles.map(c=>c.close),14)*1.2; const sl=direction===1?lastClose-atr*1.2:lastClose+atr*1.2; const tp1=direction===1?lastClose+atr*1.8:lastClose-atr*1.8; const tp2=direction===1?lastClose+atr*3.0:lastClose-atr*3.0; const tp3=direction===1?lastClose+atr*4.5:lastClose-atr*4.5; const rr=(tp1-lastClose)/(lastClose-sl)*direction;
-        let quality='medium'; if(score>=90)quality='excellent'; else if(score>=80)quality='good';
-        return {symbol:state.symbol, interval:state.interval, time:new Date().toISOString(), direction:direction===1?'LONG':'SHORT', entry:lastClose, sl:sl, tp1:tp1, tp2:tp2, tp3:tp3, rr:Math.abs(rr), score:score, quality:quality, reasons:reasons.join(' | '), status:'open', tp1Hit:false, tp2Hit:false, exit:null, profit:null, closeTime:null};
+/* ============================== State ============================== */
+const DEFAULT_SYMBOLS = ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","LINKUSDT","AVAXUSDT","SUIUSDT"];
+const ALL_TFS = [
+  {v:"5m",  label:"5m"}, {v:"15m", label:"15m"}, {v:"30m", label:"30m"}, {v:"1h", label:"1h"}, {v:"4h", label:"4h"}
+];
+const DEFAULT_TFS = ["15m","30m","1h","4h"];
+
+function loadJSON(key, fallback){ try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } }
+function saveJSON(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+
+let SETTINGS = loadJSON('cs_settings', {
+  tgToken:"", tgChatId:"", tgEnabled:false, threshold:70, intervalMin:5,
+  symbols:[...DEFAULT_SYMBOLS], timeframes:[...DEFAULT_TFS]
+});
+let SIGNALS = loadJSON('cs_signals', []);      // history of all signals produced
+let TRADES  = loadJSON('cs_trades', []);       // closed + open trades
+let OPEN_TRADES = loadJSON('cs_open', {});     // key: SYMBOL|TF -> open trade object
+let SCAN_TIMER = null;
+
+function persist(){
+  saveJSON('cs_settings', SETTINGS); saveJSON('cs_signals', SIGNALS);
+  saveJSON('cs_trades', TRADES); saveJSON('cs_open', OPEN_TRADES);
+}
+
+/* ============================== Data fetching ============================== */
+async function fetchKlines(symbol, interval, limit=300){
+  const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('binance_fetch_failed');
+  const raw = await res.json();
+  return raw.map(k=>({
+    time: k[0], open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:+k[5]
+  }));
+}
+
+/* ============================== Math helpers ============================== */
+function sma(arr,len,i){ if(i<len-1) return null; let s=0; for(let j=i-len+1;j<=i;j++) s+=arr[j]; return s/len; }
+function stdev(arr,len,i){
+  if(i<len-1) return null;
+  const m = sma(arr,len,i); let s=0;
+  for(let j=i-len+1;j<=i;j++) s += (arr[j]-m)*(arr[j]-m);
+  return Math.sqrt(s/len);
+}
+function linreg(arr,len,i){
+  if(i<len-1) return null;
+  let sx=0,sy=0,sxy=0,sxx=0;
+  for(let j=0;j<len;j++){ const x=j; const y=arr[i-len+1+j]; sx+=x; sy+=y; sxy+=x*y; sxx+=x*x; }
+  const n=len; const slope = (n*sxy - sx*sy) / (n*sxx - sx*sx || 1);
+  const intercept = (sy - slope*sx)/n;
+  return intercept + slope*(n-1); // value at current bar
+}
+function pivotHigh(highs, left, right, i){
+  if(i-left<0 || i+right>=highs.length) return null;
+  const v = highs[i-right]; // pine pivothigh looks back `right` bars from current for confirmation; simplified: center index
+  for(let j=i-right-left;j<=i;j++){ if(j!==i-right && highs[j]>=v) return null; }
+  return v;
+}
+
+/* ============================== Engine: 4 confluence modules ============================== */
+// 1) Market Structure (BOS/CHoCH) via fractal swing pivots
+function marketStructure(c, len=5){
+  const p = Math.floor(len/2);
+  const n = c.length-1;
+  let lastSwingHigh=null, lastSwingHighIdx=null, lastSwingLow=null, lastSwingLowIdx=null;
+  let structure = 'none'; // 'bull' | 'bear'
+  let brokenLevel = null;
+  for(let i=p; i<c.length-p; i++){
+    const isHigh = c[i].high === Math.max(...c.slice(i-p,i+p+1).map(x=>x.high));
+    const isLow  = c[i].low  === Math.min(...c.slice(i-p,i+p+1).map(x=>x.low));
+    if(isHigh){ lastSwingHigh=c[i].high; lastSwingHighIdx=i; }
+    if(isLow){ lastSwingLow=c[i].low; lastSwingLowIdx=i; }
+  }
+  const last = c[n], prev = c[n-1];
+  if(lastSwingHigh!==null && prev.close<=lastSwingHigh && last.close>lastSwingHigh){
+    structure='bull'; brokenLevel=lastSwingHigh;
+  } else if(lastSwingLow!==null && prev.close>=lastSwingLow && last.close<lastSwingLow){
+    structure='bear'; brokenLevel=lastSwingLow;
+  } else {
+    // no fresh break this bar -> infer bias from last swing relationship to price
+    structure = last.close > (lastSwingHigh||Infinity) ? 'bull' : last.close < (lastSwingLow||-Infinity) ? 'bear' : 'none';
+  }
+  return {structure, lastSwingHigh, lastSwingLow, brokenLevel};
+}
+
+// 2) Liquidity zone grading (bull/bear volume dominance around latest pivot zone)
+function liquidityZone(c, len=10, dominanceWindow=20){
+  const n = c.length-1;
+  const win = c.slice(Math.max(0,n-dominanceWindow), n+1);
+  let bullVol=0, bearVol=0;
+  for(let i=1;i<win.length;i++){ if(win[i].close>=win[i-1].close) bullVol+=win[i].volume; else bearVol+=win[i].volume; }
+  const total = bullVol+bearVol || 1;
+  const bullRatio = bullVol/total*100, bearRatio = bearVol/total*100;
+  const dom = Math.max(bullRatio,bearRatio);
+  const grade = dom>=85?'A+': dom>=75?'A': dom>=65?'B':'C';
+  const gradePoints = {'A+':30,'A':22,'B':13,'C':0};
+  return {grade, dominance:dom.toFixed(1), isBull: bullRatio>=bearRatio, points:gradePoints[grade]};
+}
+
+// 3) Volume profile: POC / VAH / VAL over recent window, proximity score
+function volumeProfile(c, window=100, bins=24, vaPct=0.68){
+  const n = c.length-1;
+  const win = c.slice(Math.max(0,n-window+1), n+1);
+  const hi = Math.max(...win.map(x=>x.high)), lo = Math.min(...win.map(x=>x.low));
+  const step = (hi-lo)/bins || 1;
+  const vols = new Array(bins).fill(0);
+  win.forEach(k=>{
+    for(let b=0;b<bins;b++){
+      const bl=lo+b*step, bh=bl+step;
+      if(k.high>=bl && k.low<bh){
+        const overlap = Math.min(k.high,bh)-Math.max(k.low,bl);
+        const range = (k.high-k.low)||step;
+        vols[b]+= k.volume * Math.max(overlap,0)/range;
+      }
     }
-    return null;
+  });
+  const maxV = Math.max(...vols);
+  const pocIdx = vols.indexOf(maxV);
+  let above=pocIdx, below=pocIdx, areaVol=vols[pocIdx];
+  const target = vols.reduce((a,b)=>a+b,0)*vaPct;
+  while(areaVol<target){
+    const upV = above<bins-1? vols[above+1]:0;
+    const dnV = below>0? vols[below-1]:0;
+    if(upV===0 && dnV===0) break;
+    if(upV>=dnV){ areaVol+=upV; above++; } else { areaVol+=dnV; below--; }
+  }
+  const poc = lo+(pocIdx+0.5)*step, vah = lo+(above+1)*step, val = lo+below*step;
+  const price = c[n].close;
+  const proximity = Math.min(Math.abs(price-poc), Math.abs(price-vah), Math.abs(price-val)) / (hi-lo||1);
+  const points = proximity<0.03?15: proximity<0.08?10: proximity<0.15?5:0;
+  return {poc, vah, val, points};
 }
 
-// ================================================================
-// 5. إدارة الصفقات
-// ================================================================
-function addTrade(signal) {
-    if(!signal)return; if(state.trades.some(t=>t.time===signal.time))return;
-    state.trades.push(signal); localStorage.setItem('ai_trades',JSON.stringify(state.trades));
-    updateStats(); renderLog(); renderSignals(); sendTelegramAlert(signal,'إشارة جديدة'); if(state.isNotifications)sendBrowserNotification(signal);
+// 4) Adaptive regression breakout + squeeze
+function regressionBreakout(c, len=50, devMult=2, sqzLen=100, sqzPct=20){
+  const closes = c.map(k=>k.close);
+  const n = closes.length-1;
+  if(n < len+sqzLen) return {points:0, isSqueeze:false, bullBreak:false, bearBreak:false, bandwidth:0};
+  const reg = linreg(closes,len,n), sd = stdev(closes,len,n);
+  const upper = reg+sd*devMult, lower = reg-sd*devMult, bandwidth = upper-lower;
+  const widths=[];
+  for(let i=n-sqzLen+1;i<=n;i++){
+    const r=linreg(closes,len,i), s=stdev(closes,len,i);
+    if(r!==null && s!==null) widths.push((r+s*devMult)-(r-s*devMult));
+  }
+  const minW=Math.min(...widths), maxW=Math.max(...widths);
+  const widthPct = (bandwidth-minW)/((maxW-minW)||1e-6)*100;
+  const isSqueeze = widthPct<=sqzPct;
+  const prevClose = closes[n-1];
+  const regPrev = linreg(closes,len,n-1), sdPrev = stdev(closes,len,n-1);
+  const upperPrev = regPrev+sdPrev*devMult, lowerPrev = regPrev-sdPrev*devMult;
+  const bullBreak = closes[n]>upper && prevClose<=upperPrev;
+  const bearBreak = closes[n]<lower && prevClose>=lowerPrev;
+  const points = (isSqueeze && (bullBreak||bearBreak)) ? 20 : (bullBreak||bearBreak) ? 10 : 0;
+  return {points, isSqueeze, bullBreak, bearBreak, bandwidth, upper, lower};
 }
-function updateTradeStatus(index, result, exitPrice) {
-    if(index<0||index>=state.trades.length)return; const t=state.trades[index]; t.status=result; t.exit=exitPrice||t.tp1; t.closeTime=new Date().toISOString();
-    if(result==='win')t.profit=(t.exit-t.entry)/t.entry*(t.direction==='LONG'?1:-1)*100; else t.profit=(t.exit-t.entry)/t.entry*(t.direction==='LONG'?1:-1)*100;
-    localStorage.setItem('ai_trades',JSON.stringify(state.trades)); updateStats(); renderLog(); renderSignals(); sendTelegramAlert(t,result==='win'?'🎯 تحقيق الهدف':'🛑 ضرب الوقف');
+
+// Composite scorer per spec weights: structure 35, liquidity 30, breakout 20, volume-profile 15
+function scoreSignal(candles){
+  const ms = marketStructure(candles);
+  if(ms.structure==='none') return null;
+  const direction = ms.structure==='bull' ? 'BUY' : 'SELL';
+  const structPoints = 35; // direction gate already applied; full weight if structure confirmed
+  const liq = liquidityZone(candles);
+  // liquidity must agree with direction bias to count fully
+  const liqAgrees = (direction==='BUY' && liq.isBull) || (direction==='SELL' && !liq.isBull);
+  const liqPoints = liqAgrees ? liq.points : liq.points*0.4;
+  const brk = regressionBreakout(candles);
+  const brkAgrees = (direction==='BUY' && brk.bullBreak) || (direction==='SELL' && brk.bearBreak);
+  const brkPoints = brkAgrees ? brk.points : 0;
+  const vp = volumeProfile(candles);
+  const score = Math.round(structPoints + liqPoints + brkPoints + vp.points);
+  const cappedScore = Math.min(100, score);
+  const last = candles[candles.length-1];
+  const entry = last.close;
+  const bw = brk.bandwidth || (last.high-last.low)*4;
+  const sl = direction==='BUY' ? (brk.lower || entry - bw/2) : (brk.upper || entry + bw/2);
+  const dir = direction==='BUY'?1:-1;
+  const tp1 = entry + dir*bw*1.0, tp2 = entry + dir*bw*2.0, tp3 = entry + dir*bw*3.0;
+  const risk = Math.abs(entry-sl) || 1;
+  const rr = (Math.abs(tp1-entry)/risk).toFixed(2);
+  const reasons = [];
+  reasons.push(direction==='BUY' ? 'BOS/CHoCH صاعد مؤكد' : 'BOS/CHoCH هابط مؤكد');
+  reasons.push(`منطقة سيولة درجة ${liq.grade} (هيمنة ${liq.dominance}%)`);
+  if(brkAgrees) reasons.push(brk.isSqueeze ? 'اختراق حقيقي بعد انكماش (Squeeze)' : 'اختراق قناة الانحدار');
+  reasons.push(`قرب من POC/VAH/VAL (+${vp.points} نقطة)`);
+  return {
+    direction, score:cappedScore, entry, sl, tp1, tp2, tp3, rr,
+    grade: liq.grade, reasons, isSqueeze:brk.isSqueeze, poc:vp.poc, vah:vp.vah, val:vp.val
+  };
 }
-function checkOpenTrades(candles) {
-    if(!state.isTrailing)return; const lastClose=candles[candles.length-1].close;
-    state.trades.forEach((t,idx)=>{
-        if(t.status!=='open')return;
-        if(!t.tp1Hit&&((t.direction==='LONG'&&lastClose>=t.tp1)||(t.direction==='SHORT'&&lastClose<=t.tp1))){t.tp1Hit=true; if(t.direction==='LONG')t.sl=t.entry; else t.sl=t.entry; sendTelegramAlert(t,'TP1 تم الوصول');}
-        if(t.tp1Hit&&!t.tp2Hit&&((t.direction==='LONG'&&lastClose>=t.tp2)||(t.direction==='SHORT'&&lastClose<=t.tp2))){t.tp2Hit=true; if(t.direction==='LONG')t.sl=t.tp1; else t.sl=t.tp1; sendTelegramAlert(t,'TP2 تم الوصول');}
-        if(t.tp2Hit&&((t.direction==='LONG'&&lastClose>=t.tp3)||(t.direction==='SHORT'&&lastClose<=t.tp3))){updateTradeStatus(idx,'win',t.tp3);}
-        if((t.direction==='LONG'&&lastClose<=t.sl)||(t.direction==='SHORT'&&lastClose>=t.sl)){const result=t.tp1Hit?'win':'loss'; updateTradeStatus(idx,result,t.sl);}
+
+/* ============================== Telegram ============================== */
+async function sendTelegram(text){
+  if(!SETTINGS.tgEnabled || !SETTINGS.tgToken || !SETTINGS.tgChatId) return {ok:false, skipped:true};
+  try{
+    const url = `https://api.telegram.org/bot${SETTINGS.tgToken}/sendMessage`;
+    const res = await fetch(url, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({chat_id:SETTINGS.tgChatId, text, parse_mode:'HTML'})
     });
+    const data = await res.json();
+    return {ok: !!data.ok, data};
+  }catch(e){ return {ok:false, error:e.message}; }
 }
-// ================================================================
-// 6. محرك الإحصائيات الكامل
-// ================================================================
-function updateStats() {
-    const closed=state.trades.filter(t=>t.status!=='open'); const wins=closed.filter(t=>t.status==='win'); const losses=closed.filter(t=>t.status==='loss'); const total=closed.length;
-    const winRate=total>0?(wins.length/total)*100:0; const totalWin=wins.reduce((a,b)=>a+(b.profit||0),0); const totalLoss=losses.reduce((a,b)=>a+(b.profit||0),0);
-    const pf=totalLoss!==0?Math.abs(totalWin/totalLoss):totalWin>0?999:0; const returns=closed.map(t=>t.profit||0); const avgRet=returns.length>0?returns.reduce((a,b)=>a+b,0)/returns.length:0;
-    const stdRet=returns.length>1?Math.sqrt(returns.reduce((a,b)=>a+(b-avgRet)**2,0)/(returns.length-1)):0; const sharpe=stdRet!==0?avgRet/stdRet:0;
-    let maxDD=0; let cum=0; returns.forEach(r=>{cum+=r; if(cum<maxDD)maxDD=cum;});
-    state.stats={total,win:wins.length,loss:losses.length,winRate,pf,sharpe,expectancy:avgRet,maxDD};
-    document.getElementById('sTotal').textContent=total; document.getElementById('sWin').textContent=wins.length; document.getElementById('sLoss').textContent=losses.length;
-    document.getElementById('sWinRate').textContent=winRate.toFixed(1)+'%'; document.getElementById('sPF').textContent=pf.toFixed(2);
-    document.getElementById('sSharpe').textContent=sharpe.toFixed(2); document.getElementById('sExpectancy').textContent=avgRet.toFixed(2)+'%'; document.getElementById('sMaxDD').textContent=maxDD.toFixed(2)+'%';
-    renderFrameStats(); renderSymbolStats();
-}
-function renderFrameStats() {
-    const container=document.getElementById('frameStatsTable'); let html='<table class="trade-log-table"><thead><tr><th>الفريم</th><th>صفقات</th><th>رابحة</th><th>خاسرة</th><th>Win Rate</th><th>PF</th><th>Sharpe</th><th>Expectancy</th></tr></thead><tbody>';
-    CONFIG.intervals.forEach(f=>{const trades=state.trades.filter(t=>t.interval===f); const closed=trades.filter(t=>t.status!=='open'); const wins=closed.filter(t=>t.status==='win'); const losses=closed.filter(t=>t.status==='loss'); const total=closed.length; const wr=total>0?(wins.length/total)*100:0; const tw=wins.reduce((a,b)=>a+(b.profit||0),0); const tl=losses.reduce((a,b)=>a+(b.profit||0),0); const pf=tl!==0?Math.abs(tw/tl):tw>0?999:0; const rets=closed.map(t=>t.profit||0); const avg=rets.length>0?rets.reduce((a,b)=>a+b,0)/rets.length:0; const std=rets.length>1?Math.sqrt(rets.reduce((a,b)=>a+(b-avg)**2,0)/(rets.length-1)):0; const sh=std!==0?avg/std:0; html+=`<tr><td>${f}</td><td>${total}</td><td class="green">${wins.length}</td><td class="red">${losses.length}</td><td class="orange">${wr.toFixed(1)}%</td><td>${pf.toFixed(2)}</td><td>${sh.toFixed(2)}</td><td class="blue">${avg.toFixed(2)}%</td></tr>`;});
-    html+='</tbody></table>'; container.innerHTML=html;
-}
-function renderSymbolStats() {
-    const container=document.getElementById('symbolStatsTable'); let html='<table class="trade-log-table"><thead><tr><th>العملة</th><th>صفقات</th><th>Win Rate</th><th>PF</th><th>أفضل فريم</th><th>آخر إشارة</th></tr></thead><tbody>';
-    CONFIG.symbols.forEach(sym=>{const trades=state.trades.filter(t=>t.symbol===sym); const closed=trades.filter(t=>t.status!=='open'); const wins=closed.filter(t=>t.status==='win'); const total=closed.length; const wr=total>0?(wins.length/total)*100:0; const tw=wins.reduce((a,b)=>a+(b.profit||0),0); const tl=closed.filter(t=>t.status==='loss').reduce((a,b)=>a+(b.profit||0),0); const pf=tl!==0?Math.abs(tw/tl):tw>0?999:0; let bestFrame='N/A',bestWR=0; CONFIG.intervals.forEach(f=>{const ft=closed.filter(t=>t.interval===f); const fw=ft.filter(t=>t.status==='win'); const fwr=ft.length>0?(fw.length/ft.length)*100:0; if(fwr>bestWR){bestWR=fwr; bestFrame=f;}}); const lastSignal=trades.length>0?trades[trades.length-1]:null; const lastSignalStr=lastSignal?`${lastSignal.direction} @ ${lastSignal.entry.toFixed(2)}`:'--'; html+=`<tr><td>${sym}</td><td>${total}</td><td class="orange">${wr.toFixed(1)}%</td><td>${pf.toFixed(2)}</td><td>${bestFrame}</td><td>${lastSignalStr}</td></tr>`;});
-    html+='</tbody></table>'; container.innerHTML=html;
-}
-function renderLog() {
-    const body=document.getElementById('logBody'); const symFilter=document.getElementById('logFilterSymbol').value; const tfFilter=document.getElementById('logFilterTF').value; const statusFilter=document.getElementById('logFilterStatus').value; const dateFilter=document.getElementById('logFilterDate').value;
-    let filtered=state.trades; if(symFilter!=='all')filtered=filtered.filter(t=>t.symbol===symFilter); if(tfFilter!=='all')filtered=filtered.filter(t=>t.interval===tfFilter); if(statusFilter!=='all')filtered=filtered.filter(t=>t.status===statusFilter); if(dateFilter)filtered=filtered.filter(t=>t.time.startsWith(dateFilter));
-    if(filtered.length===0){body.innerHTML='<tr><td colspan="6" class="text-center text-muted">لا توجد صفقات</td></tr>'; return;}
-    let html=''; filtered.slice().reverse().slice(0,50).forEach(t=>{const cls=t.status==='win'?'win':t.status==='loss'?'loss':'open'; const profitStr=t.profit?(t.profit>0?'+':'')+t.profit.toFixed(2)+'%':'--'; let duration='--'; if(t.closeTime){const diff=Math.abs(new Date(t.closeTime)-new Date(t.time)); const mins=Math.floor(diff/60000); duration=mins<60?`${mins}m`:mins<1440?`${Math.floor(mins/60)}h`: `${Math.floor(mins/1440)}d`;} html+=`<tr><td>${t.symbol}</td><td style="color:${t.direction==='LONG'?'#0ecb81':'#f6465d'}">${t.direction}</td><td>${t.entry.toFixed(2)}</td><td>${t.exit?t.exit.toFixed(2):'مفتوح'}</td><td class="${cls}">${profitStr}</td><td>${duration}</td></tr>`;});
-    body.innerHTML=html;
-}
-function renderSignals() {
-    const container=document.getElementById('signalList'); const open=state.trades.filter(t=>t.status==='open');
-    if(open.length===0){container.innerHTML='<div class="text-center text-muted" style="padding:20px;">لا توجد إشارات نشطة</div>'; return;}
-    let html=''; open.slice().reverse().forEach(s=>{const cls=s.direction==='LONG'?'long':'short'; const badge=s.quality==='excellent'?'excellent':s.quality==='good'?'good':'medium'; html+=`<div class="signal-item ${cls}"><div class="header"><span><strong>${s.symbol}</strong> (${s.interval}) <span style="color:${s.direction==='LONG'?'#0ecb81':'#f6465d'}">${s.direction}</span></span><span class="score-badge ${badge}">${s.score}</span></div><div class="details"><span>دخول: ${s.entry.toFixed(2)}</span><span>وقف: ${s.sl.toFixed(2)}</span><span>TP1: ${s.tp1.toFixed(2)}</span><span>TP2: ${s.tp2.toFixed(2)}</span><span>TP3: ${s.tp3.toFixed(2)}</span><span>RR: 1:${s.rr.toFixed(2)}</span></div><div class="reason">📌 ${s.reasons}</div></div>`;});
-    container.innerHTML=html; document.getElementById('signalCount').textContent=open.length+' إشارة';
+function formatSignalMessage(sym, tf, sig){
+  const emoji = sig.direction==='BUY' ? '🟢' : '🔴';
+  return `${emoji} <b>${sig.direction}</b> — ${sym} (${tf})\n`+
+  `Score: <b>${sig.score}/100</b> | Grade: ${sig.grade}\n`+
+  `Entry: ${sig.entry.toFixed(4)}\nSL: ${sig.sl.toFixed(4)}\n`+
+  `TP1: ${sig.tp1.toFixed(4)} | TP2: ${sig.tp2.toFixed(4)} | TP3: ${sig.tp3.toFixed(4)}\n`+
+  `R:R ${sig.rr}\n${sig.reasons.map(r=>'• '+r).join('\n')}`;
 }
 
-// ================================================================
-// 7. التنبيهات (Telegram والمتصفح)
-// ================================================================
-async function sendTelegramAlert(signal, alertType='إشارة جديدة') {
-    if(!state.tgToken||!state.tgChatId)return;
-    const emoji=signal.direction==='LONG'?'🟢':'🔴';
-    const msg=`🚨 *${alertType}*\n\nالزوج: ${signal.symbol}\nالفريم: ${signal.interval}\nالاتجاه: ${emoji} ${signal.direction}\nالدخول: ${signal.entry.toFixed(2)}\nوقف: ${signal.sl.toFixed(2)}\nTP1: ${signal.tp1.toFixed(2)}\nTP2: ${signal.tp2.toFixed(2)}\nTP3: ${signal.tp3.toFixed(2)}\nRR: 1:${signal.rr.toFixed(2)}\nالنقاط: ${signal.score}\nالسبب: ${signal.reasons}`;
-    try{await fetch(`https://api.telegram.org/bot${state.tgToken}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:state.tgChatId,text:msg,parse_mode:'Markdown'})}); document.getElementById('tgStatus').textContent='✅ تم الإرسال';}catch(e){document.getElementById('tgStatus').textContent='❌ فشل: '+e.message;}
-}
-function sendBrowserNotification(signal){if(!('Notification'in window)||Notification.permission!=='granted')return; new Notification(`🚨 إشارة ${signal.direction}`,{body:`${signal.symbol} | دخول: ${signal.entry.toFixed(2)} | النقاط: ${signal.score}`});}
+/* ============================== Trade management ============================== */
+function tradeKey(sym,tf){ return sym+'|'+tf; }
 
-// ================================================================
-// 8. محرك الرسم البياني (Candlestick Chart)
-// ================================================================
-function drawChart(candles, activeSignal = null) {
-    const container = document.getElementById('tradeChart'); if (!container) return;
-    let width = container.clientWidth || container.parentElement.clientWidth || 600;
-    let height = container.clientHeight || container.parentElement.clientHeight || 400;
-    try {
-        if (!state.chart) {
-            state.chart = LightweightCharts.createChart(container, { width: width, height: height, layout: { background: { color: '#0b0e11' }, textColor: '#848e9c' }, grid: { vertLines: { color: '#2b3139' }, horzLines: { color: '#2b3139' } }, timeScale: { timeVisible: true, secondsVisible: false } });
-            state.candleSeries = state.chart.addCandlestickSeries({ upColor: '#0ecb81', downColor: '#f6465d', borderUpColor: '#0ecb81', borderDownColor: '#f6465d', wickUpColor: '#0ecb81', wickDownColor: '#f6465d' });
-            state.volSeries = state.chart.addHistogramSeries({ color: '#2962ff', title: 'Volume' });
-        } else { state.chart.resize(width, height); }
-    } catch (e) { console.error('Chart init failed:', e); return; }
-    if (!candles || candles.length === 0) {
-        const dummyCandles = []; let price = 50000; const now = Date.now();
-        for (let i = 0; i < 100; i++) { price += (Math.random() - 0.5) * 200; dummyCandles.push({ time: (now - (100 - i) * 60000) / 1000, open: price - 50 + Math.random() * 100, high: price + 50 + Math.random() * 100, low: price - 50 - Math.random() * 100, close: price, volume: Math.random() * 100 + 10 }); }
-        candles = dummyCandles; document.getElementById('currentPrice').textContent = '50,000 (جاري التحميل)'; document.getElementById('currentChange').textContent = '0.00%';
-    }
-    const candleData = candles.map(c => ({ time: Math.floor(c.time / 1000), open: c.open, high: c.high, low: c.low, close: c.close }));
-    state.candleSeries.setData(candleData);
-    const volData = candles.map(c => ({ time: Math.floor(c.time / 1000), value: c.volume, color: c.close >= c.open ? '#0ecb81' : '#f6465d' }));
-    state.volSeries.setData(volData);
-    state.chart.timeScale().fitContent();
-    if (candles.length > 1) { const last = candles[candles.length - 1]; const prev = candles[candles.length - 2]; document.getElementById('currentPrice').textContent = last.close.toFixed(2); const change = ((last.close - prev.close) / prev.close * 100); document.getElementById('currentChange').textContent = (change > 0 ? '+' : '') + change.toFixed(2) + '%'; document.getElementById('currentChange').style.color = change >= 0 ? '#0ecb81' : '#f6465d'; }
+function maybeOpenTrade(sym, tf, sig){
+  const key = tradeKey(sym,tf);
+  if(OPEN_TRADES[key]) return false; // already in a trade for this pair/tf
+  if(sig.score < SETTINGS.threshold) return false;
+  const trade = {
+    id: Date.now()+'_'+key, symbol:sym, timeframe:tf, direction:sig.direction,
+    entry:sig.entry, sl:sig.sl, tp1:sig.tp1, tp2:sig.tp2, tp3:sig.tp3,
+    openTime: Date.now(), status:'open', tp1Hit:false, tp2Hit:false, score:sig.score, grade:sig.grade
+  };
+  OPEN_TRADES[key] = trade;
+  SIGNALS.unshift({...sig, symbol:sym, timeframe:tf, time:Date.now()});
+  if(SIGNALS.length>500) SIGNALS.length=500;
+  persist();
+  return trade;
 }
 
-// ================================================================
-// 9. محرك باكتست كامل
-// ================================================================
-function runBacktest(symbol, interval, days) {
-    const trades=state.trades.filter(t=>t.symbol===symbol&&t.interval===interval&&t.status!=='open');
-    if(trades.length===0){document.getElementById('btStats').innerHTML='<div class="text-center text-muted">لا توجد بيانات كافية.</div>'; document.getElementById('btResults').style.display='block'; return;}
-    const wins=trades.filter(t=>t.status==='win'); const losses=trades.filter(t=>t.status==='loss'); const total=trades.length; const wr=(wins.length/total)*100;
-    const tw=wins.reduce((a,b)=>a+(b.profit||0),0); const tl=losses.reduce((a,b)=>a+(b.profit||0),0); const pf=tl!==0?Math.abs(tw/tl):tw>0?999:0;
-    const rets=trades.map(t=>t.profit||0); const avg=rets.reduce((a,b)=>a+b,0)/rets.length; const std=rets.length>1?Math.sqrt(rets.reduce((a,b)=>a+(b-avg)**2,0)/(rets.length-1)):0; const sharpe=std!==0?avg/std:0;
-    const maxDD=Math.min(...rets.reduce((acc,val)=>{acc.push((acc[acc.length-1]||0)+val); return acc;},[])); const totalProfit=tw+tl;
-    document.getElementById('btStats').innerHTML=`<div class="stat-item"><div class="label">صفقات</div><div class="value">${total}</div></div><div class="stat-item"><div class="label">Win Rate</div><div class="value orange">${wr.toFixed(1)}%</div></div><div class="stat-item"><div class="label">Profit Factor</div><div class="value orange">${pf.toFixed(2)}</div></div><div class="stat-item"><div class="label">Sharpe</div><div class="value orange">${sharpe.toFixed(2)}</div></div><div class="stat-item"><div class="label">Max DD</div><div class="value red">${maxDD.toFixed(2)}%</div></div><div class="stat-item"><div class="label">متوسط الصفقة</div><div class="value green">${avg.toFixed(2)}%</div></div><div class="stat-item"><div class="label">إجمالي الربح</div><div class="value green">${totalProfit.toFixed(2)}%</div></div>`;
-    document.getElementById('btResults').style.display='block'; drawEquityCurve(rets);
+function updateOpenTradeWithCandle(trade, k){
+  const dir = trade.direction==='BUY'?1:-1;
+  const hitTp1 = trade.direction==='BUY' ? k.high>=trade.tp1 : k.low<=trade.tp1;
+  const hitTp2 = trade.direction==='BUY' ? k.high>=trade.tp2 : k.low<=trade.tp2;
+  const hitTp3 = trade.direction==='BUY' ? k.high>=trade.tp3 : k.low<=trade.tp3;
+  const hitSl  = trade.direction==='BUY' ? k.low<=trade.sl : k.high>=trade.sl;
+  if(hitTp1 && !trade.tp1Hit){ trade.tp1Hit=true; trade.sl=trade.entry; }
+  if(hitTp2 && !trade.tp2Hit){ trade.tp2Hit=true; trade.sl=trade.tp1; }
+  if(hitTp3){
+    trade.status='closed'; trade.closeTime=k.time; trade.result='win';
+    trade.pct = ((trade.tp3-trade.entry)/trade.entry*100*dir);
+    return true;
+  } else if(hitSl){
+    trade.status='closed'; trade.closeTime=k.time;
+    trade.result = trade.tp1Hit ? 'win' : 'loss';
+    trade.pct = ((trade.sl-trade.entry)/trade.entry*100*dir);
+    return true;
+  }
+  return false;
 }
-function drawEquityCurve(returns){const canvas=document.getElementById('equityCanvas'); const ctx=canvas.getContext('2d'); const rect=canvas.parentElement.getBoundingClientRect(); canvas.width=rect.width||600; canvas.height=200; ctx.clearRect(0,0,canvas.width,canvas.height); if(returns.length===0)return; let equity=10000; const points=[equity]; returns.forEach(r=>{equity+=equity*(r/100); points.push(equity);}); const min=Math.min(...points); const max=Math.max(...points); const range=max-min||1; const h=canvas.height-20; ctx.beginPath(); ctx.strokeStyle='#0ecb81'; ctx.lineWidth=2; points.forEach((p,i)=>{const x=(i/(points.length-1))*(canvas.width-20)+10; const y=h-((p-min)/range)*h+10; if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);}); ctx.stroke(); ctx.lineTo(canvas.width-10,h+10); ctx.lineTo(10,h+10); ctx.closePath(); ctx.fillStyle='rgba(14,203,129,0.1)'; ctx.fill();}
 
-// ================================================================
-// 10. أدوات التحكم في واجهة المستخدم
-// ================================================================
-document.getElementById('selSymbol').addEventListener('change',e=>{state.symbol=e.target.value; if(state.ws)state.ws.close(); loadData(); updateSymbolButtons(); updateLogFilters();});
-document.getElementById('selTF').addEventListener('change',e=>{state.interval=e.target.value; document.getElementById('statFrameLabel').textContent=state.interval; if(state.ws)state.ws.close(); loadData(); updateLogFilters();});
-document.querySelectorAll('.symbol-btn').forEach(btn=>{btn.addEventListener('click',()=>{state.symbol=btn.dataset.sym; document.getElementById('selSymbol').value=state.symbol; if(state.ws)state.ws.close(); loadData(); updateSymbolButtons(); updateLogFilters();});});
-function updateSymbolButtons(){document.querySelectorAll('.symbol-btn').forEach(b=>b.classList.remove('active')); document.querySelector(`.symbol-btn[data-sym="${state.symbol}"]`)?.classList.add('active');}
-function updateLogFilters(){const symSel=document.getElementById('logFilterSymbol'); symSel.innerHTML='<option value="all">كل العملات</option>'; CONFIG.symbols.forEach(s=>{symSel.innerHTML+=`<option value="${s}">${s}</option>`;}); symSel.value=state.symbol;}
-document.getElementById('btnRefresh').addEventListener('click',()=>{if(state.ws)state.ws.close(); loadData();});
-document.getElementById('btnAlerts').addEventListener('click',()=>{state.isAlertsOn=!state.isAlertsOn; document.getElementById('btnAlerts').classList.toggle('btn-active'); document.getElementById('btnAlerts').textContent=state.isAlertsOn?'🔔 تنبيهات':'🔕 صامت';});
-document.getElementById('btnShare').addEventListener('click',()=>{if(navigator.share)navigator.share({title:'AI Trading Signals',url:window.location.href}); else {navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط!');}});
-document.querySelectorAll('.tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); tab.classList.add('active'); document.getElementById(tab.dataset.tab).classList.add('active');});});
-document.getElementById('logFilterBtn').addEventListener('click',renderLog); ['logFilterSymbol','logFilterTF','logFilterStatus','logFilterDate'].forEach(id=>{document.getElementById(id).addEventListener('change',renderLog);});
-document.getElementById('clearLogBtn').addEventListener('click',()=>{if(confirm('مسح سجل الصفقات؟')){state.trades=[]; localStorage.setItem('ai_trades',JSON.stringify(state.trades)); updateStats(); renderLog(); renderSignals();}});
-document.getElementById('tgToken').value=state.tgToken; document.getElementById('tgChatId').value=state.tgChatId;
-document.getElementById('tgSave').addEventListener('click',()=>{state.tgToken=document.getElementById('tgToken').value.trim(); state.tgChatId=document.getElementById('tgChatId').value.trim(); localStorage.setItem('tg_token',state.tgToken); localStorage.setItem('tg_chat',state.tgChatId); document.getElementById('tgStatus').textContent='✅ تم الحفظ';});
-document.getElementById('tgTest').addEventListener('click',async()=>{const token=document.getElementById('tgToken').value.trim(); const chat=document.getElementById('tgChatId').value.trim(); if(!token||!chat){document.getElementById('tgStatus').textContent='⚠️ أدخل البيانات'; return;} document.getElementById('tgStatus').textContent='جاري الاختبار...'; try{const res=await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chat,text:'✅ اتصال ناجح!'})}); if(res.ok)document.getElementById('tgStatus').textContent='✅ تم الإرسال'; else document.getElementById('tgStatus').textContent='❌ فشل';}catch(e){document.getElementById('tgStatus').textContent='❌ خطأ: '+e.message;}});
-document.getElementById('wStructure').value=state.weights.structure; document.getElementById('wLiquidity').value=state.weights.liquidity; document.getElementById('wARBM').value=state.weights.arbm; document.getElementById('wVolume').value=state.weights.volume;
-document.getElementById('saveWeights').addEventListener('click',()=>{state.weights.structure=parseInt(document.getElementById('wStructure').value)||35; state.weights.liquidity=parseInt(document.getElementById('wLiquidity').value)||30; state.weights.arbm=parseInt(document.getElementById('wARBM').value)||20; state.weights.volume=parseInt(document.getElementById('wVolume').value)||15; localStorage.setItem('ai_weights',JSON.stringify(state.weights)); document.getElementById('tgStatus').textContent='✅ تم تحديث الأوزان'; loadData();});
-document.getElementById('chkAutoTrade').checked=state.isAutoTrade; document.getElementById('chkTrailing').checked=state.isTrailing; document.getElementById('chkNotifications').checked=state.isNotifications;
-['chkAutoTrade','chkTrailing','chkNotifications'].forEach(id=>{document.getElementById(id).addEventListener('change',(e)=>{if(id==='chkAutoTrade')state.isAutoTrade=e.target.checked; if(id==='chkTrailing')state.isTrailing=e.target.checked; if(id==='chkNotifications')state.isNotifications=e.target.checked; localStorage.setItem('ai_settings',JSON.stringify({isTrailing:state.isTrailing,isAutoTrade:state.isAutoTrade,isNotifications:state.isNotifications}));});});
-document.getElementById('btnRunBacktest').addEventListener('click',()=>{runBacktest(document.getElementById('btSymbol').value,document.getElementById('btTF').value,parseInt(document.getElementById('btDays').value));});
-let deferredPrompt=null; window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault(); deferredPrompt=e; document.getElementById('pwa-banner').classList.add('show');});
-document.getElementById('installBtn').addEventListener('click',async()=>{if(deferredPrompt){deferredPrompt.prompt(); const result=await deferredPrompt.userChoice; if(result.outcome==='accepted')document.getElementById('pwa-banner').classList.remove('show'); deferredPrompt=null;}});
-document.getElementById('closeBanner').addEventListener('click',()=>{document.getElementById('pwa-banner').classList.remove('show');});
-if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
+/* ============================== Stats ============================== */
+function computeStats(trades){
+  const closed = trades.filter(t=>t.status==='closed');
+  const n = closed.length;
+  const wins = closed.filter(t=>t.result==='win');
+  const losses = closed.filter(t=>t.result==='loss');
+  const winRate = n? (wins.length/n*100):0;
+  const avgWin = wins.length? wins.reduce((a,b)=>a+b.pct,0)/wins.length : 0;
+  const avgLoss = losses.length? Math.abs(losses.reduce((a,b)=>a+b.pct,0)/losses.length) : 0;
+  const grossWin = wins.reduce((a,b)=>a+Math.max(b.pct,0),0);
+  const grossLoss = Math.abs(losses.reduce((a,b)=>a+Math.min(b.pct,0),0));
+  const pf = grossLoss>0 ? grossWin/grossLoss : (grossWin>0?Infinity:0);
+  const rets = closed.map(t=>t.pct);
+  const mean = rets.length? rets.reduce((a,b)=>a+b,0)/rets.length : 0;
+  const sd = rets.length>1 ? Math.sqrt(rets.reduce((a,b)=>a+(b-mean)*(b-mean),0)/rets.length) : 0;
+  const sharpe = sd>0 ? mean/sd : 0;
+  let equity=0, peak=0, maxDD=0;
+  closed.sort((a,b)=>a.closeTime-b.closeTime).forEach(t=>{ equity+=t.pct; peak=Math.max(peak,equity); maxDD=Math.max(maxDD, peak-equity); });
+  const expectancy = n? (winRate/100*avgWin - (1-winRate/100)*avgLoss) : 0;
+  return {n, winRate, pf, sharpe, maxDD, expectancy, avgWin, avgLoss};
+}
 
-// ================================================================
-// 11. الحلقة الرئيسية والتهيئة
-// ================================================================
-const chartObserver = new ResizeObserver(() => { if (state.chart) { const container = document.getElementById('tradeChart'); if (container) state.chart.resize(container.clientWidth || 600, container.clientHeight || 400); } });
-async function loadData() {
-    state.processing = true;
-    try {
-        let candles = await BinanceAPI.fetchKlines(state.symbol, state.interval, CONFIG.candleLimit);
-        if (!candles || candles.length === 0) {
-            console.warn('Using Cached Data.'); const cached = localStorage.getItem('ai_cached_candles');
-            if (cached) { const parsed = JSON.parse(cached); if (parsed.symbol === state.symbol && parsed.interval === state.interval) candles = parsed.candles; }
-            if (!candles || candles.length === 0) { candles = []; let price = 50000; for(let i=0; i<100; i++){ price += (Math.random()-0.5)*200; candles.push({ time: Date.now() - (100-i)*60000, open: price-50+Math.random()*100, high: price+50+Math.random()*100, low: price-50-Math.random()*100, close: price, volume: Math.random()*100+10 }); } }
+/* ============================== Scanning loop ============================== */
+async function scanOnce(){
+  document.getElementById('lastScanTxt').textContent = t('lastScanPrefix') + new Date().toLocaleTimeString(LANG==='ar'?'ar-EG':'en-US');
+  for(const sym of SETTINGS.symbols){
+    for(const tf of SETTINGS.timeframes){
+      try{
+        const candles = await fetchKlines(sym, tf, 300);
+        const key = tradeKey(sym,tf);
+        // manage existing open trade first using latest candle
+        if(OPEN_TRADES[key]){
+          const closedNow = updateOpenTradeWithCandle(OPEN_TRADES[key], candles[candles.length-1]);
+          if(closedNow){ TRADES.push(OPEN_TRADES[key]); delete OPEN_TRADES[key]; persist(); }
         }
-        state.candles = candles; drawChart(candles); processIndicators(candles);
-        BinanceAPI.subscribe(state.symbol, state.interval, (candle) => {
-            if (state.candles.length > 0 && state.candles[state.candles.length-1].time === candle.time) { state.candles[state.candles.length-1] = candle; } 
-            else { state.candles.push(candle); if (state.candles.length > CONFIG.candleLimit) state.candles.shift(); }
-            drawChart(state.candles); processIndicators(state.candles);
-        });
-    } catch (e) { console.error('Load error:', e); }
-    state.processing = false;
+        if(!OPEN_TRADES[key]){
+          const sig = scoreSignal(candles);
+          if(sig && sig.score>=SETTINGS.threshold){
+            const trade = maybeOpenTrade(sym, tf, sig);
+            if(trade){ await sendTelegram(formatSignalMessage(sym, tf, sig)); }
+          }
+        }
+      }catch(e){ console.warn('scan error', sym, tf, e.message); }
+    }
+  }
+  persist();
+  renderAll();
 }
-function processIndicators(candles) { if(candles.length<50)return; if(state.isAutoTrade){const signal=generateSignal(candles); if(signal)addTrade(signal);} checkOpenTrades(candles); updateStats(); renderLog(); renderSignals(); }
 
-window.addEventListener('load',()=>{ updateLogFilters(); loadData(); updateStats(); renderLog(); renderSignals(); renderFrameStats(); renderSymbolStats(); document.getElementById('statFrameLabel').textContent=state.interval; const chartContainer=document.getElementById('tradeChart'); if(chartContainer)chartObserver.observe(chartContainer); setInterval(()=>{if(state.ws)state.ws.close(); loadData();},300000); });
-window.addEventListener('beforeunload',()=>{if(state.ws)state.ws.close(); chartObserver.disconnect();});
-console.log('✅ AI Signals Full Professional App Loaded. Complete Version.');
+function startScan(){
+  if(SCAN_TIMER) return;
+  scanOnce();
+  SCAN_TIMER = setInterval(scanOnce, Math.max(1,SETTINGS.intervalMin)*60*1000);
+  document.getElementById('scanDot').classList.add('live');
+  applyI18n();
+  toast(t('scanStarted'));
+}
+function stopScan(){
+  clearInterval(SCAN_TIMER); SCAN_TIMER=null;
+  document.getElementById('scanDot').classList.remove('live');
+  applyI18n();
+  toast(t('scanStopped'));
+}
+
+/* ============================== Backtest ============================== */
+async function runBacktest(sym, tf, bars){
+  const candles = await fetchKlines(sym, tf, bars);
+  const trades = []; let open=null;
+  const minLen = 160; // warmup for indicators
+  for(let i=minLen;i<candles.length;i++){
+    const slice = candles.slice(0,i+1);
+    const k = slice[slice.length-1];
+    if(open){
+      const closedNow = updateOpenTradeWithCandle(open, k);
+      if(closedNow){ trades.push(open); open=null; }
+    }
+    if(!open){
+      const sig = scoreSignal(slice);
+      if(sig && sig.score>=SETTINGS.threshold){
+        open = {symbol:sym, timeframe:tf, direction:sig.direction, entry:sig.entry, sl:sig.sl,
+          tp1:sig.tp1, tp2:sig.tp2, tp3:sig.tp3, openTime:k.time, status:'open', tp1Hit:false, tp2Hit:false, score:sig.score};
+      }
+    }
+  }
+  return {trades, candles};
+}
+
+/* ============================== Rendering ============================== */
+function toast(msg, isErr=false){
+  const d = document.createElement('div'); d.className='toast'+(isErr?' err':''); d.textContent=msg;
+  document.body.appendChild(d); setTimeout(()=>d.remove(), 3200);
+}
+function gaugeSVG(score){
+  const r=26, c=2*Math.PI*r, pct=Math.max(0,Math.min(100,score))/100;
+  const color = score>=90?'var(--gold)':score>=80?'var(--up)':score>=70?'#c9d24a':'var(--mute)';
+  return `<div class="gauge"><svg width="64" height="64">
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--line)" stroke-width="6"/>
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${c*(1-pct)}"/>
+  </svg><div class="gauge-val">${score}</div></div>`;
+}
+function renderKPIs(){
+  const stats = computeStats(TRADES);
+  const openCount = Object.keys(OPEN_TRADES).length;
+  const rows = [
+    [t('thTrades'), stats.n, ''],
+    [t('thWin'), stats.n? stats.winRate.toFixed(1)+'%':'—', stats.winRate>=50?'up':'down'],
+    [t('thPF'), stats.n? (isFinite(stats.pf)?stats.pf.toFixed(2):'∞'):'—', ''],
+    ['Open', openCount, '']
+  ];
+  document.getElementById('kpiRow').innerHTML = rows.map(([label,val,cls])=>
+    `<div class="card"><h3>${label}</h3><div class="stat-num ${cls||''}">${val}</div></div>`).join('');
+}
+function renderTfTable(){
+  const tbody = document.querySelector('#tfTable tbody');
+  const rows = SETTINGS.timeframes.map(tf=>{
+    const trades = TRADES.filter(x=>x.timeframe===tf);
+    const s = computeStats(trades);
+    return {tf, ...s};
+  }).sort((a,b)=> b.pf - a.pf);
+  tbody.innerHTML = rows.map(r=>`<tr>
+    <td>${r.tf}</td><td>${r.n}</td>
+    <td class="${r.winRate>=50?'up':'down'}">${r.n?r.winRate.toFixed(1)+'%':'—'}</td>
+    <td>${r.n?(isFinite(r.pf)?r.pf.toFixed(2):'∞'):'—'}</td>
+    <td>${r.n?r.sharpe.toFixed(2):'—'}</td>
+    <td class="down">${r.n?r.maxDD.toFixed(1)+'%':'—'}</td>
+    <td>${r.n?r.expectancy.toFixed(2)+'%':'—'}</td>
+  </tr>`).join('') || `<tr><td colspan="7" class="empty">${t('noTrades')}</td></tr>`;
+}
+function renderSymTable(){
+  const tbody = document.querySelector('#symTable tbody');
+  const rows = SETTINGS.symbols.map(sym=>{
+    const trades = TRADES.filter(x=>x.symbol===sym);
+    const s = computeStats(trades);
+    const bySub = {};
+    SETTINGS.timeframes.forEach(tf=>{ bySub[tf] = computeStats(trades.filter(x=>x.timeframe===tf)); });
+    let bestTf = '—', bestPf=-Infinity;
+    Object.entries(bySub).forEach(([tf,st])=>{ if(st.n && st.pf>bestPf){ bestPf=st.pf; bestTf=tf; } });
+    const lastSig = SIGNALS.find(x=>x.symbol===sym);
+    return {sym, ...s, bestTf, lastSig};
+  }).sort((a,b)=>b.pf-a.pf);
+  tbody.innerHTML = rows.map(r=>`<tr>
+    <td class="sym">${r.sym}</td><td>${r.n}</td>
+    <td class="${r.winRate>=50?'up':'down'}">${r.n?r.winRate.toFixed(1)+'%':'—'}</td>
+    <td>${r.n?(isFinite(r.pf)?r.pf.toFixed(2):'∞'):'—'}</td>
+    <td>${r.bestTf}</td>
+    <td>${r.lastSig? new Date(r.lastSig.time).toLocaleString(LANG==='ar'?'ar-EG':'en-US') : '—'}</td>
+  </tr>`).join('') || `<tr><td colspan="6" class="empty">${t('noTrades')}</td></tr>`;
+}
+function renderSignals(){
+  const symF = document.getElementById('filterSymbol').value;
+  const tfF = document.getElementById('filterTf').value;
+  const typeF = document.getElementById('filterType').value;
+  const q = document.getElementById('filterSearch').value.trim().toLowerCase();
+  let list = SIGNALS.filter(s=>
+    (!symF || s.symbol===symF) && (!tfF || s.timeframe===tfF) && (!typeF || s.direction===typeF) &&
+    (!q || s.symbol.toLowerCase().includes(q))
+  );
+  const wrap = document.getElementById('signalsList');
+  if(!list.length){ wrap.innerHTML = `<div class="empty"><div class="big">⚡</div>${t('noSignals')}</div>`; return; }
+  wrap.innerHTML = list.slice(0,100).map(s=>`
+    <div class="signal-card">
+      ${gaugeSVG(s.score)}
+      <div class="signal-main">
+        <div class="signal-top">
+          <span class="sym">${s.symbol}</span>
+          <span class="tf-chip">${s.timeframe}</span>
+          <span class="badge ${s.direction==='BUY'?'buy':'sell'}">${s.direction}</span>
+          <span class="grade ${s.grade.replace('+','plus')}">${s.grade}</span>
+          <span style="color:var(--sub);font-size:11px;font-family:var(--mono);">${new Date(s.time).toLocaleString(LANG==='ar'?'ar-EG':'en-US')}</span>
+        </div>
+        <div class="reasons">${s.reasons.join(' · ')}</div>
+        <div class="levels">
+          <span><b>${t('entry')}</b>${s.entry.toFixed(4)}</span>
+          <span><b>${t('sl')}</b>${s.sl.toFixed(4)}</span>
+          <span><b>TP1</b>${s.tp1.toFixed(4)}</span>
+          <span><b>TP2</b>${s.tp2.toFixed(4)}</span>
+          <span><b>TP3</b>${s.tp3.toFixed(4)}</span>
+          <span><b>${t('rr')}</b>${s.rr}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+function renderTradesTable(){
+  const tbody = document.querySelector('#tradesTable tbody');
+  const all = [...TRADES].sort((a,b)=>b.openTime-a.openTime);
+  tbody.innerHTML = all.map(tr=>{
+    const dur = tr.closeTime ? Math.round((tr.closeTime-tr.openTime)/60000)+'m' : '—';
+    const pct = tr.pct!==undefined ? tr.pct.toFixed(2)+'%' : '—';
+    const resTxt = tr.result==='win' ? (tr.tp2Hit?t('closedFull'):t('closedPartial')) : tr.result==='loss'? t('closedSl') : '—';
+    return `<tr>
+      <td class="sym">${tr.symbol}</td><td>${tr.timeframe}</td>
+      <td><span class="badge ${tr.direction==='BUY'?'buy':'sell'}">${tr.direction}</span></td>
+      <td>${new Date(tr.openTime).toLocaleString(LANG==='ar'?'ar-EG':'en-US')}</td>
+      <td>${tr.closeTime? new Date(tr.closeTime).toLocaleString(LANG==='ar'?'ar-EG':'en-US'):'—'}</td>
+      <td class="${tr.result==='win'?'up':tr.result==='loss'?'down':''}">${resTxt}</td>
+      <td class="${(tr.pct||0)>=0?'up':'down'}">${pct}</td>
+      <td>${dur}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" class="empty">${t('noTrades')}</td></tr>`;
+}
+function renderFilters(){
+  const symSel = document.getElementById('filterSymbol'), tfSel = document.getElementById('filterTf');
+  const curSym = symSel.value, curTf = tfSel.value;
+  symSel.innerHTML = `<option value="">${t('allSymbols')}</option>` + SETTINGS.symbols.map(s=>`<option value="${s}">${s}</option>`).join('');
+  tfSel.innerHTML = `<option value="">${t('allTf')}</option>` + SETTINGS.timeframes.map(s=>`<option value="${s}">${s}</option>`).join('');
+  symSel.value = curSym; tfSel.value = curTf;
+}
+function renderSettingsChips(){
+  document.getElementById('symbolChips').innerHTML = DEFAULT_SYMBOLS.concat(SETTINGS.symbols.filter(s=>!DEFAULT_SYMBOLS.includes(s)))
+    .map(s=>`<div class="chip ${SETTINGS.symbols.includes(s)?'on':''}" data-sym="${s}">${s}</div>`).join('');
+  document.getElementById('tfChips').innerHTML = ALL_TFS.map(o=>`<div class="chip ${SETTINGS.timeframes.includes(o.v)?'on':''}" data-tf="${o.v}">${o.label}</div>`).join('');
+}
+function renderBacktestSelectors(){
+  document.getElementById('btSymbol').innerHTML = SETTINGS.symbols.map(s=>`<option value="${s}">${s}</option>`).join('');
+  document.getElementById('btTf').innerHTML = SETTINGS.timeframes.map(s=>`<option value="${s}">${s}</option>`).join('');
+}
+function renderAll(){
+  renderKPIs(); renderTfTable(); renderSymTable(); renderFilters(); renderSignals(); renderTradesTable();
+  document.getElementById('threshDisplay').textContent = SETTINGS.threshold;
+}
+
+/* ============================== Tabs ============================== */
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('main > section').forEach(s=>s.classList.add('hidden'));
+    document.getElementById('tab-'+btn.dataset.tab).classList.remove('hidden');
+  });
+});
+
+/* ============================== Settings wiring ============================== */
+function initSettingsUI(){
+  document.getElementById('tgToken').value = SETTINGS.tgToken;
+  document.getElementById('tgChatId').value = SETTINGS.tgChatId;
+  document.getElementById('tgEnableSwitch').classList.toggle('on', SETTINGS.tgEnabled);
+  document.getElementById('cfgThreshold').value = SETTINGS.threshold;
+  document.getElementById('cfgInterval').value = SETTINGS.intervalMin;
+  renderSettingsChips();
+  renderBacktestSelectors();
+
+  document.getElementById('tgToken').addEventListener('change', e=>{ SETTINGS.tgToken=e.target.value.trim(); persist(); });
+  document.getElementById('tgChatId').addEventListener('change', e=>{ SETTINGS.tgChatId=e.target.value.trim(); persist(); });
+  document.getElementById('tgEnableSwitch').addEventListener('click', e=>{
+    SETTINGS.tgEnabled = !SETTINGS.tgEnabled; persist();
+    document.getElementById('tgEnableSwitch').classList.toggle('on', SETTINGS.tgEnabled);
+  });
+  document.getElementById('btnTestTg').addEventListener('click', async ()=>{
+    const prevEnabled = SETTINGS.tgEnabled; SETTINGS.tgEnabled=true;
+    const r = await sendTelegram('✅ Confluence Signals — رسالة تجريبية / test message');
+    SETTINGS.tgEnabled = prevEnabled;
+    toast(r.ok ? t('tgTestOk') : t('tgTestFail'), !r.ok);
+  });
+  document.getElementById('cfgThreshold').addEventListener('change', e=>{
+    SETTINGS.threshold = Math.max(0,Math.min(100,+e.target.value)); persist(); renderAll();
+  });
+  document.getElementById('cfgInterval').addEventListener('change', e=>{
+    SETTINGS.intervalMin = Math.max(1,+e.target.value); persist();
+    if(SCAN_TIMER){ stopScan(); startScan(); }
+  });
+  document.getElementById('symbolChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    const sym = chip.dataset.sym;
+    if(SETTINGS.symbols.includes(sym)) SETTINGS.symbols = SETTINGS.symbols.filter(s=>s!==sym);
+    else SETTINGS.symbols.push(sym);
+    persist(); renderSettingsChips(); renderFilters(); renderBacktestSelectors();
+  });
+  document.getElementById('tfChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    const tf = chip.dataset.tf;
+    if(SETTINGS.timeframes.includes(tf)) SETTINGS.timeframes = SETTINGS.timeframes.filter(s=>s!==tf);
+    else SETTINGS.timeframes.push(tf);
+    persist(); renderSettingsChips(); renderFilters(); renderBacktestSelectors();
+  });
+  document.getElementById('btnReset').addEventListener('click', ()=>{
+    if(!confirm(LANG==='ar'?'هل أنت متأكد؟':'Are you sure?')) return;
+    SIGNALS=[]; TRADES=[]; OPEN_TRADES={}; persist(); renderAll(); toast(t('resetDone'));
+  });
+}
+
+/* ============================== Filters wiring ============================== */
+['filterSymbol','filterTf','filterType','filterSearch'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderSignals);
+  document.getElementById(id).addEventListener('change', renderSignals);
+});
+
+/* ============================== Lang wiring ============================== */
+function setLang(l){ LANG=l; localStorage.setItem('cs_lang', l); applyI18n(); renderAll(); }
+document.getElementById('langAr').addEventListener('click', ()=>setLang('ar'));
+document.getElementById('langEn').addEventListener('click', ()=>setLang('en'));
+document.getElementById('langAr2').addEventListener('click', ()=>setLang('ar'));
+document.getElementById('langEn2').addEventListener('click', ()=>setLang('en'));
+
+/* ============================== Scan toggle ============================== */
+document.getElementById('btnScanToggle').addEventListener('click', ()=>{
+  if(SCAN_TIMER){ stopScan(); } else { startScan(); }
+  document.getElementById('btnScanToggle').textContent = SCAN_TIMER ? t('stopScan') : t('startScan');
+});
+
+/* ============================== Backtest wiring ============================== */
+document.getElementById('btnRunBacktest').addEventListener('click', async ()=>{
+  const sym = document.getElementById('btSymbol').value, tf = document.getElementById('btTf').value;
+  const bars = +document.getElementById('btBars').value;
+  const btn = document.getElementById('btnRunBacktest'); btn.disabled=true; btn.textContent='...';
+  try{
+    const {trades, candles} = await runBacktest(sym, tf, bars);
+    const closed = trades.filter(x=>x.status==='closed');
+    const stats = computeStats(closed);
+    document.getElementById('btResults').innerHTML = `
+      <div class="grid cols-4">
+        <div class="card"><h3>${t('thTrades')}</h3><div class="stat-num">${stats.n}</div></div>
+        <div class="card"><h3>${t('thWin')}</h3><div class="stat-num ${stats.winRate>=50?'up':'down'}">${stats.n?stats.winRate.toFixed(1)+'%':'—'}</div></div>
+        <div class="card"><h3>${t('thPF')}</h3><div class="stat-num">${stats.n?(isFinite(stats.pf)?stats.pf.toFixed(2):'∞'):'—'}</div></div>
+        <div class="card"><h3>${t('thDD')}</h3><div class="stat-num down">${stats.n?stats.maxDD.toFixed(1)+'%':'—'}</div></div>
+      </div>`;
+    // equity curve
+    let eq=0; const eqPoints = closed.sort((a,b)=>a.closeTime-b.closeTime).map(tr=>{ eq+=tr.pct; return {time: Math.floor(tr.closeTime/1000), value: eq}; });
+    const wrap = document.getElementById('btChartWrap'); wrap.classList.remove('hidden'); wrap.innerHTML='';
+    if(eqPoints.length && window.LightweightCharts){
+      const chart = LightweightCharts.createChart(wrap, {height:260, layout:{background:{color:'#0f1522'}, textColor:'#7c8aa3'}, grid:{vertLines:{color:'#1e2a3d'},horzLines:{color:'#1e2a3d'}}, timeScale:{timeVisible:true}});
+      const line = chart.addLineSeries({color:'#17c98d', lineWidth:2});
+      line.setData(eqPoints);
+    }
+  }catch(e){ toast(e.message, true); }
+  btn.disabled=false; btn.textContent=t('btRun');
+});
+
+/* ============================== Init ============================== */
+function init(){
+  applyI18n();
+  initSettingsUI();
+  renderAll();
+}
+init();
 </script>
 </body>
-                                                                                               </html>
+</html>
