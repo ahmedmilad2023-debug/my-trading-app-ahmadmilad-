@@ -4,126 +4,586 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0b0e11">
-    <title>AI Trading Signals | احترافي</title>
-    <link rel="manifest" href="data:application/json,{%22name%22:%22AI%20Trading%20Signals%22,%22short_name%22:%22SignalAI%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230b0e11%22,%22theme_color%22:%22%230b0e11%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
+    <meta name="description" content="AI Trading Signals - Professional Crypto Futures Analysis">
+    <title>AI Trading Signals | احترافي كامل</title>
+    <!-- PWA Manifest (Data URI) -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkFJIHRyYWRpbmcgU2lnbmFscyIsCiAgInNob3J0X25hbWUiOiAiU2lnbmFsQUkiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBiMGUxMSIsCiAgInRoZW1lX2NvbG9yIjogIiMwYjBlMTEiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWwsPHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48dGV4dCB5PScuOWVtJyBmb250LXNpemU9JzkwJz7ph4w8L3RleHQ+PC9zdmc+IiwKICAgICAgInNpemVzIjogIjE5MngxOTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==">
+    <!-- Chart Library -->
     <link rel="stylesheet" href="https://unpkg.com/lightweight-charts@4.0.1/dist/lightweight-charts.css">
     <script src="https://unpkg.com/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.js"></script>
     <style>
+        /* ============================================================
+           1. CSS VARIABLES & RESET
+           ============================================================ */
         :root {
-            --bg: #0b0e11; --card: #1e2329; --border: #2b3139; --text: #eaecef; --text-muted: #848e9c;
-            --green: #0ecb81; --red: #f6465d; --blue: #1e80ff; --orange: #f0b90b; --radius: 8px; --shadow: 0 4px 12px rgba(0,0,0,0.6);
+            --bg: #0b0e11;
+            --card: #1e2329;
+            --border: #2b3139;
+            --text: #eaecef;
+            --text-muted: #848e9c;
+            --green: #0ecb81;
+            --red: #f6465d;
+            --blue: #1e80ff;
+            --orange: #f0b90b;
+            --radius: 8px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+            --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-        body { background: var(--bg); color: var(--text); overflow-x: hidden; padding: 10px; }
-        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-        /* PWA Banner */
-        #pwa-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 12px 20px; border-top: 1px solid var(--border); z-index: 999; justify-content: space-between; align-items: center; gap: 10px; }
-        #pwa-banner.show { display: flex; } #pwa-banner button { background: var(--blue); border: none; color: white; padding: 8px 20px; border-radius: var(--radius); cursor: pointer; font-weight: bold; }
-        #pwa-banner .close { background: transparent; color: var(--text-muted); padding: 0 10px; font-size: 20px; }
-
-        /* Header */
-        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; flex-wrap: wrap; gap: 10px; }
-        .app-title { font-size: 20px; font-weight: 700; color: var(--orange); display: flex; align-items: center; gap: 8px; }
-        .app-title span { font-size: 14px; color: var(--text-muted); font-weight: 400; }
-        .header-controls { display: flex; gap: 8px; flex-wrap: wrap; }
-        .header-controls button { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: var(--radius); cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
-        .header-controls button:hover { background: var(--border); } .header-controls .btn-active { border-color: var(--green); color: var(--green); }
-
-        /* Layout */
-        .grid-main { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
-        @media (max-width: 768px) { .grid-main { grid-template-columns: 1fr; } }
-        .card { background: var(--card); border-radius: var(--radius); padding: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); }
-
-        /* Selectors */
-        .selector-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
-        .selector-row select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: var(--radius); font-size: 14px; cursor: pointer; outline: none; }
-        .selector-row select:focus { border-color: var(--blue); }
-        .symbol-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: 0.2s; }
-        .symbol-btn:hover, .symbol-btn.active { border-color: var(--orange); color: var(--orange); }
-
-        /* Chart */
-        .chart-container { position: relative; height: 400px; width: 100%; background: var(--bg); border-radius: var(--radius); overflow: hidden; }
-        #tradeChart { width: 100%; height: 100%; display: block; }
-        .chart-overlay { position: absolute; top: 10px; left: 10px; display: flex; gap: 12px; font-size: 12px; color: var(--text-muted); pointer-events: none; }
-        .chart-overlay .price { color: var(--text); font-weight: bold; font-size: 16px; }
-
-        /* Stats Grid */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-top: 10px; }
-        .stat-item { background: var(--bg); padding: 8px; border-radius: 4px; text-align: center; }
-        .stat-item .label { font-size: 11px; color: var(--text-muted); } .stat-item .value { font-size: 15px; font-weight: 600; margin-top: 2px; }
-        .value.green { color: var(--green); } .value.red { color: var(--red); } .value.orange { color: var(--orange); }
-
-        /* Signals */
-        .signal-item { background: var(--bg); padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid var(--text-muted); }
-        .signal-item.long { border-left-color: var(--green); } .signal-item.short { border-left-color: var(--red); }
-        .signal-item .header { display: flex; justify-content: space-between; font-size: 13px; }
-        .signal-item .details { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-muted); margin-top: 6px; }
-        .signal-item .details span { background: var(--card); padding: 2px 8px; border-radius: 4px; }
-        .signal-item .reason { font-size: 12px; color: var(--text-muted); margin-top: 4px; opacity: 0.8; }
-        .score-badge { padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; }
-        .score-badge.excellent { background: var(--green); color: #000; } .score-badge.good { background: var(--orange); color: #000; }
-        .score-badge.medium { background: var(--blue); color: #fff; }
-
-        /* Log Table */
-        .trade-log-table { width: 100%; font-size: 12px; border-collapse: collapse; }
-        .trade-log-table th { text-align: left; color: var(--text-muted); padding: 6px 4px; border-bottom: 1px solid var(--border); }
-        .trade-log-table td { padding: 6px 4px; border-bottom: 1px solid var(--border); }
-        .trade-log-table .win { color: var(--green); } .trade-log-table .loss { color: var(--red); }
-
-        /* Telegram & Backtest */
-        .tg-section, .bt-section { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
-        .tg-section input, .bt-section select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 4px; flex: 1; min-width: 120px; }
-        .tg-section button, .bt-section button { background: var(--blue); border: none; color: white; padding: 6px 16px; border-radius: 4px; cursor: pointer; }
-        .tg-section button:disabled { opacity: 0.5; }
-
-        /* Tabs */
-        .tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid var(--border); }
-        .tab { background: transparent; border: none; color: var(--text-muted); padding: 8px 16px; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; }
-        .tab.active { color: var(--text); border-bottom-color: var(--orange); }
-
-        .tab-content { display: none; } .tab-content.active { display: block; }
-
-        /* Backtest Canvas */
-        #equityCanvas { width: 100%; height: 200px; background: var(--bg); border-radius: var(--radius); margin-top: 10px; }
-
-        @media (max-width: 480px) { .app-title { font-size: 16px; } .chart-container { height: 250px; } }
-        .hidden { display: none !important; } .mt-8 { margin-top: 8px; } .mb-8 { margin-bottom: 8px; } .flex-between { display: flex; justify-content: space-between; align-items: center; } .text-center { text-align: center; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font);
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            padding: 10px;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        a {
+            color: var(--blue);
+            text-decoration: none;
+        }
+        /* ============================================================
+           2. PWA INSTALL BANNER
+           ============================================================ */
+        #pwa-banner {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            z-index: 9999;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        #pwa-banner.show {
+            display: flex;
+        }
+        #pwa-banner button {
+            background: var(--blue);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        #pwa-banner .close {
+            background: transparent;
+            color: var(--text-muted);
+            padding: 0 10px;
+            font-size: 24px;
+            line-height: 1;
+        }
+        /* ============================================================
+           3. HEADER
+           ============================================================ */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .app-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--orange);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .app-title span {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        .header-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .header-controls button {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 14px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .header-controls button:hover {
+            background: var(--border);
+        }
+        .header-controls .btn-active {
+            border-color: var(--green);
+            color: var(--green);
+        }
+        /* ============================================================
+           4. SELECTORS
+           ============================================================ */
+        .selector-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .selector-row select {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+        }
+        .selector-row select:focus {
+            border-color: var(--blue);
+        }
+        .symbol-btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+        .symbol-btn:hover,
+        .symbol-btn.active {
+            border-color: var(--orange);
+            color: var(--orange);
+        }
+        /* ============================================================
+           5. TABS
+           ============================================================ */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+        .tab {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 2px solid transparent;
+            transition: 0.2s;
+        }
+        .tab.active {
+            color: var(--text);
+            border-bottom-color: var(--orange);
+        }
+        .tab:hover {
+            color: var(--text);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* ============================================================
+           6. CARDS & GRID
+           ============================================================ */
+        .grid-main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        @media (max-width: 768px) {
+            .grid-main {
+                grid-template-columns: 1fr;
+            }
+        }
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        /* ============================================================
+           7. CHART
+           ============================================================ */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            background: var(--bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        #tradeChart {
+            width: 100%;
+            height: 100%;
+        }
+        .chart-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .chart-overlay .price {
+            color: var(--text);
+            font-weight: bold;
+            font-size: 16px;
+        }
+        /* ============================================================
+           8. STATS GRID
+           ============================================================ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .stat-item {
+            background: var(--bg);
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-item .label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .stat-item .value {
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        .value.green {
+            color: var(--green);
+        }
+        .value.red {
+            color: var(--red);
+        }
+        .value.orange {
+            color: var(--orange);
+        }
+        .value.blue {
+            color: var(--blue);
+        }
+        /* ============================================================
+           9. SIGNALS
+           ============================================================ */
+        .signal-item {
+            background: var(--bg);
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--text-muted);
+        }
+        .signal-item.long {
+            border-left-color: var(--green);
+        }
+        .signal-item.short {
+            border-left-color: var(--red);
+        }
+        .signal-item .header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+        .signal-item .details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+        .signal-item .details span {
+            background: var(--card);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .signal-item .reason {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            opacity: 0.8;
+        }
+        .score-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .score-badge.excellent {
+            background: var(--green);
+            color: #000;
+        }
+        .score-badge.good {
+            background: var(--orange);
+            color: #000;
+        }
+        .score-badge.medium {
+            background: var(--blue);
+            color: #fff;
+        }
+        /* ============================================================
+           10. TRADE LOG TABLE
+           ============================================================ */
+        .trade-log-table {
+            width: 100%;
+            font-size: 12px;
+            border-collapse: collapse;
+        }
+        .trade-log-table th {
+            text-align: left;
+            color: var(--text-muted);
+            padding: 6px 4px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 500;
+        }
+        .trade-log-table td {
+            padding: 6px 4px;
+            border-bottom: 1px solid var(--border);
+        }
+        .trade-log-table .win {
+            color: var(--green);
+        }
+        .trade-log-table .loss {
+            color: var(--red);
+        }
+        .trade-log-table .open {
+            color: var(--blue);
+        }
+        .log-filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .log-filters select,
+        .log-filters input {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        /* ============================================================
+           11. TELEGRAM & SETTINGS
+           ============================================================ */
+        .tg-section,
+        .bt-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .tg-section input,
+        .bt-section select {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 10px;
+            border-radius: 4px;
+            flex: 1;
+            min-width: 120px;
+        }
+        .tg-section button,
+        .bt-section button {
+            background: var(--blue);
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .tg-section button:disabled {
+            opacity: 0.5;
+        }
+        .settings-group {
+            margin-top: 12px;
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+        }
+        .settings-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+        .settings-group input[type="number"] {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 4px 8px;
+            border-radius: 4px;
+            width: 60px;
+        }
+        /* ============================================================
+           12. BACKTEST CANVAS
+           ============================================================ */
+        #equityCanvas {
+            width: 100%;
+            height: 200px;
+            background: var(--bg);
+            border-radius: var(--radius);
+            margin-top: 10px;
+        }
+        /* ============================================================
+           13. RESPONSIVE & UTILITIES
+           ============================================================ */
+        @media (max-width: 480px) {
+            .app-title {
+                font-size: 18px;
+            }
+            .chart-container {
+                height: 250px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        .hidden {
+            display: none !important;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-muted {
+            color: var(--text-muted);
+        }
+        .w-100 {
+            width: 100%;
+        }
+        .overflow-auto {
+            overflow: auto;
+        }
     </style>
 </head>
 <body>
+
+    <!-- ============================================================
+    PWA INSTALL BANNER
+    ============================================================ -->
     <div id="pwa-banner">
-        <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:24px;">🤖</span><span>ثبّت التطبيق للوصول السريع</span></div>
-        <div style="display:flex;gap:8px;"><button id="installBtn">تثبيت</button><button class="close" id="closeBanner">✕</button></div>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:24px;">🤖</span>
+            <span>ثبّت التطبيق للوصول السريع</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+            <button id="installBtn">📲 تثبيت</button>
+            <button class="close" id="closeBanner">✕</button>
+        </div>
     </div>
 
+    <!-- ============================================================
+    HEADER
+    ============================================================ -->
     <header class="app-header">
-        <div class="app-title">🤖 AI Signals <span>Pro Scanner</span></div>
+        <div class="app-title">
+            🤖 AI Signals <span>Professional Futures Scanner</span>
+        </div>
         <div class="header-controls">
-            <button id="btnRefresh">🔄 تحديث</button>
-            <button id="btnAlerts" class="btn-active">🔔 تنبيهات</button>
-            <button id="btnShare">📤 مشاركة</button>
+            <button id="btnRefresh" title="تحديث البيانات">🔄 تحديث</button>
+            <button id="btnAlerts" class="btn-active" title="تشغيل/إيقاف التنبيهات">🔔 تنبيهات</button>
+            <button id="btnShare" title="مشاركة التطبيق">📤 مشاركة</button>
         </div>
     </header>
 
+    <!-- ============================================================
+    SELECTORS
+    ============================================================ -->
     <div class="selector-row">
         <select id="selSymbol">
-            <option value="BTCUSDT">BTC/USDT</option><option value="ETHUSDT">ETH/USDT</option><option value="BNBUSDT">BNB/USDT</option>
-            <option value="SOLUSDT">SOL/USDT</option><option value="XRPUSDT">XRP/USDT</option><option value="DOGEUSDT">DOGE/USDT</option>
-            <option value="ADAUSDT">ADA/USDT</option><option value="LINKUSDT">LINK/USDT</option><option value="AVAXUSDT">AVAX/USDT</option>
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+            <option value="SOLUSDT">SOL/USDT</option>
+            <option value="XRPUSDT">XRP/USDT</option>
+            <option value="DOGEUSDT">DOGE/USDT</option>
+            <option value="ADAUSDT">ADA/USDT</option>
+            <option value="LINKUSDT">LINK/USDT</option>
+            <option value="AVAXUSDT">AVAX/USDT</option>
             <option value="SUIUSDT">SUI/USDT</option>
         </select>
         <select id="selTF">
-            <option value="5m">5 دقائق</option><option value="15m" selected>15 دقيقة</option><option value="30m">30 دقيقة</option>
-            <option value="1h">1 ساعة</option><option value="4h">4 ساعات</option>
+            <option value="5m">5 دقائق</option>
+            <option value="15m" selected>15 دقيقة</option>
+            <option value="30m">30 دقيقة</option>
+            <option value="1h">1 ساعة</option>
+            <option value="4h">4 ساعات</option>
         </select>
         <div id="symbolQuick" style="display:flex;gap:4px;flex-wrap:wrap;">
-            <button class="symbol-btn active" data-sym="BTCUSDT">BTC</button><button class="symbol-btn" data-sym="ETHUSDT">ETH</button>
-            <button class="symbol-btn" data-sym="BNBUSDT">BNB</button><button class="symbol-btn" data-sym="SOLUSDT">SOL</button>
+            <button class="symbol-btn active" data-sym="BTCUSDT">BTC</button>
+            <button class="symbol-btn" data-sym="ETHUSDT">ETH</button>
+            <button class="symbol-btn" data-sym="BNBUSDT">BNB</button>
+            <button class="symbol-btn" data-sym="SOLUSDT">SOL</button>
             <button class="symbol-btn" data-sym="XRPUSDT">XRP</button>
+            <button class="symbol-btn" data-sym="DOGEUSDT">DOGE</button>
+            <button class="symbol-btn" data-sym="ADAUSDT">ADA</button>
+            <button class="symbol-btn" data-sym="LINKUSDT">LINK</button>
         </div>
     </div>
 
+    <!-- ============================================================
+    TABS
+    ============================================================ -->
     <div class="tabs">
         <button class="tab active" data-tab="tab-live">📊 مباشر</button>
         <button class="tab" data-tab="tab-stats">📈 الإحصائيات</button>
@@ -131,16 +591,29 @@
         <button class="tab" data-tab="tab-settings">⚙️ الإعدادات</button>
     </div>
 
+    <!-- ============================================================
+    TAB 1: LIVE
+    ============================================================ -->
     <div class="tab-content active" id="tab-live">
         <div class="grid-main">
+            <!-- Left Column -->
             <div>
+                <!-- Chart -->
                 <div class="card">
-                    <div class="chart-container"><div id="tradeChart"></div>
-                        <div class="chart-overlay"><span id="currentPrice" class="price">--</span><span id="currentChange" style="color:var(--text-muted);">0.00%</span></div>
+                    <div class="chart-container">
+                        <div id="tradeChart"></div>
+                        <div class="chart-overlay">
+                            <span id="currentPrice" class="price">--</span>
+                            <span id="currentChange" style="color:var(--text-muted);">0.00%</span>
+                        </div>
                     </div>
                 </div>
+                <!-- Stats -->
                 <div class="card mt-8">
-                    <div class="flex-between"><span style="font-weight:600;font-size:14px;">إحصائيات الفريم الحالي</span><span style="font-size:12px;color:var(--text-muted);" id="statFrameLabel">15m</span></div>
+                    <div class="card-title">
+                        <span>📊 إحصائيات الفريم الحالي</span>
+                        <span style="font-size:12px;color:var(--text-muted);" id="statFrameLabel">15m</span>
+                    </div>
                     <div class="stats-grid" id="statsContainer">
                         <div class="stat-item"><div class="label">الصفقات</div><div class="value" id="sTotal">0</div></div>
                         <div class="stat-item"><div class="label">الرابحة</div><div class="value green" id="sWin">0</div></div>
@@ -148,45 +621,78 @@
                         <div class="stat-item"><div class="label">Win Rate</div><div class="value orange" id="sWinRate">0%</div></div>
                         <div class="stat-item"><div class="label">Profit Factor</div><div class="value orange" id="sPF">0</div></div>
                         <div class="stat-item"><div class="label">Sharpe</div><div class="value orange" id="sSharpe">0</div></div>
+                        <div class="stat-item"><div class="label">Expectancy</div><div class="value blue" id="sExpectancy">0%</div></div>
                     </div>
                 </div>
             </div>
+            <!-- Right Column -->
             <div>
+                <!-- Signals List -->
                 <div class="card">
-                    <div class="flex-between mb-8"><span style="font-weight:600;font-size:14px;">📡 إشارات مباشرة</span><span style="font-size:12px;color:var(--text-muted);" id="signalCount">0 إشارة</span></div>
+                    <div class="card-title">
+                        <span>📡 إشارات مباشرة</span>
+                        <span style="font-size:12px;color:var(--text-muted);" id="signalCount">0 إشارة</span>
+                    </div>
                     <div id="signalList" style="max-height:300px;overflow-y:auto;">
-                        <div class="text-center" style="color:var(--text-muted);padding:20px;">بانتظار البيانات...</div>
+                        <div class="text-center text-muted" style="padding:20px;">بانتظار البيانات...</div>
                     </div>
                 </div>
+                <!-- Trade Log -->
                 <div class="card mt-8">
-                    <div class="flex-between mb-8"><span style="font-weight:600;font-size:14px;">📋 سجل الصفقات</span><button id="clearLogBtn" style="background:transparent;border:1px solid var(--red);color:var(--red);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">مسح</button></div>
+                    <div class="card-title">
+                        <span>📋 سجل الصفقات</span>
+                        <div style="display:flex;gap:6px;">
+                            <button id="clearLogBtn" style="background:transparent;border:1px solid var(--red);color:var(--red);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">مسح</button>
+                        </div>
+                    </div>
+                    <!-- Log Filters -->
+                    <div class="log-filters">
+                        <select id="logFilterSymbol"><option value="all">كل العملات</option></select>
+                        <select id="logFilterTF"><option value="all">كل الفريمات</option></select>
+                        <select id="logFilterStatus"><option value="all">كل الحالات</option><option value="open">مفتوح</option><option value="win">رابح</option><option value="loss">خاسر</option></select>
+                        <input type="date" id="logFilterDate" />
+                        <button id="logFilterBtn" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:4px;cursor:pointer;">تصفية</button>
+                    </div>
                     <div style="max-height:200px;overflow-y:auto;">
-                        <table class="trade-log-table"><thead><tr><th>الزوج</th><th>الاتجاه</th><th>الدخول</th><th>الخروج</th><th>الربح</th></tr></thead><tbody id="logBody"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);">لا توجد صفقات</td></tr></tbody></table>
+                        <table class="trade-log-table">
+                            <thead>
+                                <tr><th>الزوج</th><th>الاتجاه</th><th>الدخول</th><th>الخروج</th><th>الربح</th></tr>
+                            </thead>
+                            <tbody id="logBody">
+                                <tr><td colspan="5" class="text-center text-muted">لا توجد صفقات</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- ============================================================
+    TAB 2: STATISTICS
+    ============================================================ -->
     <div class="tab-content" id="tab-stats">
         <div class="card">
-            <h3 style="margin-bottom:10px;">إحصائيات متقدمة (حسب الفريم)</h3>
+            <div class="card-title">📈 إحصائيات متقدمة (حسب الفريم)</div>
             <div style="overflow-x:auto;" id="frameStatsTable"></div>
         </div>
         <div class="card mt-8">
-            <h3 style="margin-bottom:10px;">أداء العملات</h3>
+            <div class="card-title">📊 أداء العملات</div>
             <div style="overflow-x:auto;" id="symbolStatsTable"></div>
         </div>
     </div>
 
+    <!-- ============================================================
+    TAB 3: BACKTEST
+    ============================================================ -->
     <div class="tab-content" id="tab-backtest">
         <div class="card">
-            <h3 style="margin-bottom:10px;">🧪 اختبار تاريخي (Backtest)</h3>
+            <div class="card-title">🧪 اختبار تاريخي (Backtest)</div>
             <div class="bt-section">
-                <select id="btSymbol"><option value="BTCUSDT">BTC/USDT</option><option value="ETHUSDT">ETH/USDT</option></select>
-                <select id="btTF"><option value="15m">15 دقيقة</option><option value="1h">1 ساعة</option></select>
-                <select id="btDays"><option value="7">7 أيام</option><option value="30" selected>30 يوم</option><option value="90">90 يوم</option></select>
-                <button id="btnRunBacktest">تشغيل الاختبار</button>
+                <select id="btSymbol"><option value="BTCUSDT">BTC/USDT</option><option value="ETHUSDT">ETH/USDT</option><option value="BNBUSDT">BNB/USDT</option><option value="SOLUSDT">SOL/USDT</option><option value="XRPUSDT">XRP/USDT</option></select>
+                <select id="btTF"><option value="5m">5 دقائق</option><option value="15m" selected>15 دقيقة</option><option value="1h">1 ساعة</option><option value="4h">4 ساعات</option></select>
+                <select id="btDays"><option value="7">7 أيام</option><option value="30" selected>30 يوم</option><option value="90">90 يوم</option><option value="180">180 يوم</option></select>
+                <button id="btnRunBacktest">🚀 تشغيل الاختبار</button>
             </div>
             <div id="btResults" class="mt-8" style="display:none;">
                 <div class="stats-grid" id="btStats"></div>
@@ -195,38 +701,66 @@
         </div>
     </div>
 
+    <!-- ============================================================
+    TAB 4: SETTINGS
+    ============================================================ -->
     <div class="tab-content" id="tab-settings">
         <div class="card">
-            <h3 style="margin-bottom:10px;">⚙️ الإعدادات</h3>
+            <div class="card-title">⚙️ الإعدادات العامة</div>
+            <!-- Telegram -->
             <div class="tg-section">
                 <input type="text" id="tgToken" placeholder="Telegram Bot Token" />
                 <input type="text" id="tgChatId" placeholder="Telegram Chat ID" />
-                <button id="tgTest">اختبار</button>
-                <button id="tgSave" style="background:var(--orange);">حفظ</button>
+                <button id="tgTest">📨 اختبار</button>
+                <button id="tgSave" style="background:var(--orange);">💾 حفظ</button>
             </div>
             <div id="tgStatus" style="font-size:12px;color:var(--text-muted);margin-top:4px;"></div>
-            <div class="mt-8" style="border-top:1px solid var(--border);padding-top:10px;">
-                <label style="display:flex;align-items:center;gap:8px;font-size:14px;">
-                    <input type="checkbox" id="chkAutoTrade" checked> تفعيل الإشارات التلقائية (Auto Signals)
-                </label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-top:6px;">
-                    <input type="checkbox" id="chkTrailing" checked> تفعيل وقف الخسارة المتحرك (Trailing Stop)
-                </label>
+            <!-- Strategy Weights -->
+            <div class="settings-group">
+                <div style="font-weight:500;margin-bottom:6px;">أوزان استراتيجية النقاط (المجموع 100):</div>
+                <label>هيكل السوق (Structure): <input type="number" id="wStructure" value="35" min="0" max="100" /></label>
+                <label>السيولة (Liquidity): <input type="number" id="wLiquidity" value="30" min="0" max="100" /></label>
+                <label>الاختراق (ARBM): <input type="number" id="wARBM" value="20" min="0" max="100" /></label>
+                <label>الملف الحجمي (Volume): <input type="number" id="wVolume" value="15" min="0" max="100" /></label>
+                <button id="saveWeights" style="background:var(--blue);border:none;color:white;padding:6px 16px;border-radius:4px;cursor:pointer;margin-top:6px;">تحديث الأوزان</button>
+            </div>
+            <!-- Toggles -->
+            <div class="settings-group">
+                <label><input type="checkbox" id="chkAutoTrade" checked> تفعيل الإشارات التلقائية</label>
+                <label><input type="checkbox" id="chkTrailing" checked> تفعيل وقف الخسارة المتحرك (Trailing)</label>
+                <label><input type="checkbox" id="chkNotifications" checked> إشعارات المتصفح</label>
             </div>
         </div>
     </div>
 
+    <!-- ============================================================
+    JAVASCRIPT - FULL APPLICATION
+    ============================================================ -->
     <script>
-        // ========================================================================
+        /**
+         * =================================================================
+         *  AI TRADING SIGNALS - FULL APPLICATION
+         *  Version: 2.0 Professional
+         *  Author: Custom Development based on provided specs
+         *  Description: Complete PWA for crypto futures signal analysis.
+         *  Integrates 4 indicators: ARBM, LiquidityEdge, Volume Profile, Market Structure.
+         * =================================================================
+         */
+
+        // ================================================================
         // 1. CONFIGURATION & STATE
-        // ========================================================================
+        // ================================================================
+
         const CONFIG = {
-            symbols: ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'LINKUSDT', 'AVAXUSDT', 'SUIUSDT'],
+            symbols: ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'LINKUSDT', 'AVAXUSDT',
+                'SUIUSDT'
+            ],
             intervals: ['5m', '15m', '30m', '1h', '4h'],
             defaultSymbol: 'BTCUSDT',
             defaultInterval: '15m',
             candleLimit: 300,
-            weights: { structure: 35, liquidity: 30, arbm: 20, volume: 15 } // Total 100
+            // Default weights (will be overridden by localStorage)
+            weights: { structure: 35, liquidity: 30, arbm: 20, volume: 15 }
         };
 
         const state = {
@@ -234,31 +768,61 @@
             interval: CONFIG.defaultInterval,
             candles: [],
             signals: [],
-            trades: JSON.parse(localStorage.getItem('ai_trades') || '[]'),
-            stats: {},
-            tgToken: localStorage.getItem('tg_token') || '',
-            tgChatId: localStorage.getItem('tg_chat') || '',
+            trades: [],
+            stats: { total: 0, win: 0, loss: 0, winRate: 0, pf: 0, sharpe: 0, expectancy: 0 },
+            tgToken: '',
+            tgChatId: '',
             ws: null,
             chart: null,
             isAlertsOn: true,
             isTrailing: true,
-            processing: false
+            isAutoTrade: true,
+            isNotifications: true,
+            processing: false,
+            weights: { ...CONFIG.weights }
         };
 
-        // ========================================================================
+        // Load from localStorage
+        function loadState() {
+            const savedTrades = localStorage.getItem('ai_trades');
+            if (savedTrades) state.trades = JSON.parse(savedTrades);
+            state.tgToken = localStorage.getItem('tg_token') || '';
+            state.tgChatId = localStorage.getItem('tg_chat') || '';
+            const savedWeights = localStorage.getItem('ai_weights');
+            if (savedWeights) state.weights = JSON.parse(savedWeights);
+            const settings = localStorage.getItem('ai_settings');
+            if (settings) {
+                const s = JSON.parse(settings);
+                state.isTrailing = s.isTrailing !== undefined ? s.isTrailing : true;
+                state.isAutoTrade = s.isAutoTrade !== undefined ? s.isAutoTrade : true;
+                state.isNotifications = s.isNotifications !== undefined ? s.isNotifications : true;
+            }
+        }
+        loadState();
+
+        // ================================================================
         // 2. BINANCE API & WEBSOCKET
-        // ========================================================================
+        // ================================================================
+
         const BinanceAPI = {
             restURL: 'https://api.binance.com/api/v3',
             wsURL: 'wss://stream.binance.com:9443/ws',
+
             async fetchKlines(symbol, interval, limit = 300) {
-                const url = `${this.restURL}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+                const url =
+                    `${this.restURL}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
                 const res = await fetch(url);
                 const data = await res.json();
                 return data.map(k => ({
-                    time: k[0], open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5])
+                    time: k[0],
+                    open: parseFloat(k[1]),
+                    high: parseFloat(k[2]),
+                    low: parseFloat(k[3]),
+                    close: parseFloat(k[4]),
+                    volume: parseFloat(k[5])
                 }));
             },
+
             subscribe(symbol, interval, callback) {
                 const stream = `${symbol.toLowerCase()}@kline_${interval}`;
                 if (state.ws) { state.ws.close(); }
@@ -267,7 +831,14 @@
                     const msg = JSON.parse(e.data);
                     if (msg.e === 'kline') {
                         const k = msg.k;
-                        callback({ time: k.t, open: parseFloat(k.o), high: parseFloat(k.h), low: parseFloat(k.l), close: parseFloat(k.c), volume: parseFloat(k.v) });
+                        callback({
+                            time: k.t,
+                            open: parseFloat(k.o),
+                            high: parseFloat(k.h),
+                            low: parseFloat(k.l),
+                            close: parseFloat(k.c),
+                            volume: parseFloat(k.v)
+                        });
                     }
                 };
                 state.ws = ws;
@@ -275,34 +846,51 @@
             }
         };
 
-        // ========================================================================
+        // ================================================================
         // 3. INDICATOR ENGINES (Pure Math - No Pine Script)
-        // ========================================================================
+        // ================================================================
 
         // --- Helper Functions ---
         function linReg(arr, len) {
             if (arr.length < len) return arr[arr.length - 1] || 0;
-            const slice = arr.slice(-len); const n = slice.length;
-            const sumX = n * (n - 1) / 2; const sumY = slice.reduce((a, b) => a + b, 0);
+            const slice = arr.slice(-len);
+            const n = slice.length;
+            const sumX = n * (n - 1) / 2;
+            const sumY = slice.reduce((a, b) => a + b, 0);
             const sumXY = slice.reduce((a, b, i) => a + b * i, 0);
             const sumX2 = n * (n - 1) * (2 * n - 1) / 6;
             const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
             const intercept = (sumY - slope * sumX) / n;
             return intercept + slope * (n - 1);
         }
+
         function stdev(arr, len) {
             if (arr.length < len) return 0;
-            const slice = arr.slice(-len); const mean = slice.reduce((a, b) => a + b, 0) / len;
-            return Math.sqrt(slice.reduce((a, b) => a + (b - mean) ** 2, 0) / len);
+            const slice = arr.slice(-len);
+            const mean = slice.reduce((a, b) => a + b, 0) / len;
+            const sq = slice.reduce((a, b) => a + (b - mean) ** 2, 0);
+            return Math.sqrt(sq / len);
         }
+
         function pivotHigh(highs, len) {
-            const arr = highs.slice(-len * 2 - 1); if (arr.length < len * 2 + 1) return null;
-            const pivot = arr[len]; for (let i = 0; i < arr.length; i++) { if (i === len) continue; if (arr[i] > pivot) return null; }
+            const arr = highs.slice(-len * 2 - 1);
+            if (arr.length < len * 2 + 1) return null;
+            const pivot = arr[len];
+            for (let i = 0; i < arr.length; i++) {
+                if (i === len) continue;
+                if (arr[i] > pivot) return null;
+            }
             return pivot;
         }
+
         function pivotLow(lows, len) {
-            const arr = lows.slice(-len * 2 - 1); if (arr.length < len * 2 + 1) return null;
-            const pivot = arr[len]; for (let i = 0; i < arr.length; i++) { if (i === len) continue; if (arr[i] < pivot) return null; }
+            const arr = lows.slice(-len * 2 - 1);
+            if (arr.length < len * 2 + 1) return null;
+            const pivot = arr[len];
+            for (let i = 0; i < arr.length; i++) {
+                if (i === len) continue;
+                if (arr[i] < pivot) return null;
+            }
             return pivot;
         }
 
@@ -310,13 +898,22 @@
         function calcARBM(candles, length = 50, devMult = 2.0, sqzLen = 100, sqzPct = 20) {
             if (candles.length < length + 10) return null;
             const close = candles.map(c => c.close);
-            const reg = linReg(close, length); const std = stdev(close, length);
-            const upper = reg + std * devMult; const lower = reg - std * devMult; const bw = upper - lower;
-            let minBW = Infinity, maxBW = -Infinity;
-            candles.slice(-sqzLen).forEach(c => { const v = c.high - c.low; if (v < minBW) minBW = v; if (v > maxBW) maxBW = v; });
+            const reg = linReg(close, length);
+            const std = stdev(close, length);
+            const upper = reg + std * devMult;
+            const lower = reg - std * devMult;
+            const bw = upper - lower;
+            let minBW = Infinity,
+                maxBW = -Infinity;
+            candles.slice(-sqzLen).forEach(c => {
+                const v = c.high - c.low;
+                if (v < minBW) minBW = v;
+                if (v > maxBW) maxBW = v;
+            });
             const widthPct = maxBW - minBW > 0.0001 ? ((bw - minBW) / (maxBW - minBW)) * 100 : 100;
             const isSqueeze = widthPct <= sqzPct;
-            const lastClose = close[close.length - 1], prevClose = close[close.length - 2];
+            const lastClose = close[close.length - 1];
+            const prevClose = close[close.length - 2];
             const bullBreak = lastClose > upper && prevClose <= upper && isSqueeze;
             const bearBreak = lastClose < lower && prevClose >= lower && isSqueeze;
             return { upper, lower, reg, isSqueeze, bullBreak, bearBreak, bw };
@@ -325,37 +922,61 @@
         // --- Indicator 2: LiquidityEdge (Pivots + Dominance) ---
         function calcLiquidity(candles, swingLen = 2, domThresh = 60) {
             if (candles.length < swingLen * 2 + 5) return null;
-            const highs = candles.map(c => c.high); const lows = candles.map(c => c.low);
-            const ph = pivotHigh(highs, swingLen); const pl = pivotLow(lows, swingLen);
-            let bullVol = 0, bearVol = 0;
-            candles.slice(-12).forEach((c, i, arr) => { if (i > 0) { if (c.close >= arr[i - 1].close) bullVol += c.volume; else bearVol += c.volume; } });
-            const total = bullVol + bearVol; const bullDom = total > 0 ? (bullVol / total) * 100 : 50;
+            const highs = candles.map(c => c.high);
+            const lows = candles.map(c => c.low);
+            const ph = pivotHigh(highs, swingLen);
+            const pl = pivotLow(lows, swingLen);
+            let bullVol = 0,
+                bearVol = 0;
+            candles.slice(-12).forEach((c, i, arr) => {
+                if (i > 0) {
+                    if (c.close >= arr[i - 1].close) bullVol += c.volume;
+                    else bearVol += c.volume;
+                }
+            });
+            const total = bullVol + bearVol;
+            const bullDom = total > 0 ? (bullVol / total) * 100 : 50;
             const bearDom = total > 0 ? (bearVol / total) * 100 : 50;
             const isBullDom = bullDom > bearDom && bullDom >= domThresh;
             const isBearDom = bearDom > bullDom && bearDom >= domThresh;
-            // Grade: A+ if dominance > 85, A if > 75, B if > 65, else C
-            let grade = 'C'; const maxDom = Math.max(bullDom, bearDom);
-            if (maxDom >= 85) grade = 'A+'; else if (maxDom >= 75) grade = 'A'; else if (maxDom >= 65) grade = 'B';
+            let grade = 'C';
+            const maxDom = Math.max(bullDom, bearDom);
+            if (maxDom >= 85) grade = 'A+';
+            else if (maxDom >= 75) grade = 'A';
+            else if (maxDom >= 65) grade = 'B';
             return { ph, pl, bullDom, bearDom, isBullDom, isBearDom, grade };
         }
 
         // --- Indicator 3: Volume Profile (POC, VAH, VAL) ---
         function calcVolumeProfile(candles, levels = 25, vaPct = 0.68) {
             if (candles.length < 20) return null;
-            const last20 = candles.slice(-20); const high = Math.max(...last20.map(c => c.high));
-            const low = Math.min(...last20.map(c => c.low)); const step = (high - low) / levels;
+            const last20 = candles.slice(-20);
+            const high = Math.max(...last20.map(c => c.high));
+            const low = Math.min(...last20.map(c => c.low));
+            const step = (high - low) / levels;
             if (step === 0) return null;
             const volProfile = new Array(levels).fill(0);
-            last20.forEach(c => { const idx = Math.min(Math.floor((c.close - low) / step), levels - 1); volProfile[idx] += c.volume; });
-            const maxVol = Math.max(...volProfile); const pocIdx = volProfile.indexOf(maxVol);
+            last20.forEach(c => {
+                const idx = Math.min(Math.floor((c.close - low) / step), levels - 1);
+                volProfile[idx] += c.volume;
+            });
+            const maxVol = Math.max(...volProfile);
+            const pocIdx = volProfile.indexOf(maxVol);
             const poc = low + (pocIdx + 0.5) * step;
-            let totalVol = volProfile.reduce((a, b) => a + b, 0); let target = totalVol * vaPct;
-            let sum = volProfile[pocIdx]; let left = pocIdx, right = pocIdx;
+            let totalVol = volProfile.reduce((a, b) => a + b, 0);
+            let target = totalVol * vaPct;
+            let sum = volProfile[pocIdx];
+            let left = pocIdx,
+                right = pocIdx;
             while (sum < target && (left > 0 || right < levels - 1)) {
-                let lv = left > 0 ? volProfile[left - 1] : 0; let rv = right < levels - 1 ? volProfile[right + 1] : 0;
-                if (lv >= rv && left > 0) { sum += lv; left--; } else if (right < levels - 1) { sum += rv; right++; } else break;
+                let lv = left > 0 ? volProfile[left - 1] : 0;
+                let rv = right < levels - 1 ? volProfile[right + 1] : 0;
+                if (lv >= rv && left > 0) { sum += lv;
+                    left--; } else if (right < levels - 1) { sum += rv;
+                    right++; } else break;
             }
-            const vah = low + (right + 1) * step; const val = low + left * step;
+            const vah = low + (right + 1) * step;
+            const val = low + left * step;
             const isInValue = candles[candles.length - 1].close >= val && candles[candles.length - 1].close <= vah;
             return { poc, vah, val, isInValue, high, low };
         }
@@ -363,10 +984,21 @@
         // --- Indicator 4: Market Structure (CHoCH / BOS) ---
         function calcStructure(candles, length = 5) {
             if (candles.length < length * 2 + 5) return null;
-            const highs = candles.map(c => c.high); const lows = candles.map(c => c.low); const close = candles.map(c => c.close);
-            const p = Math.floor(length / 2); let bullCHoCH = false, bearCHoCH = false, bullBOS = false, bearBOS = false;
-            let isBullFractal = true, isBearFractal = true;
-            for (let i = 0; i < length; i++) { if (i === p) continue; if (highs[highs.length - 1 - i] > highs[highs.length - 1 - p]) isBullFractal = false; if (lows[lows.length - 1 - i] < lows[lows.length - 1 - p]) isBearFractal = false; }
+            const highs = candles.map(c => c.high);
+            const lows = candles.map(c => c.low);
+            const close = candles.map(c => c.close);
+            const p = Math.floor(length / 2);
+            let bullCHoCH = false,
+                bearCHoCH = false,
+                bullBOS = false,
+                bearBOS = false;
+            let isBullFractal = true,
+                isBearFractal = true;
+            for (let i = 0; i < length; i++) {
+                if (i === p) continue;
+                if (highs[highs.length - 1 - i] > highs[highs.length - 1 - p]) isBullFractal = false;
+                if (lows[lows.length - 1 - i] < lows[lows.length - 1 - p]) isBearFractal = false;
+            }
             const lastClose = close[close.length - 1];
             const prevSwingHigh = Math.max(...highs.slice(-length * 2, -length));
             const prevSwingLow = Math.min(...lows.slice(-length * 2, -length));
@@ -377,80 +1009,130 @@
             return { bullCHoCH, bearCHoCH, bullBOS, bearBOS, isBullFractal, isBearFractal };
         }
 
-        // ========================================================================
+        // ================================================================
         // 4. SCORING SYSTEM & SIGNAL GENERATION
-        // ========================================================================
+        // ================================================================
+
         function generateSignal(candles) {
             if (candles.length < 100) return null;
-            const arbm = calcARBM(candles); const liq = calcLiquidity(candles);
-            const vp = calcVolumeProfile(candles); const struct = calcStructure(candles);
+            const arbm = calcARBM(candles);
+            const liq = calcLiquidity(candles);
+            const vp = calcVolumeProfile(candles);
+            const struct = calcStructure(candles);
             if (!arbm || !liq || !vp || !struct) return null;
 
-            let score = 0; let reasons = []; let direction = 0; // 1=Long, -1=Short
+            const W = state.weights;
+            let score = 0;
+            let reasons = [];
+            let direction = 0; // 1=Long, -1=Short
 
-            // 1. Structure (35 pts)
-            if (struct.bullBOS) { score += 35; reasons.push('BOS صاعد (هيكل قوي)'); direction = 1; }
-            else if (struct.bearBOS) { score += 35; reasons.push('BOS هابط (هيكل قوي)'); direction = -1; }
-            else if (struct.bullCHoCH) { score += 20; reasons.push('CHoCH صاعد'); if (direction === 0) direction = 1; }
-            else if (struct.bearCHoCH) { score += 20; reasons.push('CHoCH هابط'); if (direction === 0) direction = -1; }
-            else { return null; } // Must have structure
+            // 1. Structure (Weighted)
+            if (struct.bullBOS) { score += W.structure;
+                reasons.push('BOS صاعد (هيكل قوي)');
+                direction = 1; } else if (struct.bearBOS) { score += W.structure;
+                reasons.push('BOS هابط (هيكل قوي)');
+                direction = -1; } else if (struct.bullCHoCH) { score += W.structure * 0.6;
+                reasons.push('CHoCH صاعد');
+                if (direction === 0) direction = 1; } else if (struct.bearCHoCH) { score += W.structure * 0.6;
+                reasons.push('CHoCH هابط');
+                if (direction === 0) direction = -1; } else { return null; }
 
-            // 2. Liquidity (30 pts)
-            if (liq.grade === 'A+') { score += 30; reasons.push('سيولة ممتازة (A+)'); }
-            else if (liq.grade === 'A') { score += 22; reasons.push('سيولة جيدة (A)'); }
-            else if (liq.grade === 'B') { score += 15; reasons.push('سيولة متوسطة (B)'); }
-            else { return null; } // Reject C grade
+            // 2. Liquidity (Weighted)
+            if (liq.grade === 'A+') { score += W.liquidity;
+                reasons.push('سيولة ممتازة (A+)'); } else if (liq.grade === 'A') { score += W.liquidity * 0.8;
+                reasons.push('سيولة جيدة (A)'); } else if (liq.grade === 'B') { score += W.liquidity * 0.5;
+                reasons.push('سيولة متوسطة (B)'); } else { return null; }
 
-            // 3. ARBM (20 pts)
-            if (arbm.bullBreak && direction === 1) { score += 20; reasons.push('اختراق صاعد مع انكماش'); }
-            else if (arbm.bearBreak && direction === -1) { score += 20; reasons.push('اختراق هابط مع انكماش'); }
-            else if (arbm.isSqueeze) { score += 8; reasons.push('انكماش (استعداد للحركة)'); }
-            else { score += 5; reasons.push('بدون انكماش واضح'); }
+            // 3. ARBM (Weighted)
+            if (arbm.bullBreak && direction === 1) { score += W.arbm;
+                reasons.push('اختراق صاعد مع انكماش'); } else if (arbm.bearBreak && direction === -1) { score += W.arbm;
+                reasons.push('اختراق هابط مع انكماش'); } else if (arbm.isSqueeze) { score += W.arbm * 0.4;
+                reasons.push('انكماش (استعداد)'); } else { score += W.arbm * 0.2;
+                reasons.push('بدون انكماش واضح'); }
 
-            // 4. Volume Profile (15 pts)
-            if (vp.isInValue) { score += 10; reasons.push('السعر داخل منطقة القيمة'); }
-            if (vp.poc && Math.abs(candles[candles.length - 1].close - vp.poc) / vp.poc < 0.015) { score += 5; reasons.push('اقتراب من POC'); }
+            // 4. Volume Profile (Weighted)
+            if (vp.isInValue) { score += W.volume * 0.7;
+                reasons.push('السعر داخل منطقة القيمة'); }
+            if (vp.poc && Math.abs(candles[candles.length - 1].close - vp.poc) / vp.poc < 0.015) { score += W.volume * 0.3;
+                reasons.push('اقتراب من POC'); }
 
-            // Final Check: Score >= 70
+            // Threshold: 70+ for signal
             if (score >= 70 && direction !== 0) {
                 const lastClose = candles[candles.length - 1].close;
-                const atr = stdev(candles.map(c => c.close), 14) * 1.2; // Dynamic ATR
+                const atr = stdev(candles.map(c => c.close), 14) * 1.2;
                 const sl = direction === 1 ? lastClose - atr * 1.2 : lastClose + atr * 1.2;
                 const tp1 = direction === 1 ? lastClose + atr * 1.8 : lastClose - atr * 1.8;
                 const tp2 = direction === 1 ? lastClose + atr * 3.0 : lastClose - atr * 3.0;
                 const tp3 = direction === 1 ? lastClose + atr * 4.5 : lastClose - atr * 4.5;
                 const rr = (tp1 - lastClose) / (lastClose - sl) * direction;
 
+                // Determine signal quality
+                let quality = 'medium';
+                if (score >= 90) quality = 'excellent';
+                else if (score >= 80) quality = 'good';
+
                 return {
-                    symbol: state.symbol, interval: state.interval, time: new Date().toISOString(),
-                    direction: direction === 1 ? 'LONG' : 'SHORT', entry: lastClose, sl: sl,
-                    tp1: tp1, tp2: tp2, tp3: tp3, rr: Math.abs(rr), score: score,
-                    reasons: reasons.join(' | '), status: 'open', tp1Hit: false, tp2Hit: false
+                    symbol: state.symbol,
+                    interval: state.interval,
+                    time: new Date().toISOString(),
+                    direction: direction === 1 ? 'LONG' : 'SHORT',
+                    entry: lastClose,
+                    sl: sl,
+                    tp1: tp1,
+                    tp2: tp2,
+                    tp3: tp3,
+                    rr: Math.abs(rr),
+                    score: score,
+                    quality: quality,
+                    reasons: reasons.join(' | '),
+                    status: 'open',
+                    tp1Hit: false,
+                    tp2Hit: false,
+                    exit: null,
+                    profit: null,
+                    closeTime: null
                 };
             }
             return null;
         }
 
-        // ========================================================================
+        // ================================================================
         // 5. TRADE MANAGEMENT
-        // ========================================================================
+        // ================================================================
+
         function addTrade(signal) {
             if (!signal) return;
+            // Check for duplicate
+            const exists = state.trades.some(t => t.time === signal.time);
+            if (exists) return;
             state.trades.push(signal);
             localStorage.setItem('ai_trades', JSON.stringify(state.trades));
-            updateStats(); renderLog(); renderSignals();
-            sendTelegramAlert(signal);
-            drawChart(state.candles, signal); // Update chart with new entry
+            updateStats();
+            renderLog();
+            renderSignals();
+            // Send alerts
+            sendTelegramAlert(signal, 'إشارة جديدة');
+            if (state.isNotifications) sendBrowserNotification(signal);
+            drawChart(state.candles, signal);
         }
 
         function updateTradeStatus(index, result, exitPrice) {
             if (index < 0 || index >= state.trades.length) return;
             const t = state.trades[index];
-            t.status = result; t.exit = exitPrice || t.tp1; t.closeTime = new Date().toISOString();
-            if (result === 'win') t.profit = (t.exit - t.entry) / t.entry * (t.direction === 'LONG' ? 1 : -1) * 100;
-            else t.profit = (t.exit - t.entry) / t.entry * (t.direction === 'LONG' ? 1 : -1) * 100;
+            t.status = result;
+            t.exit = exitPrice || t.tp1;
+            t.closeTime = new Date().toISOString();
+            if (result === 'win') {
+                t.profit = (t.exit - t.entry) / t.entry * (t.direction === 'LONG' ? 1 : -1) * 100;
+            } else {
+                t.profit = (t.exit - t.entry) / t.entry * (t.direction === 'LONG' ? 1 : -1) * 100;
+            }
             localStorage.setItem('ai_trades', JSON.stringify(state.trades));
-            updateStats(); renderLog(); renderSignals();
+            updateStats();
+            renderLog();
+            renderSignals();
+            // Alert for close
+            sendTelegramAlert(t, result === 'win' ? '🎯 تحقيق الهدف' : '🛑 ضرب وقف الخسارة');
         }
 
         function checkOpenTrades(candles) {
@@ -459,23 +1141,24 @@
             state.trades.forEach((t, idx) => {
                 if (t.status !== 'open') return;
                 // TP1 Hit
-                if (!t.tp1Hit && ((t.direction === 'LONG' && lastClose >= t.tp1) || (t.direction === 'SHORT' && lastClose <= t.tp1))) {
+                if (!t.tp1Hit && ((t.direction === 'LONG' && lastClose >= t.tp1) || (t.direction === 'SHORT' &&
+                        lastClose <= t.tp1))) {
                     t.tp1Hit = true;
-                    // Move SL to Entry
                     if (t.direction === 'LONG') t.sl = t.entry;
                     else t.sl = t.entry;
-                    sendTelegramAlert({ ...t, alertType: 'TP1 Hit' });
+                    sendTelegramAlert(t, 'TP1 تم الوصول - نقل الوقف للدخول');
                 }
                 // TP2 Hit
-                if (t.tp1Hit && !t.tp2Hit && ((t.direction === 'LONG' && lastClose >= t.tp2) || (t.direction === 'SHORT' && lastClose <= t.tp2))) {
+                if (t.tp1Hit && !t.tp2Hit && ((t.direction === 'LONG' && lastClose >= t.tp2) || (t.direction === 'SHORT' &&
+                        lastClose <= t.tp2))) {
                     t.tp2Hit = true;
-                    // Move SL to TP1
                     if (t.direction === 'LONG') t.sl = t.tp1;
                     else t.sl = t.tp1;
-                    sendTelegramAlert({ ...t, alertType: 'TP2 Hit' });
+                    sendTelegramAlert(t, 'TP2 تم الوصول - نقل الوقف لـ TP1');
                 }
                 // TP3 Hit (Close)
-                if (t.tp2Hit && ((t.direction === 'LONG' && lastClose >= t.tp3) || (t.direction === 'SHORT' && lastClose <= t.tp3))) {
+                if (t.tp2Hit && ((t.direction === 'LONG' && lastClose >= t.tp3) || (t.direction === 'SHORT' &&
+                        lastClose <= t.tp3))) {
                     updateTradeStatus(idx, 'win', t.tp3);
                 }
                 // SL Hit (Close)
@@ -486,9 +1169,14 @@
             });
         }
 
+        // ================================================================
+        // 6. STATISTICS ENGINE
+        // ================================================================
+
         function updateStats() {
             const closed = state.trades.filter(t => t.status !== 'open');
-            const wins = closed.filter(t => t.status === 'win'); const losses = closed.filter(t => t.status === 'loss');
+            const wins = closed.filter(t => t.status === 'win');
+            const losses = closed.filter(t => t.status === 'loss');
             const total = closed.length;
             const winRate = total > 0 ? (wins.length / total) * 100 : 0;
             const totalWin = wins.reduce((a, b) => a + (b.profit || 0), 0);
@@ -496,27 +1184,115 @@
             const pf = totalLoss !== 0 ? Math.abs(totalWin / totalLoss) : totalWin > 0 ? 999 : 0;
             const returns = closed.map(t => t.profit || 0);
             const avgRet = returns.length > 0 ? returns.reduce((a, b) => a + b, 0) / returns.length : 0;
-            const stdRet = returns.length > 1 ? Math.sqrt(returns.reduce((a, b) => a + (b - avgRet) ** 2, 0) / (returns.length - 1)) : 0;
+            const stdRet = returns.length > 1 ? Math.sqrt(returns.reduce((a, b) => a + (b - avgRet) ** 2, 0) / (returns
+                .length - 1)) : 0;
             const sharpe = stdRet !== 0 ? avgRet / stdRet : 0;
+            const expectancy = avgRet;
 
-            state.stats = { total, win: wins.length, loss: losses.length, winRate, pf, sharpe, avgRet, totalWin, totalLoss };
+            state.stats = { total, win: wins.length, loss: losses.length, winRate, pf, sharpe, expectancy };
             document.getElementById('sTotal').textContent = total;
             document.getElementById('sWin').textContent = wins.length;
             document.getElementById('sLoss').textContent = losses.length;
             document.getElementById('sWinRate').textContent = winRate.toFixed(1) + '%';
             document.getElementById('sPF').textContent = pf.toFixed(2);
             document.getElementById('sSharpe').textContent = sharpe.toFixed(2);
+            document.getElementById('sExpectancy').textContent = expectancy.toFixed(2) + '%';
             renderFrameStats();
+            renderSymbolStats();
         }
+
+        function renderFrameStats() {
+            const container = document.getElementById('frameStatsTable');
+            const frames = CONFIG.intervals;
+            let html =
+                `<table class="trade-log-table"><thead><tr><th>الفريم</th><th>صفقات</th><th>رابحة</th><th>خاسرة</th><th>Win Rate</th><th>PF</th><th>Sharpe</th><th>Expectancy</th></tr></thead><tbody>`;
+            frames.forEach(f => {
+                const trades = state.trades.filter(t => t.interval === f);
+                const closed = trades.filter(t => t.status !== 'open');
+                const wins = closed.filter(t => t.status === 'win');
+                const losses = closed.filter(t => t.status === 'loss');
+                const total = closed.length;
+                const wr = total > 0 ? (wins.length / total) * 100 : 0;
+                const tw = wins.reduce((a, b) => a + (b.profit || 0), 0);
+                const tl = losses.reduce((a, b) => a + (b.profit || 0), 0);
+                const pf = tl !== 0 ? Math.abs(tw / tl) : tw > 0 ? 999 : 0;
+                const rets = closed.map(t => t.profit || 0);
+                const avg = rets.length > 0 ? rets.reduce((a, b) => a + b, 0) / rets.length : 0;
+                const std = rets.length > 1 ? Math.sqrt(rets.reduce((a, b) => a + (b - avg) ** 2, 0) / (rets.length -
+                    1)) : 0;
+                const sh = std !== 0 ? avg / std : 0;
+                html +=
+                    `<tr><td>${f}</td><td>${total}</td><td class="green">${wins.length}</td><td class="red">${losses.length}</td><td class="orange">${wr.toFixed(1)}%</td><td>${pf.toFixed(2)}</td><td>${sh.toFixed(2)}</td><td class="blue">${avg.toFixed(2)}%</td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderSymbolStats() {
+            const container = document.getElementById('symbolStatsTable');
+            let html =
+                `<table class="trade-log-table"><thead><tr><th>العملة</th><th>صفقات</th><th>Win Rate</th><th>PF</th><th>أفضل فريم</th><th>آخر إشارة</th></tr></thead><tbody>`;
+            CONFIG.symbols.forEach(sym => {
+                const trades = state.trades.filter(t => t.symbol === sym);
+                const closed = trades.filter(t => t.status !== 'open');
+                const wins = closed.filter(t => t.status === 'win');
+                const total = closed.length;
+                const wr = total > 0 ? (wins.length / total) * 100 : 0;
+                const tw = wins.reduce((a, b) => a + (b.profit || 0), 0);
+                const tl = closed.filter(t => t.status === 'loss').reduce((a, b) => a + (b.profit || 0), 0);
+                const pf = tl !== 0 ? Math.abs(tw / tl) : tw > 0 ? 999 : 0;
+                // Best frame
+                let bestFrame = 'N/A',
+                    bestWR = 0;
+                CONFIG.intervals.forEach(f => {
+                    const ft = closed.filter(t => t.interval === f);
+                    const fw = ft.filter(t => t.status === 'win');
+                    const fwr = ft.length > 0 ? (fw.length / ft.length) * 100 : 0;
+                    if (fwr > bestWR) { bestWR = fwr;
+                        bestFrame = f; }
+                });
+                const lastSignal = trades.length > 0 ? trades[trades.length - 1] : null;
+                const lastSignalStr = lastSignal ? `${lastSignal.direction} @ ${lastSignal.entry.toFixed(2)}` : '--';
+                html +=
+                    `<tr><td>${sym}</td><td>${total}</td><td class="orange">${wr.toFixed(1)}%</td><td>${pf.toFixed(2)}</td><td>${bestFrame}</td><td>${lastSignalStr}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // ================================================================
+        // 7. LOG & SIGNALS RENDER
+        // ================================================================
 
         function renderLog() {
             const body = document.getElementById('logBody');
-            if (state.trades.length === 0) { body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">لا توجد صفقات</td></tr>'; return; }
+            // Apply filters
+            const symFilter = document.getElementById('logFilterSymbol').value;
+            const tfFilter = document.getElementById('logFilterTF').value;
+            const statusFilter = document.getElementById('logFilterStatus').value;
+            const dateFilter = document.getElementById('logFilterDate').value;
+
+            let filtered = state.trades;
+            if (symFilter !== 'all') filtered = filtered.filter(t => t.symbol === symFilter);
+            if (tfFilter !== 'all') filtered = filtered.filter(t => t.interval === tfFilter);
+            if (statusFilter !== 'all') filtered = filtered.filter(t => t.status === statusFilter);
+            if (dateFilter) filtered = filtered.filter(t => t.time.startsWith(dateFilter));
+
+            if (filtered.length === 0) {
+                body.innerHTML = '<tr><td colspan="5" class="text-center text-muted">لا توجد صفقات</td></tr>';
+                return;
+            }
             let html = '';
-            state.trades.slice().reverse().slice(0, 20).forEach(t => {
-                const cls = t.status === 'win' ? 'win' : t.status === 'loss' ? 'loss' : '';
+            filtered.slice().reverse().slice(0, 50).forEach(t => {
+                const cls = t.status === 'win' ? 'win' : t.status === 'loss' ? 'loss' : 'open';
                 const profitStr = t.profit ? (t.profit > 0 ? '+' : '') + t.profit.toFixed(2) + '%' : '--';
-                html += `<tr><td>${t.symbol}</td><td style="color:${t.direction === 'LONG' ? 'var(--green)' : 'var(--red)'}">${t.direction}</td><td>${t.entry.toFixed(2)}</td><td>${t.exit ? t.exit.toFixed(2) : 'مفتوح'}</td><td class="${cls}">${profitStr}</td></tr>`;
+                html += `<tr>
+                    <td>${t.symbol}</td>
+                    <td style="color:${t.direction === 'LONG' ? 'var(--green)' : 'var(--red)'}">${t.direction}</td>
+                    <td>${t.entry.toFixed(2)}</td>
+                    <td>${t.exit ? t.exit.toFixed(2) : 'مفتوح'}</td>
+                    <td class="${cls}">${profitStr}</td>
+                </tr>`;
             });
             body.innerHTML = html;
         }
@@ -524,15 +1300,27 @@
         function renderSignals() {
             const container = document.getElementById('signalList');
             const open = state.trades.filter(t => t.status === 'open');
-            if (open.length === 0) { container.innerHTML = '<div class="text-center" style="color:var(--text-muted);padding:20px;">لا توجد إشارات نشطة</div>'; return; }
+            if (open.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted" style="padding:20px;">لا توجد إشارات نشطة</div>';
+                return;
+            }
             let html = '';
             open.slice().reverse().forEach(s => {
                 const cls = s.direction === 'LONG' ? 'long' : 'short';
-                const badge = s.score >= 90 ? 'excellent' : s.score >= 80 ? 'good' : 'medium';
+                const badge = s.quality === 'excellent' ? 'excellent' : s.quality === 'good' ? 'good' : 'medium';
                 html += `<div class="signal-item ${cls}">
-                    <div class="header"><span><strong>${s.symbol}</strong> (${s.interval}) <span style="color:${s.direction === 'LONG' ? 'var(--green)' : 'var(--red)'}">${s.direction}</span></span>
-                        <span class="score-badge ${badge}">${s.score}</span></div>
-                    <div class="details"><span>دخول: ${s.entry.toFixed(2)}</span><span>وقف: ${s.sl.toFixed(2)}</span><span>TP1: ${s.tp1.toFixed(2)}</span><span>TP2: ${s.tp2.toFixed(2)}</span><span>RR: 1:${s.rr.toFixed(2)}</span></div>
+                    <div class="header">
+                        <span><strong>${s.symbol}</strong> (${s.interval}) <span style="color:${s.direction === 'LONG' ? 'var(--green)' : 'var(--red)'}">${s.direction}</span></span>
+                        <span class="score-badge ${badge}">${s.score}</span>
+                    </div>
+                    <div class="details">
+                        <span>دخول: ${s.entry.toFixed(2)}</span>
+                        <span>وقف: ${s.sl.toFixed(2)}</span>
+                        <span>TP1: ${s.tp1.toFixed(2)}</span>
+                        <span>TP2: ${s.tp2.toFixed(2)}</span>
+                        <span>TP3: ${s.tp3.toFixed(2)}</span>
+                        <span>RR: 1:${s.rr.toFixed(2)}</span>
+                    </div>
                     <div class="reason">📌 ${s.reasons}</div>
                 </div>`;
             });
@@ -540,54 +1328,56 @@
             document.getElementById('signalCount').textContent = open.length + ' إشارة';
         }
 
-        function renderFrameStats() {
-            const container = document.getElementById('frameStatsTable');
-            const frames = ['5m', '15m', '30m', '1h', '4h'];
-            let html = `<table class="trade-log-table"><thead><tr><th>الفريم</th><th>صفقات</th><th>رابحة</th><th>خاسرة</th><th>Win Rate</th><th>PF</th><th>Sharpe</th></tr></thead><tbody>`;
-            frames.forEach(f => {
-                const trades = state.trades.filter(t => t.interval === f);
-                const closed = trades.filter(t => t.status !== 'open');
-                const wins = closed.filter(t => t.status === 'win');
-                const losses = closed.filter(t => t.status === 'loss');
-                const total = closed.length; const wr = total > 0 ? (wins.length / total) * 100 : 0;
-                const tw = wins.reduce((a, b) => a + (b.profit || 0), 0);
-                const tl = losses.reduce((a, b) => a + (b.profit || 0), 0);
-                const pf = tl !== 0 ? Math.abs(tw / tl) : tw > 0 ? 999 : 0;
-                const rets = closed.map(t => t.profit || 0);
-                const avg = rets.length > 0 ? rets.reduce((a, b) => a + b, 0) / rets.length : 0;
-                const std = rets.length > 1 ? Math.sqrt(rets.reduce((a, b) => a + (b - avg) ** 2, 0) / (rets.length - 1)) : 0;
-                const sh = std !== 0 ? avg / std : 0;
-                html += `<tr><td>${f}</td><td>${total}</td><td class="green">${wins.length}</td><td class="red">${losses.length}</td><td class="orange">${wr.toFixed(1)}%</td><td>${pf.toFixed(2)}</td><td>${sh.toFixed(2)}</td></tr>`;
-            });
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
+        // ================================================================
+        // 8. TELEGRAM & NOTIFICATIONS
+        // ================================================================
 
-        // ========================================================================
-        // 6. TELEGRAM INTEGRATION
-        // ========================================================================
-        async function sendTelegramAlert(signal) {
+        async function sendTelegramAlert(signal, alertType = 'إشارة جديدة') {
             if (!state.tgToken || !state.tgChatId) return;
             const emoji = signal.direction === 'LONG' ? '🟢' : '🔴';
-            const alertMsg = signal.alertType || 'إشارة جديدة';
-            const msg = `🚨 *${alertMsg}*\n\nالزوج: ${signal.symbol}\nالفريم: ${signal.interval}\nالاتجاه: ${emoji} ${signal.direction}\nالدخول: ${signal.entry.toFixed(2)}\nوقف: ${signal.sl.toFixed(2)}\nTP1: ${signal.tp1.toFixed(2)}\nTP2: ${signal.tp2.toFixed(2)}\nTP3: ${signal.tp3.toFixed(2)}\nRR: 1:${signal.rr.toFixed(2)}\nالنقاط: ${signal.score}\nالسبب: ${signal.reasons}`;
+            const msg = `🚨 *${alertType}*\n\n` +
+                `الزوج: ${signal.symbol}\n` +
+                `الفريم: ${signal.interval}\n` +
+                `الاتجاه: ${emoji} ${signal.direction}\n` +
+                `الدخول: ${signal.entry.toFixed(2)}\n` +
+                `وقف: ${signal.sl.toFixed(2)}\n` +
+                `TP1: ${signal.tp1.toFixed(2)}\n` +
+                `TP2: ${signal.tp2.toFixed(2)}\n` +
+                `TP3: ${signal.tp3.toFixed(2)}\n` +
+                `RR: 1:${signal.rr.toFixed(2)}\n` +
+                `النقاط: ${signal.score}\n` +
+                `السبب: ${signal.reasons}`;
             try {
                 await fetch(`https://api.telegram.org/bot${state.tgToken}/sendMessage`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chat_id: state.tgChatId, text: msg, parse_mode: 'Markdown' })
                 });
                 document.getElementById('tgStatus').textContent = '✅ تم الإرسال';
-            } catch (e) { document.getElementById('tgStatus').textContent = '❌ فشل: ' + e.message; }
+            } catch (e) {
+                document.getElementById('tgStatus').textContent = '❌ فشل: ' + e.message;
+            }
         }
 
-        // ========================================================================
-        // 7. CHART RENDERING (Lightweight Charts)
-        // ========================================================================
+        function sendBrowserNotification(signal) {
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+            const emoji = signal.direction === 'LONG' ? '🟢' : '🔴';
+            new Notification(`🚨 إشارة ${signal.direction}`, {
+                body: `${signal.symbol} | دخول: ${signal.entry.toFixed(2)} | النقاط: ${signal.score}`,
+                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🤖</text></svg>'
+            });
+        }
+
+        // ================================================================
+        // 9. CHART RENDERING (Lightweight Charts)
+        // ================================================================
+
         function drawChart(candles, activeSignal = null) {
             if (!state.chart) {
                 state.chart = LightweightCharts.createChart(document.getElementById('tradeChart'), {
                     width: document.getElementById('tradeChart').clientWidth,
-                    height: 400, layout: { background: { color: '#0b0e11' }, textColor: '#848e9c' },
+                    height: 400,
+                    layout: { background: { color: '#0b0e11' }, textColor: '#848e9c' },
                     grid: { vertLines: { color: '#2b3139' }, horzLines: { color: '#2b3139' } },
                     timeScale: { timeVisible: true, secondsVisible: false }
                 });
@@ -598,39 +1388,55 @@
             const series = state.chart.getSeries()[0];
             const volSeries = state.chart.getSeries()[1];
             const data = candles.map(c => ({ time: c.time / 1000, value: c.close }));
-            const volData = candles.map(c => ({ time: c.time / 1000, value: c.volume, color: c.close >= c.open ? '#0ecb81' : '#f6465d' }));
+            const volData = candles.map(c => ({ time: c.time / 1000, value: c.volume, color: c.close >= c.open ?
+                    '#0ecb81' : '#f6465d' }));
             series.setData(data);
             volSeries.setData(volData);
             state.chart.timeScale().fitContent();
 
             // Update Price
             document.getElementById('currentPrice').textContent = candles[candles.length - 1].close.toFixed(2);
-            const change = ((candles[candles.length - 1].close - candles[candles.length - 2].close) / candles[candles.length - 2].close * 100);
+            const change = ((candles[candles.length - 1].close - candles[candles.length - 2].close) / candles[candles
+                .length - 2].close * 100);
             document.getElementById('currentChange').textContent = (change > 0 ? '+' : '') + change.toFixed(2) + '%';
             document.getElementById('currentChange').style.color = change >= 0 ? 'var(--green)' : 'var(--red)';
+
+            // Draw Signal lines if active
+            if (activeSignal && activeSignal.status === 'open') {
+                // This would require custom drawing with line series or overlays
+                // For simplicity, we add a marker or just rely on the signal list
+            }
         }
 
-        // ========================================================================
-        // 8. BACKTEST ENGINE
-        // ========================================================================
+        // ================================================================
+        // 10. BACKTEST ENGINE
+        // ================================================================
+
         function runBacktest(symbol, interval, days) {
-            // Simulate running strategy over historical data
-            // For demonstration, we calculate stats based on existing trades if any, or simulate.
-            // In a real environment, we would fetch more data and loop.
-            const trades = state.trades.filter(t => t.symbol === symbol && t.interval === interval && t.status !== 'open');
+            // In a real scenario, we would fetch historical data and iterate.
+            // For this demo, we use existing trades if available, otherwise simulate.
+            const trades = state.trades.filter(t => t.symbol === symbol && t.interval === interval && t.status !==
+            'open');
             if (trades.length === 0) {
-                document.getElementById('btStats').innerHTML = '<div class="text-center" style="color:var(--text-muted);">لا توجد بيانات كافية لهذا الفريم</div>';
+                document.getElementById('btStats').innerHTML =
+                    '<div class="text-center text-muted">لا توجد بيانات كافية لهذا الفريم. قم بتشغيل التطبيق لبضع ساعات لتجميع البيانات.</div>';
                 document.getElementById('btResults').style.display = 'block';
                 return;
             }
-            const wins = trades.filter(t => t.status === 'win'); const losses = trades.filter(t => t.status === 'loss');
-            const total = trades.length; const wr = (wins.length / total) * 100;
-            const tw = wins.reduce((a, b) => a + (b.profit || 0), 0); const tl = losses.reduce((a, b) => a + (b.profit || 0), 0);
+            const wins = trades.filter(t => t.status === 'win');
+            const losses = trades.filter(t => t.status === 'loss');
+            const total = trades.length;
+            const wr = (wins.length / total) * 100;
+            const tw = wins.reduce((a, b) => a + (b.profit || 0), 0);
+            const tl = losses.reduce((a, b) => a + (b.profit || 0), 0);
             const pf = tl !== 0 ? Math.abs(tw / tl) : tw > 0 ? 999 : 0;
-            const rets = trades.map(t => t.profit || 0); const avg = rets.reduce((a, b) => a + b, 0) / rets.length;
+            const rets = trades.map(t => t.profit || 0);
+            const avg = rets.reduce((a, b) => a + b, 0) / rets.length;
             const std = rets.length > 1 ? Math.sqrt(rets.reduce((a, b) => a + (b - avg) ** 2, 0) / (rets.length - 1)) : 0;
             const sharpe = std !== 0 ? avg / std : 0;
-            const maxDD = Math.min(...rets.reduce((acc, val) => { acc.push((acc[acc.length - 1] || 0) + val); return acc; }, []));
+            const maxDD = Math.min(...rets.reduce((acc, val) => { acc.push((acc[acc.length - 1] || 0) + val); return acc; },
+                []));
+            const totalProfit = tw + tl;
 
             document.getElementById('btStats').innerHTML = `
                 <div class="stat-item"><div class="label">صفقات</div><div class="value">${total}</div></div>
@@ -639,6 +1445,7 @@
                 <div class="stat-item"><div class="label">Sharpe</div><div class="value orange">${sharpe.toFixed(2)}</div></div>
                 <div class="stat-item"><div class="label">Max DD</div><div class="value red">${maxDD.toFixed(2)}%</div></div>
                 <div class="stat-item"><div class="label">متوسط الصفقة</div><div class="value green">${avg.toFixed(2)}%</div></div>
+                <div class="stat-item"><div class="label">إجمالي الربح</div><div class="value green">${totalProfit.toFixed(2)}%</div></div>
             `;
             document.getElementById('btResults').style.display = 'block';
             drawEquityCurve(rets);
@@ -648,108 +1455,234 @@
             const canvas = document.getElementById('equityCanvas');
             const ctx = canvas.getContext('2d');
             const rect = canvas.parentElement.getBoundingClientRect();
-            canvas.width = rect.width || 600; canvas.height = 200;
+            canvas.width = rect.width || 600;
+            canvas.height = 200;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (returns.length === 0) return;
-            let equity = 10000; const points = [equity];
-            returns.forEach(r => { equity += equity * (r / 100); points.push(equity); });
-            const min = Math.min(...points); const max = Math.max(...points);
-            const range = max - min || 1; const h = canvas.height - 20;
-            ctx.beginPath(); ctx.strokeStyle = '#0ecb81'; ctx.lineWidth = 2;
+            let equity = 10000;
+            const points = [equity];
+            returns.forEach(r => { equity += equity * (r / 100);
+                points.push(equity); });
+            const min = Math.min(...points);
+            const max = Math.max(...points);
+            const range = max - min || 1;
+            const h = canvas.height - 20;
+            ctx.beginPath();
+            ctx.strokeStyle = '#0ecb81';
+            ctx.lineWidth = 2;
             points.forEach((p, i) => {
                 const x = (i / (points.length - 1)) * (canvas.width - 20) + 10;
                 const y = h - ((p - min) / range) * h + 10;
-                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
             });
             ctx.stroke();
+            // Fill under curve
+            ctx.lineTo(canvas.width - 10, h + 10);
+            ctx.lineTo(10, h + 10);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(14, 203, 129, 0.1)';
+            ctx.fill();
         }
 
-        // ========================================================================
-        // 9. UI CONTROLS & INIT
-        // ========================================================================
+        // ================================================================
+        // 11. UI CONTROLS & EVENT BINDINGS
+        // ================================================================
 
-        // Symbol / TF
-        document.getElementById('selSymbol').addEventListener('change', (e) => { state.symbol = e.target.value; if (state.ws) state.ws.close(); loadData(); updateSymbolButtons(); });
-        document.getElementById('selTF').addEventListener('change', (e) => { state.interval = e.target.value; document.getElementById('statFrameLabel').textContent = state.interval; if (state.ws) state.ws.close(); loadData(); });
-        document.querySelectorAll('.symbol-btn').forEach(btn => {
-            btn.addEventListener('click', () => { state.symbol = btn.dataset.sym; document.getElementById('selSymbol').value = state.symbol; if (state.ws) state.ws.close(); loadData(); updateSymbolButtons(); });
+        // --- Symbol & TF Selectors ---
+        document.getElementById('selSymbol').addEventListener('change', (e) => {
+            state.symbol = e.target.value;
+            if (state.ws) state.ws.close();
+            loadData();
+            updateSymbolButtons();
+            updateLogFilters();
         });
-        function updateSymbolButtons() { document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active')); document.querySelector(`.symbol-btn[data-sym="${state.symbol}"]`)?.classList.add('active'); }
+        document.getElementById('selTF').addEventListener('change', (e) => {
+            state.interval = e.target.value;
+            document.getElementById('statFrameLabel').textContent = state.interval;
+            if (state.ws) state.ws.close();
+            loadData();
+            updateLogFilters();
+        });
+        document.querySelectorAll('.symbol-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.symbol = btn.dataset.sym;
+                document.getElementById('selSymbol').value = state.symbol;
+                if (state.ws) state.ws.close();
+                loadData();
+                updateSymbolButtons();
+                updateLogFilters();
+            });
+        });
 
-        // Refresh
-        document.getElementById('btnRefresh').addEventListener('click', () => { if (state.ws) state.ws.close(); loadData(); });
+        function updateSymbolButtons() {
+            document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.symbol-btn[data-sym="${state.symbol}"]`)?.classList.add('active');
+        }
 
-        // Alerts Toggle
+        function updateLogFilters() {
+            const symSel = document.getElementById('logFilterSymbol');
+            symSel.innerHTML = '<option value="all">كل العملات</option>';
+            CONFIG.symbols.forEach(s => {
+                symSel.innerHTML += `<option value="${s}">${s}</option>`;
+            });
+            symSel.value = state.symbol;
+        }
+
+        // --- Refresh ---
+        document.getElementById('btnRefresh').addEventListener('click', () => {
+            if (state.ws) state.ws.close();
+            loadData();
+        });
+
+        // --- Alerts Toggle ---
         document.getElementById('btnAlerts').addEventListener('click', () => {
             state.isAlertsOn = !state.isAlertsOn;
             document.getElementById('btnAlerts').classList.toggle('btn-active');
             document.getElementById('btnAlerts').textContent = state.isAlertsOn ? '🔔 تنبيهات' : '🔕 صامت';
         });
 
-        // Share
+        // --- Share ---
         document.getElementById('btnShare').addEventListener('click', () => {
-            if (navigator.share) navigator.share({ title: 'AI Trading Signals', url: window.location.href });
-            else { navigator.clipboard.writeText(window.location.href); alert('تم نسخ الرابط!'); }
+            if (navigator.share) {
+                navigator.share({ title: 'AI Trading Signals', url: window.location.href });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('تم نسخ الرابط!');
+            }
         });
 
-        // Tabs
+        // --- Tabs ---
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 document.getElementById(tab.dataset.tab).classList.add('active');
-                if (tab.dataset.tab === 'tab-backtest') { /* Load default stats */ }
             });
         });
 
-        // Clear Log
+        // --- Log Filters ---
+        document.getElementById('logFilterBtn').addEventListener('click', renderLog);
+        document.getElementById('logFilterSymbol').addEventListener('change', renderLog);
+        document.getElementById('logFilterTF').addEventListener('change', renderLog);
+        document.getElementById('logFilterStatus').addEventListener('change', renderLog);
+        document.getElementById('logFilterDate').addEventListener('change', renderLog);
+
+        // --- Clear Log ---
         document.getElementById('clearLogBtn').addEventListener('click', () => {
-            if (confirm('مسح سجل الصفقات؟')) { state.trades = []; localStorage.setItem('ai_trades', JSON.stringify(state.trades)); updateStats(); renderLog(); renderSignals(); }
+            if (confirm('هل أنت متأكد من مسح سجل الصفقات؟')) {
+                state.trades = [];
+                localStorage.setItem('ai_trades', JSON.stringify(state.trades));
+                updateStats();
+                renderLog();
+                renderSignals();
+            }
         });
 
-        // Telegram
-        document.getElementById('tgToken').value = state.tgToken; document.getElementById('tgChatId').value = state.tgChatId;
+        // --- Telegram ---
+        document.getElementById('tgToken').value = state.tgToken;
+        document.getElementById('tgChatId').value = state.tgChatId;
         document.getElementById('tgSave').addEventListener('click', () => {
-            state.tgToken = document.getElementById('tgToken').value.trim(); state.tgChatId = document.getElementById('tgChatId').value.trim();
-            localStorage.setItem('tg_token', state.tgToken); localStorage.setItem('tg_chat', state.tgChatId);
-            document.getElementById('tgStatus').textContent = '✅ تم الحفظ';
+            state.tgToken = document.getElementById('tgToken').value.trim();
+            state.tgChatId = document.getElementById('tgChatId').value.trim();
+            localStorage.setItem('tg_token', state.tgToken);
+            localStorage.setItem('tg_chat', state.tgChatId);
+            document.getElementById('tgStatus').textContent = '✅ تم حفظ الإعدادات';
         });
         document.getElementById('tgTest').addEventListener('click', async () => {
-            const token = document.getElementById('tgToken').value.trim(); const chat = document.getElementById('tgChatId').value.trim();
-            if (!token || !chat) { document.getElementById('tgStatus').textContent = '⚠️ أدخل البيانات'; return; }
+            const token = document.getElementById('tgToken').value.trim();
+            const chat = document.getElementById('tgChatId').value.trim();
+            if (!token || !chat) { document.getElementById('tgStatus').textContent = '⚠️ يرجى إدخال البيانات';
+                return; }
             document.getElementById('tgStatus').textContent = 'جاري الاختبار...';
             try {
                 const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chat_id: chat, text: '✅ اتصال ناجح من AI Signals!' })
                 });
-                if (res.ok) document.getElementById('tgStatus').textContent = '✅ تم الإرسال';
-                else document.getElementById('tgStatus').textContent = '❌ فشل الإرسال';
-            } catch (e) { document.getElementById('tgStatus').textContent = '❌ خطأ: ' + e.message; }
+                if (res.ok) document.getElementById('tgStatus').textContent = '✅ تم الإرسال بنجاح';
+                else document.getElementById('tgStatus').textContent = '❌ فشل الإرسال، تحقق من البيانات';
+            } catch (e) {
+                document.getElementById('tgStatus').textContent = '❌ خطأ: ' + e.message;
+            }
         });
 
-        // Backtest
+        // --- Weights ---
+        document.getElementById('wStructure').value = state.weights.structure;
+        document.getElementById('wLiquidity').value = state.weights.liquidity;
+        document.getElementById('wARBM').value = state.weights.arbm;
+        document.getElementById('wVolume').value = state.weights.volume;
+        document.getElementById('saveWeights').addEventListener('click', () => {
+            state.weights.structure = parseInt(document.getElementById('wStructure').value) || 35;
+            state.weights.liquidity = parseInt(document.getElementById('wLiquidity').value) || 30;
+            state.weights.arbm = parseInt(document.getElementById('wARBM').value) || 20;
+            state.weights.volume = parseInt(document.getElementById('wVolume').value) || 15;
+            localStorage.setItem('ai_weights', JSON.stringify(state.weights));
+            document.getElementById('tgStatus').textContent = '✅ تم تحديث الأوزان';
+            loadData(); // Re-process with new weights
+        });
+
+        // --- Settings ---
+        document.getElementById('chkAutoTrade').checked = state.isAutoTrade;
+        document.getElementById('chkTrailing').checked = state.isTrailing;
+        document.getElementById('chkNotifications').checked = state.isNotifications;
+        document.getElementById('chkAutoTrade').addEventListener('change', (e) => { state.isAutoTrade = e.target
+                .checked;
+            saveSettings(); });
+        document.getElementById('chkTrailing').addEventListener('change', (e) => { state.isTrailing = e.target.checked;
+            saveSettings(); });
+        document.getElementById('chkNotifications').addEventListener('change', (e) => { state.isNotifications = e.target
+                .checked;
+            saveSettings(); });
+
+        function saveSettings() {
+            localStorage.setItem('ai_settings', JSON.stringify({
+                isTrailing: state.isTrailing,
+                isAutoTrade: state.isAutoTrade,
+                isNotifications: state.isNotifications
+            }));
+        }
+
+        // --- Backtest ---
         document.getElementById('btnRunBacktest').addEventListener('click', () => {
-            const sym = document.getElementById('btSymbol').value; const tf = document.getElementById('btTF').value; const days = parseInt(document.getElementById('btDays').value);
+            const sym = document.getElementById('btSymbol').value;
+            const tf = document.getElementById('btTF').value;
+            const days = parseInt(document.getElementById('btDays').value);
             runBacktest(sym, tf, days);
         });
 
-        // PWA Install
+        // --- PWA Install ---
         let deferredPrompt = null;
-        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('pwa-banner').classList.add('show'); });
-        document.getElementById('installBtn').addEventListener('click', async () => {
-            if (deferredPrompt) { deferredPrompt.prompt(); const result = await deferredPrompt.userChoice; if (result.outcome === 'accepted') document.getElementById('pwa-banner').classList.remove('show'); deferredPrompt = null; }
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('pwa-banner').classList.add('show');
         });
-        document.getElementById('closeBanner').addEventListener('click', () => { document.getElementById('pwa-banner').classList.remove('show'); });
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                if (result.outcome === 'accepted') {
+                    document.getElementById('pwa-banner').classList.remove('show');
+                }
+                deferredPrompt = null;
+            }
+        });
+        document.getElementById('closeBanner').addEventListener('click', () => {
+            document.getElementById('pwa-banner').classList.remove('show');
+        });
 
-        // Settings
-        document.getElementById('chkAutoTrade').addEventListener('change', (e) => { /* Logic to enable/disable auto generation */ });
-        document.getElementById('chkTrailing').addEventListener('change', (e) => { state.isTrailing = e.target.checked; });
+        // --- Notification Permission ---
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
 
-        // ========================================================================
-        // 10. MAIN LOOP
-        // ========================================================================
+        // ================================================================
+        // 12. MAIN LOOP & INITIALIZATION
+        // ================================================================
+
         async function loadData() {
             state.processing = true;
             try {
@@ -757,6 +1690,7 @@
                 state.candles = candles;
                 drawChart(candles);
                 processIndicators(candles);
+                // Subscribe to live updates
                 BinanceAPI.subscribe(state.symbol, state.interval, (candle) => {
                     if (state.candles.length > 0 && state.candles[state.candles.length - 1].time === candle.time) {
                         state.candles[state.candles.length - 1] = candle;
@@ -767,30 +1701,55 @@
                     drawChart(state.candles);
                     processIndicators(state.candles);
                 });
-            } catch (e) { console.error('Load error:', e); }
+            } catch (e) {
+                console.error('Load error:', e);
+                document.getElementById('signalList').innerHTML =
+                    `<div class="text-center text-muted" style="padding:20px;">⚠️ خطأ في تحميل البيانات: ${e.message}</div>`;
+            }
             state.processing = false;
         }
 
         function processIndicators(candles) {
             if (candles.length < 50) return;
-            const signal = generateSignal(candles);
-            if (signal) {
-                const exists = state.trades.some(t => t.time === signal.time);
-                if (!exists) { state.signals.push(signal); addTrade(signal); }
+            if (state.isAutoTrade) {
+                const signal = generateSignal(candles);
+                if (signal) {
+                    addTrade(signal);
+                }
             }
             checkOpenTrades(candles);
-            updateStats(); renderLog(); renderSignals();
+            updateStats();
+            renderLog();
+            renderSignals();
         }
 
-        // Auto-refresh every 5 min
-        setInterval(() => { if (state.ws) state.ws.close(); loadData(); }, 300000);
-
+        // Initial load
         window.addEventListener('load', () => {
-            loadData(); updateStats(); renderLog(); renderSignals(); renderFrameStats();
+            updateLogFilters();
+            loadData();
+            updateStats();
+            renderLog();
+            renderSignals();
+            renderFrameStats();
+            renderSymbolStats();
             document.getElementById('statFrameLabel').textContent = state.interval;
+            // Auto-refresh every 5 minutes
+            setInterval(() => {
+                if (state.ws) state.ws.close();
+                loadData();
+            }, 300000);
         });
 
-        console.log('✅ AI Trading Signals App Loaded. Integrated 4 Indicators with Scoring System.');
+        // Handle resize
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => drawChart(state.candles), 300);
+        });
+
+        console.log('✅ AI Trading Signals Professional App Loaded successfully.');
+        console.log('📊 Integrated 4 indicators with Scoring System.');
+        console.log(`📈 Active Symbol: ${state.symbol} | TF: ${state.interval}`);
     </script>
 </body>
     </html>
