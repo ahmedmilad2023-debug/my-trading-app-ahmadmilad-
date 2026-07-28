@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>NEXUS SIGNALS — إشارات تداول العقود الآجلة</title>
 
-<!-- Charting library (rendering only — no built-in indicators are used from it) -->
-<script src="https://unpkg.com/[email protected]/dist/lightweight-charts.standalone.production.js"></script>
+<!-- Live candlestick chart is rendered by TradingView's own widget (real, live
+     TradingView data feed for Binance Futures) — used for visualization only.
+     All indicator/signal math below is computed independently from our own
+     Binance OHLCV data, not from this widget. -->
+<script src="https://s3.tradingview.com/tv.js"></script>
 
 <style>
 /* ============================================================
@@ -180,9 +183,22 @@ body{
 .tf-tab.active{background:var(--bg-3); color:var(--amber);}
 #chartWrap{flex:1; position:relative; min-height:0;}
 #priceChart{position:absolute; inset:0;}
+#tvChartContainer{position:absolute; inset:0;}
 #chartLoading{
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   color:var(--text-2); font-size:13px; background:var(--bg-0); z-index:5;
+}
+#dataBanner{
+  display:none;
+  position:absolute; top:10px; left:50%; transform:translateX(-50%);
+  z-index:30; max-width:640px; width:92%;
+  background:var(--bg-3); border:1px solid var(--sell); border-radius:10px;
+  padding:12px 16px; font-size:12px; line-height:1.8; color:var(--text-0);
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+}
+#dataBanner b{color:var(--amber);}
+#dataBanner .close-banner{
+  float:left; cursor:pointer; color:var(--text-2); background:none; border:none; font-size:14px;
 }
 
 #signalsPanel{
@@ -333,7 +349,12 @@ body{
       <div class="tf-tabs" id="tfTabs"></div>
     </div>
     <div id="chartWrap">
-      <div id="priceChart"></div>
+      <div id="dataBanner">
+        <button class="close-banner" id="closeBanner">✕</button>
+        <span id="dataBannerText"></span>
+      </div>
+      <!-- Real, live TradingView candlestick chart widget (Binance Futures feed) -->
+      <div id="tvChartContainer"></div>
       <div id="chartLoading">جارٍ تحميل بيانات الشموع من Binance...</div>
     </div>
 
@@ -926,21 +947,57 @@ function showToast(kind, direction, title, body){
 /* ================================================================
    8. BINANCE WEBSOCKET DATA LAYER
    ================================================================ */
-const REST_BASE = "https://api.binance.com";
+// Several official Binance REST hosts, tried in order. api1/api2/api3 are
+// Binance's own load-balanced mirrors; data-api.binance.vision is Binance's
+// dedicated public market-data-only mirror. Falling back across all of them
+// covers most transient failures and regional routing issues.
+const REST_BASES = [
+  "https://api.binance.com",
+  "https://data-api.binance.vision",
+  "https://api1.binance.com",
+  "https://api2.binance.com",
+  "https://api3.binance.com"
+];
+// Matching WebSocket hosts (primary stream host + the public data-only mirror).
+const WS_BASES = [
+  "wss://stream.binance.com:9443/stream?streams=",
+  "wss://data-stream.binance.vision/stream?streams="
+];
+
+const dataStatus = { anyRestOk:false, anyWsOk:false, restAttempted:false, bannerShown:false };
+
+async function fetchJsonWithFallback(pathAndQuery){
+  let lastErr = null;
+  for(const base of REST_BASES){
+    try{
+      const res = await fetch(base+pathAndQuery);
+      if(!res.ok){ lastErr = new Error("HTTP "+res.status); continue; }
+      const json = await res.json();
+      dataStatus.anyRestOk = true;
+      return json;
+    }catch(e){
+      lastErr = e;
+    }
+  }
+  dataStatus.restAttempted = true;
+  throw lastErr || new Error("all REST endpoints failed");
+}
 
 async function fetchInitialCandles(symbol, tfId){
   const tf = CONFIG.timeframes.find(t=>t.id===tfId);
-  const url = REST_BASE+"/api/v3/klines?symbol="+symbol+"&interval="+tf.binance+"&limit="+CONFIG.candleLimit;
+  const path = "/api/v3/klines?symbol="+symbol+"&interval="+tf.binance+"&limit="+CONFIG.candleLimit;
   try{
-    const res = await fetch(url);
-    const raw = await res.json();
+    const raw = await fetchJsonWithFallback(path);
     const candles = raw.map(k=>({
       t:k[0], o:parseFloat(k[1]), h:parseFloat(k[2]), l:parseFloat(k[3]), c:parseFloat(k[4]), v:parseFloat(k[5]), closed:true
     }));
     state.data[symbol][tfId].candles = candles;
+    if(candles.length) state.lastPrice[symbol] = candles[candles.length-1].c;
+    maybeHideBanner();
     return candles;
   }catch(e){
     console.error("REST fetch failed for", symbol, tfId, e);
+    maybeShowBanner();
     return [];
   }
 }
@@ -961,28 +1018,47 @@ function connectWebSockets(){
   const CHUNK = 40;
   for(let i=0;i<streams.length;i+=CHUNK){
     const chunk = streams.slice(i,i+CHUNK);
-    const url = "wss://stream.binance.com:9443/stream?streams="+chunk.join("/");
-    openSocket(url);
+    openSocket(chunk, 0);
   }
 }
 
-function openSocket(url){
-  let ws;
+function openSocket(chunk, baseIndex){
+  const base = WS_BASES[baseIndex % WS_BASES.length];
+  const url = base+chunk.join("/");
+  let ws, openedOk = false;
   try{
     ws = new WebSocket(url);
   }catch(e){
-    setWsStatus(false);
+    // move to next host for this chunk
+    setTimeout(()=>openSocket(chunk, baseIndex+1), 800);
     return;
   }
   state.wsList.push(ws);
 
-  ws.onopen = ()=> setWsStatus(true);
-  ws.onclose = ()=>{
-    setWsStatus(false);
-    // simple auto-reconnect
-    setTimeout(()=>openSocket(url), 3000);
+  // if we never reach onopen within a few seconds, this host is likely
+  // blocked (geo-restriction, network policy, etc.) — try the next one
+  const openTimeout = setTimeout(()=>{
+    if(!openedOk){
+      try{ ws.close(); }catch(e){}
+    }
+  }, 6000);
+
+  ws.onopen = ()=>{
+    openedOk = true;
+    clearTimeout(openTimeout);
+    dataStatus.anyWsOk = true;
+    setWsStatus(true);
+    maybeHideBanner();
   };
-  ws.onerror = ()=> setWsStatus(false);
+  ws.onclose = ()=>{
+    clearTimeout(openTimeout);
+    setWsStatus(dataStatus.anyWsOk);
+    // retry: same host after a short delay if it had worked before,
+    // otherwise escalate to the next host in the fallback list
+    const nextIndex = openedOk ? baseIndex : baseIndex+1;
+    setTimeout(()=>openSocket(chunk, nextIndex), openedOk? 3000 : 1500);
+  };
+  ws.onerror = ()=>{ /* onclose will fire right after and handle fallback */ };
   ws.onmessage = (msg)=>{
     try{
       const payload = JSON.parse(msg.data);
@@ -993,17 +1069,41 @@ function openSocket(url){
   };
 }
 
-let anySocketOpen = false;
 function setWsStatus(open){
-  anySocketOpen = open || anySocketOpen; // keep green once any stream is alive
   const dot = document.getElementById("wsDot");
   const label = document.getElementById("wsLabel");
-  if(anySocketOpen){
+  if(open){
     dot.className = "dot live";
     label.textContent = "متصل مباشرة — Binance WebSocket";
   } else {
     dot.className = "dot bad";
     label.textContent = "انقطع الاتصال، جارٍ إعادة المحاولة...";
+  }
+}
+
+/* ---- Diagnostic banner: shown only if BOTH REST and WS keep failing,
+   which in practice almost always means Binance is geo-restricting the
+   visitor's network/region (HTTP 451) rather than a bug in the page. ---- */
+let bannerCheckTimer = null;
+function maybeShowBanner(){
+  if(bannerCheckTimer) return;
+  bannerCheckTimer = setTimeout(()=>{
+    if(!dataStatus.anyRestOk && !dataStatus.anyWsOk){
+      const banner = document.getElementById("dataBanner");
+      document.getElementById("dataBannerText").innerHTML =
+        "تعذّر الوصول إلى بيانات Binance من هذا المتصفح/الشبكة. <b>السبب الأكثر شيوعًا</b> هو قيود Binance الجغرافية " +
+        "(HTTP 451) على بعض الدول والشبكات — وهذا قيد من Binance نفسها وليس خطأ في الصفحة. " +
+        "جرّب فتح الصفحة من شبكة/موقع مختلف، أو تحقق من اتصال الإنترنت، ثم أعد تحميل الصفحة.";
+      banner.style.display = "block";
+      dataStatus.bannerShown = true;
+    }
+  }, 9000);
+}
+function maybeHideBanner(){
+  if(dataStatus.bannerShown){
+    const banner = document.getElementById("dataBanner");
+    if(banner) banner.style.display = "none";
+    dataStatus.bannerShown = false;
   }
 }
 
@@ -1041,9 +1141,9 @@ function handleKline(symbol, k){
     }
   }
 
-  // live UI updates
+  // live UI updates — the TradingView widget streams and redraws its own
+  // candles independently; we only need to refresh our own header price.
   if(symbol===state.activeSymbol && tfId===state.activeTf){
-    updateChartCandle(candle);
     updateHeaderPrice();
   }
   if(symbol===state.activeSymbol || true){
@@ -1052,45 +1152,64 @@ function handleKline(symbol, k){
 }
 
 /* ================================================================
-   9. CHART (lightweight-charts rendering only)
+   9. CHART — real, live Japanese-candlestick chart via TradingView's
+   own official widget (s3.tradingview.com/tv.js). This pulls its own
+   live data feed directly from TradingView/Binance Futures and is
+   independent from our indicator engine, which keeps calculating
+   from our own Binance OHLCV stream regardless of what the chart
+   widget shows.
    ================================================================ */
-function initChart(){
-  const wrap = document.getElementById("priceChart");
-  state.chart = LightweightCharts.createChart(wrap, {
-    layout:{ background:{color:"#0B0E13"}, textColor:"#9AA5B8", fontFamily:"JetBrains Mono, monospace" },
-    grid:{ vertLines:{color:"#161B25"}, horzLines:{color:"#161B25"} },
-    rightPriceScale:{ borderColor:"#242B3A" },
-    timeScale:{ borderColor:"#242B3A", timeVisible:true, secondsVisible:false },
-    crosshair:{ mode:0 }
-  });
-  state.candleSeries = state.chart.addCandlestickSeries({
-    upColor:"#22C77A", downColor:"#E5484D", borderVisible:false,
-    wickUpColor:"#22C77A", wickDownColor:"#E5484D"
-  });
-  state.volumeSeries = state.chart.addHistogramSeries({
-    priceFormat:{type:"volume"}, priceScaleId:"", color:"#2C3444"
-  });
-  state.volumeSeries.priceScale().applyOptions({ scaleMargins:{top:0.85, bottom:0} });
+const TV_INTERVAL_MAP = {"1m":"1","3m":"3","5m":"5","15m":"15","30m":"30","1h":"60","4h":"240","1d":"D"};
 
-  new ResizeObserver(()=>{
-    state.chart.applyOptions({ width:wrap.clientWidth, height:wrap.clientHeight });
-  }).observe(wrap);
+function tvSymbolFor(sym){
+  // Binance USDT-M perpetual futures ticker on TradingView, e.g. BINANCE:BTCUSDT.P
+  return "BINANCE:"+sym+".P";
+}
+
+function initChart(){
+  renderTVWidget();
+  window.addEventListener("resize", ()=>{ /* TradingView widget is responsive by autosize */ });
+}
+
+function renderTVWidget(){
+  const container = document.getElementById("tvChartContainer");
+  container.innerHTML = ""; // widget must be recreated to change symbol/interval reliably
+  if(typeof TradingView === "undefined"){
+    container.innerHTML = "<div class='empty-state' style='height:100%;'>تعذّر تحميل مكتبة TradingView (تحقق من الاتصال بالإنترنت)</div>";
+    return;
+  }
+  new TradingView.widget({
+    autosize: true,
+    symbol: tvSymbolFor(state.activeSymbol),
+    interval: TV_INTERVAL_MAP[state.activeTf] || "15",
+    timezone: "Etc/UTC",
+    theme: "dark",
+    style: "1",              // candlestick style
+    locale: "ar",
+    toolbar_bg: "#10141C",
+    enable_publishing: false,
+    hide_side_toolbar: false,
+    allow_symbol_change: false,
+    withdateranges: true,
+    container_id: "tvChartContainer",
+    overrides:{
+      "paneProperties.background": "#0B0E13",
+      "paneProperties.vertGridProperties.color": "#161B25",
+      "paneProperties.horzGridProperties.color": "#161B25",
+      "mainSeriesProperties.candleStyle.upColor": "#22C77A",
+      "mainSeriesProperties.candleStyle.downColor": "#E5484D",
+      "mainSeriesProperties.candleStyle.wickUpColor": "#22C77A",
+      "mainSeriesProperties.candleStyle.wickDownColor": "#E5484D",
+      "mainSeriesProperties.candleStyle.borderUpColor": "#22C77A",
+      "mainSeriesProperties.candleStyle.borderDownColor": "#E5484D"
+    }
+  });
 }
 
 function loadChartForActive(){
-  document.getElementById("chartLoading").style.display="flex";
-  const candles = state.data[state.activeSymbol][state.activeTf].candles;
-  if(!candles.length) return;
-  state.candleSeries.setData(candles.map(c=>({time:Math.floor(c.t/1000), open:c.o, high:c.h, low:c.l, close:c.c})));
-  state.volumeSeries.setData(candles.map(c=>({time:Math.floor(c.t/1000), value:c.v, color: c.c>=c.o? "rgba(34,199,122,0.5)":"rgba(229,72,77,0.5)"})));
-  document.getElementById("chartLoading").style.display="none";
+  document.getElementById("chartLoading").style.display="none"; // TradingView widget shows its own loading state
+  renderTVWidget();
   updateHeaderPrice();
-}
-
-function updateChartCandle(candle){
-  if(!state.candleSeries) return;
-  state.candleSeries.update({time:Math.floor(candle.t/1000), open:candle.o, high:candle.h, low:candle.l, close:candle.c});
-  state.volumeSeries.update({time:Math.floor(candle.t/1000), value:candle.v, color: candle.c>=candle.o? "rgba(34,199,122,0.5)":"rgba(229,72,77,0.5)"});
 }
 
 /* ================================================================
@@ -1221,10 +1340,9 @@ async function addSymbolFlow(){
 
   // validate against Binance before adding
   try{
-    const res = await fetch(REST_BASE+"/api/v3/klines?symbol="+sym+"&interval=1m&limit=1");
-    if(!res.ok) throw new Error("invalid symbol");
+    await fetchJsonWithFallback("/api/v3/klines?symbol="+sym+"&interval=1m&limit=1");
   }catch(e){
-    showToast("info","SELL","تعذّرت الإضافة", "الرمز "+sym+" غير موجود على Binance Futures/Spot");
+    showToast("info","SELL","تعذّرت الإضافة", "الرمز "+sym+" غير موجود على Binance، أو تعذّر الوصول إلى بيانات Binance حاليًا");
     return;
   }
 
@@ -1410,10 +1528,16 @@ async function bootstrap(){
   renderHistory();
   renderStats();
 
+  document.getElementById("closeBanner").addEventListener("click", ()=>{
+    document.getElementById("dataBanner").style.display = "none";
+  });
+
   // Load 1d candles for every symbol first (needed for 24h % change),
   // then load the active symbol/timeframe for the chart, then
   // backfill the remaining timeframes for every symbol in the background.
-  await Promise.all(CONFIG.symbols.map(sym=>fetchInitialCandles(sym,"1d")));
+  // allSettled (rather than all) ensures one failing symbol never blocks
+  // the rest of the app from loading and connecting.
+  await Promise.allSettled(CONFIG.symbols.map(sym=>fetchInitialCandles(sym,"1d")));
   CONFIG.symbols.forEach(updateCoinRow);
 
   await fetchInitialCandles(state.activeSymbol, state.activeTf);
