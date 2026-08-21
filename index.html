@@ -263,6 +263,7 @@ const tr=Math.max(
 highs[i]-lows[i],
 Math.abs(highs[i]-closes[i-1]),
 Math.abs(lows[i]-closes[i-1])
+
 );
 
 trs.push(tr);
@@ -391,6 +392,213 @@ bos,
 choch,
 liquiditySweep
 };
+
+}
+
+
+/* ============================================================
+   TRADE ID
+============================================================ */
+
+function createTradeId(symbol) {
+
+const timestamp=Date.now();
+
+let randomPart='';
+
+try {
+
+if(
+window.crypto &&
+typeof window.crypto.randomUUID==='function'
+) {
+
+randomPart=
+window.crypto.randomUUID()
+.replace(/-/g,'')
+.slice(0,12);
+
+}
+
+}
+catch(error) {
+
+console.warn(
+'Crypto UUID unavailable:',
+error
+);
+
+}
+
+if(!randomPart) {
+
+randomPart=
+Math.random()
+.toString(36)
+.slice(2,14);
+
+}
+
+return `trade_${symbol.toLowerCase()}_${timestamp}_${randomPart}`;
+
+}
+
+
+/* ============================================================
+   FIXED TRADE LEVELS
+   IMPORTANT:
+   Entry / SL / TP1 / TP2 / TP3 are locked permanently.
+   They are NEVER recalculated after the trade is created.
+============================================================ */
+
+function normalizeTradeSignal(signal) {
+
+if(!signal)
+return signal;
+
+const entryValue=
+Number(
+signal.entryPriceFixed ??
+signal.entryPrice
+);
+
+const slValue=
+Number(
+signal.slFixed ??
+signal.sl
+);
+
+const tp1Value=
+Number(
+signal.tp1Fixed ??
+signal.tp1
+);
+
+const tp2Value=
+Number(
+signal.tp2Fixed ??
+signal.tp2
+);
+
+const tp3Value=
+Number(
+signal.tp3Fixed ??
+signal.tp3
+);
+
+return {
+
+...signal,
+
+tradeId:
+signal.tradeId ||
+signal.id ||
+createTradeId(
+signal.symbol ||
+'UNKNOWN'
+),
+
+entryPrice:
+entryValue,
+
+sl:
+slValue,
+
+tp1:
+tp1Value,
+
+tp2:
+tp2Value,
+
+tp3:
+tp3Value,
+
+/*
+IMPORTANT:
+These are the permanent levels of this trade.
+They are created once and never changed.
+*/
+
+entryPriceFixed:
+entryValue,
+
+slFixed:
+slValue,
+
+tp1Fixed:
+tp1Value,
+
+tp2Fixed:
+tp2Value,
+
+tp3Fixed:
+tp3Value,
+
+levelsLocked:true,
+
+tp1Hit:
+Boolean(signal.tp1Hit),
+
+tp2Hit:
+Boolean(signal.tp2Hit),
+
+lastCheckedPrice:
+signal.lastCheckedPrice ??
+null,
+
+lastCheckedAt:
+signal.lastCheckedAt ??
+null,
+
+exitPrice:
+signal.exitPrice ??
+null,
+
+pnlPct:
+signal.pnlPct ??
+null
+
+};
+
+}
+
+
+/* ============================================================
+   PROFIT / LOSS CALCULATION
+============================================================ */
+
+function calculateTradePnlPct(signal,exitPrice) {
+
+const entry=
+Number(
+signal.entryPriceFixed ??
+signal.entryPrice
+);
+
+const exit=
+Number(exitPrice);
+
+if(
+!Number.isFinite(entry) ||
+!Number.isFinite(exit) ||
+entry<=0
+) {
+
+return 0;
+
+}
+
+if(signal.action==='BUY') {
+
+return (
+((exit-entry)/entry)*100
+);
+
+}
+
+return (
+((entry-exit)/entry)*100
+);
 
 }
 
@@ -789,12 +997,19 @@ if(action==='SELL' && htfBias!=='BEARISH')
 return null;
 
 
-/* ENTRY */
+/* ============================================================
+   ENTRY
+   THIS VALUE IS CAPTURED ONCE FOR THIS TRADE
+============================================================ */
 
 const entry=currentPrice;
 
 
-/* ATR TARGETS */
+/* ============================================================
+   ATR TARGETS
+   THESE VALUES ARE CALCULATED ONLY ONCE.
+   AFTER RETURNING THE SIGNAL THEY ARE LOCKED.
+============================================================ */
 
 const slDistance=atr*1.6;
 
@@ -840,9 +1055,19 @@ Math.round(score)
 );
 
 
-return {
+/* ============================================================
+   CREATE NEW TRADE
+============================================================ */
 
-id:`sig_${pair.toLowerCase()}_${Date.now()}`,
+const tradeId=
+createTradeId(pair);
+
+
+const newSignal={
+
+id:tradeId,
+
+tradeId:tradeId,
 
 symbol:pair,
 
@@ -856,6 +1081,11 @@ direction:action,
 
 status:'ACTIVE',
 
+
+/*
+PERMANENT TRADE LEVELS
+*/
+
 entryPrice:entry,
 
 sl:sl,
@@ -865,6 +1095,36 @@ tp1:tp1,
 tp2:tp2,
 
 tp3:tp3,
+
+entryPriceFixed:entry,
+
+slFixed:sl,
+
+tp1Fixed:tp1,
+
+tp2Fixed:tp2,
+
+tp3Fixed:tp3,
+
+levelsLocked:true,
+
+
+/*
+TARGET STATE
+*/
+
+tp1Hit:false,
+
+tp2Hit:false,
+
+lastCheckedPrice:entry,
+
+lastCheckedAt:new Date().toISOString(),
+
+exitPrice:null,
+
+pnlPct:null,
+
 
 timeframe:'15m',
 
@@ -897,6 +1157,15 @@ minute:'2-digit'
 )
 
 };
+
+
+/*
+FINAL NORMALIZATION.
+This guarantees that the levels are stored as
+fixed values from the moment of creation.
+*/
+
+return normalizeTradeSignal(newSignal);
 
 }
 
@@ -953,6 +1222,19 @@ avgWinPct:'0%'
 
 
 /* ============================================================
+   TRADE MONITOR LOCK
+   Prevents duplicate processing of the same trade.
+============================================================ */
+
+const processingTradesRef=
+useRef(new Set());
+
+
+const monitorBusyRef=
+useRef(false);
+
+
+/* ============================================================
    LOAD SAVED DATA
 ============================================================ */
 
@@ -969,11 +1251,55 @@ localStorage.getItem('quant_closed_signals');
 const savedSettings=
 localStorage.getItem('quant_settings');
 
-if(savedSignals)
-setActiveSignals(JSON.parse(savedSignals));
 
-if(savedClosed)
-setClosedSignals(JSON.parse(savedClosed));
+/*
+IMPORTANT:
+Existing saved trades are migrated to the fixed-level
+structure. Their current stored Entry/SL/TP become the
+permanent levels.
+*/
+
+if(savedSignals) {
+
+const parsedSignals=
+JSON.parse(savedSignals);
+
+if(Array.isArray(parsedSignals)) {
+
+const normalizedSignals=
+parsedSignals.map(
+signal=>normalizeTradeSignal(signal)
+);
+
+setActiveSignals(
+normalizedSignals
+);
+
+}
+
+}
+
+
+if(savedClosed) {
+
+const parsedClosed=
+JSON.parse(savedClosed);
+
+if(Array.isArray(parsedClosed)) {
+
+const normalizedClosed=
+parsedClosed.map(
+signal=>normalizeTradeSignal(signal)
+);
+
+setClosedSignals(
+normalizedClosed
+);
+
+}
+
+}
+
 
 if(savedSettings)
 setSettings({
@@ -984,7 +1310,10 @@ setSettings({
 }
 catch(error) {
 
-console.error(error);
+console.error(
+'Error loading saved Quant Signals data:',
+error
+);
 
 }
 
@@ -997,30 +1326,66 @@ console.error(error);
 
 useEffect(()=>{
 
+try {
+
 localStorage.setItem(
 'quant_active_signals',
 JSON.stringify(activeSignals)
 );
+
+}
+catch(error) {
+
+console.error(
+'Error saving active signals:',
+error
+);
+
+}
 
 },[activeSignals]);
 
 
 useEffect(()=>{
 
+try {
+
 localStorage.setItem(
 'quant_closed_signals',
 JSON.stringify(closedSignals)
 );
+
+}
+catch(error) {
+
+console.error(
+'Error saving closed signals:',
+error
+);
+
+}
 
 },[closedSignals]);
 
 
 useEffect(()=>{
 
+try {
+
 localStorage.setItem(
 'quant_settings',
 JSON.stringify(settings)
 );
+
+}
+catch(error) {
+
+console.error(
+'Error saving settings:',
+error
+);
+
+}
 
 },[settings]);
 
@@ -1035,7 +1400,10 @@ try {
 
 const response=
 await fetch(
-'https://fapi.binance.com/fapi/v1/ticker/24hr'
+'https://fapi.binance.com/fapi/v1/ticker/24hr',
+{
+cache:'no-store'
+}
 );
 
 if(!response.ok)
@@ -1055,9 +1423,15 @@ p=>p.symbol===item.symbol
 )
 ) {
 
+const livePrice=
+parseFloat(item.lastPrice);
+
+if(!Number.isFinite(livePrice))
+return;
+
 tickerMap[item.symbol]={
 
-price:parseFloat(item.lastPrice),
+price:livePrice,
 
 change24h:parseFloat(
 item.priceChangePercent
@@ -1114,7 +1488,9 @@ const signal=
 await analyzePair(pairObj);
 
 if(signal)
-generated.push(signal);
+generated.push(
+normalizeTradeSignal(signal)
+);
 
 }
 
@@ -1127,19 +1503,25 @@ if(generated.length>0) {
 
 setActiveSignals(prev=>{
 
-const current=[...prev];
+const current=
+prev.map(
+signal=>normalizeTradeSignal(signal)
+);
 
 generated.forEach(newSignal=>{
 
 const existing=
 current.find(
-s=>s.symbol===newSignal.symbol &&
+s=>
+s.symbol===newSignal.symbol &&
 s.status==='ACTIVE'
 );
 
 if(!existing) {
 
-current.unshift(newSignal);
+current.unshift(
+normalizeTradeSignal(newSignal)
+);
 
 }
 
@@ -1151,6 +1533,14 @@ return current.slice(0,30);
 });
 
 }
+
+}
+catch(error) {
+
+console.error(
+'Signal generation error:',
+error
+);
 
 }
 finally {
@@ -1167,119 +1557,664 @@ setIsLoading(false);
 
 /* ============================================================
    CHECK ACTIVE TRADES
+   FIXED TRADE LIFECYCLE
 ============================================================ */
 
 const monitorActiveSignals=useCallback(()=>{
 
-setActiveSignals(prev=>{
+/*
+Do not allow overlapping monitoring cycles.
+*/
 
-const remaining=[];
+if(monitorBusyRef.current)
+return;
 
-const closed=[...closedSignals];
+monitorBusyRef.current=true;
 
-prev.forEach(signal=>{
+try {
 
-const ticker=
-marketTickers[signal.symbol];
-
-if(!ticker) {
-
-remaining.push(signal);
+if(
+!Array.isArray(activeSignals) ||
+activeSignals.length===0
+) {
 
 return;
 
 }
 
-const price=ticker.price;
 
-let result=null;
+const tradesToClose=[];
+
+const tradesToUpdate=[];
+
+const closedIds=new Set();
 
 
-/* BUY */
+/* ============================================================
+   PROCESS EACH ACTIVE TRADE
+============================================================ */
+
+activeSignals.forEach(rawSignal=>{
+
+const signal=
+normalizeTradeSignal(rawSignal);
+
+
+/*
+Only ACTIVE trades can be monitored.
+A CLOSED trade can never be reopened.
+*/
+
+if(signal.status!=='ACTIVE')
+return;
+
+
+/*
+Each trade is identified by tradeId.
+*/
+
+const tradeId=
+signal.tradeId ||
+signal.id;
+
+
+/*
+If this trade is already being closed,
+do not process it again.
+*/
+
+if(
+processingTradesRef.current.has(tradeId)
+) {
+
+return;
+
+}
+
+
+/*
+Get live Binance price.
+*/
+
+const ticker=
+marketTickers[signal.symbol];
+
+if(!ticker)
+return;
+
+
+const price=
+Number(ticker.price);
+
+if(!Number.isFinite(price))
+return;
+
+
+/*
+IMPORTANT:
+Read ONLY the fixed levels.
+Never calculate new levels here.
+*/
+
+const entry=
+Number(
+signal.entryPriceFixed
+);
+
+const sl=
+Number(
+signal.slFixed
+);
+
+const tp1=
+Number(
+signal.tp1Fixed
+);
+
+const tp2=
+Number(
+signal.tp2Fixed
+);
+
+const tp3=
+Number(
+signal.tp3Fixed
+);
+
+
+if(
+!Number.isFinite(entry) ||
+!Number.isFinite(sl) ||
+!Number.isFinite(tp1) ||
+!Number.isFinite(tp2) ||
+!Number.isFinite(tp3)
+) {
+
+console.error(
+'Invalid fixed trade levels:',
+signal
+);
+
+return;
+
+}
+
+
+let updatedSignal={
+...signal,
+
+/*
+The live price changes.
+The trade levels NEVER change.
+*/
+
+lastCheckedPrice:price,
+
+lastCheckedAt:new Date().toISOString(),
+
+entryPriceFixed:entry,
+
+slFixed:sl,
+
+tp1Fixed:tp1,
+
+tp2Fixed:tp2,
+
+tp3Fixed:tp3,
+
+entryPrice:entry,
+
+sl:sl,
+
+tp1:tp1,
+
+tp2:tp2,
+
+tp3:tp3,
+
+levelsLocked:true
+
+};
+
+
+let closeReason=null;
+
+
+/* ============================================================
+   BUY TRADE
+============================================================ */
 
 if(signal.action==='BUY') {
 
-if(price<=signal.sl) {
 
-result={
-...signal,
-status:'CLOSED',
-closeReason:'Stop Loss',
-closedAt:new Date().toLocaleTimeString('ar-SA')
-};
+/*
+STOP LOSS HAS PRIORITY.
 
-}
+If the current price is at or below the
+fixed SL, the trade is CLOSED immediately.
+*/
 
-else if(price>=signal.tp3) {
+if(price<=sl) {
 
-result={
-...signal,
-status:'CLOSED',
-closeReason:'TP3',
-closedAt:new Date().toLocaleTimeString('ar-SA')
-};
+closeReason='Stop Loss';
 
 }
+
+
+/*
+If SL was not hit, check TP levels.
+*/
 
 else {
 
-remaining.push(signal);
+
+/*
+TP1:
+Record it, but DO NOT move TP2 or TP3.
+*/
+
+if(
+price>=tp1 &&
+!signal.tp1Hit
+) {
+
+updatedSignal.tp1Hit=true;
+
+updatedSignal.tp1HitAt=
+new Date().toISOString();
+
+}
+
+
+/*
+TP2:
+Record it, but DO NOT move TP3.
+*/
+
+if(
+price>=tp2 &&
+!signal.tp2Hit
+) {
+
+updatedSignal.tp2Hit=true;
+
+updatedSignal.tp2HitAt=
+new Date().toISOString();
+
+}
+
+
+/*
+TP3 IS THE FINAL TARGET.
+
+Once price reaches the fixed TP3,
+the trade is CLOSED permanently.
+*/
+
+if(price>=tp3) {
+
+closeReason='TP3';
 
 }
 
 }
 
+}
 
-/* SELL */
+
+/* ============================================================
+   SELL TRADE
+============================================================ */
+
+else if(signal.action==='SELL') {
+
+
+/*
+STOP LOSS HAS PRIORITY.
+
+For SELL, SL is above entry.
+*/
+
+if(price>=sl) {
+
+closeReason='Stop Loss';
+
+}
+
+
+/*
+If SL was not hit, check targets.
+*/
 
 else {
 
-if(price>=signal.sl) {
 
-result={
-...signal,
+/*
+TP1:
+Record it without moving any level.
+*/
+
+if(
+price<=tp1 &&
+!signal.tp1Hit
+) {
+
+updatedSignal.tp1Hit=true;
+
+updatedSignal.tp1HitAt=
+new Date().toISOString();
+
+}
+
+
+/*
+TP2:
+Record it without moving TP3.
+*/
+
+if(
+price<=tp2 &&
+!signal.tp2Hit
+) {
+
+updatedSignal.tp2Hit=true;
+
+updatedSignal.tp2HitAt=
+new Date().toISOString();
+
+}
+
+
+/*
+TP3 IS THE FINAL TARGET.
+
+Once price reaches fixed TP3,
+the trade is CLOSED permanently.
+*/
+
+if(price<=tp3) {
+
+closeReason='TP3';
+
+}
+
+}
+
+}
+
+
+/* ============================================================
+   CLOSE TRADE
+============================================================ */
+
+if(closeReason) {
+
+
+/*
+Mark the trade as processing BEFORE
+changing React state.
+
+This prevents duplicate closure records.
+*/
+
+processingTradesRef.current.add(
+tradeId
+);
+
+closedIds.add(tradeId);
+
+
+/*
+Calculate final P/L using the ORIGINAL
+fixed entry and the ACTUAL exit price.
+*/
+
+const pnlPct=
+calculateTradePnlPct(
+updatedSignal,
+price
+);
+
+
+const closedTrade={
+
+...updatedSignal,
+
 status:'CLOSED',
-closeReason:'Stop Loss',
-closedAt:new Date().toLocaleTimeString('ar-SA')
+
+closeReason:closeReason,
+
+exitPrice:price,
+
+pnlPct:pnlPct,
+
+closedAt:new Date().toLocaleTimeString(
+'ar-SA',
+{
+hour:'2-digit',
+minute:'2-digit',
+second:'2-digit'
+}
+),
+
+closedAtISO:
+new Date().toISOString(),
+
+/*
+Permanent levels remain unchanged even
+after closure.
+*/
+
+entryPriceFixed:entry,
+
+slFixed:sl,
+
+tp1Fixed:tp1,
+
+tp2Fixed:tp2,
+
+tp3Fixed:tp3,
+
+entryPrice:entry,
+
+sl:sl,
+
+tp1:tp1,
+
+tp2:tp2,
+
+tp3:tp3,
+
+levelsLocked:true
+
 };
 
-}
 
-else if(price<=signal.tp3) {
-
-result={
-...signal,
-status:'CLOSED',
-closeReason:'TP3',
-closedAt:new Date().toLocaleTimeString('ar-SA')
-};
-
-}
-
-else {
-
-remaining.push(signal);
-
-}
+tradesToClose.push(
+closedTrade
+);
 
 }
 
 
-if(result)
-closed.unshift(result);
+/* ============================================================
+   ONLY UPDATE TARGET HIT STATE
+   WITHOUT MOVING LEVELS
+============================================================ */
+
+else if(
+updatedSignal.tp1Hit!==signal.tp1Hit ||
+updatedSignal.tp2Hit!==signal.tp2Hit
+) {
+
+tradesToUpdate.push(
+updatedSignal
+);
+
+}
 
 });
 
 
-if(closed.length!==closedSignals.length)
-setClosedSignals(closed.slice(0,100));
+/* ============================================================
+   APPLY TP1 / TP2 UPDATES
+============================================================ */
+
+if(tradesToUpdate.length>0) {
+
+const updateMap=
+new Map(
+tradesToUpdate.map(
+trade=>[
+trade.tradeId ||
+trade.id,
+trade
+]
+)
+);
 
 
-return remaining;
+setActiveSignals(prev=>{
+
+return prev.map(rawSignal=>{
+
+const tradeId=
+rawSignal.tradeId ||
+rawSignal.id;
+
+const updated=
+updateMap.get(tradeId);
+
+if(!updated)
+return rawSignal;
+
+
+/*
+Keep all fixed values exactly as they were.
+*/
+
+return normalizeTradeSignal({
+
+...rawSignal,
+
+...updated,
+
+entryPrice:
+rawSignal.entryPriceFixed ??
+rawSignal.entryPrice,
+
+sl:
+rawSignal.slFixed ??
+rawSignal.sl,
+
+tp1:
+rawSignal.tp1Fixed ??
+rawSignal.tp1,
+
+tp2:
+rawSignal.tp2Fixed ??
+rawSignal.tp2,
+
+tp3:
+rawSignal.tp3Fixed ??
+rawSignal.tp3,
+
+entryPriceFixed:
+rawSignal.entryPriceFixed ??
+rawSignal.entryPrice,
+
+slFixed:
+rawSignal.slFixed ??
+rawSignal.sl,
+
+tp1Fixed:
+rawSignal.tp1Fixed ??
+rawSignal.tp1,
+
+tp2Fixed:
+rawSignal.tp2Fixed ??
+rawSignal.tp2,
+
+tp3Fixed:
+rawSignal.tp3Fixed ??
+rawSignal.tp3,
+
+levelsLocked:true
 
 });
 
-},[marketTickers,closedSignals]);
+});
+
+}
+
+}
+
+
+/* ============================================================
+   MOVE CLOSED TRADES TO HISTORY
+============================================================ */
+
+if(tradesToClose.length>0) {
+
+
+/*
+Remove closed trades from ACTIVE immediately.
+*/
+
+setActiveSignals(prev=>{
+
+return prev.filter(signal=>{
+
+const tradeId=
+signal.tradeId ||
+signal.id;
+
+return !closedIds.has(
+tradeId
+);
+
+});
+
+});
+
+
+/*
+Add closed trades to history exactly once.
+*/
+
+setClosedSignals(prev=>{
+
+const existingIds=
+new Set(
+prev.map(
+signal=>
+signal.tradeId ||
+signal.id
+)
+);
+
+
+const newClosedTrades=
+tradesToClose.filter(
+trade=>
+!existingIds.has(
+trade.tradeId ||
+trade.id
+)
+);
+
+
+if(newClosedTrades.length===0)
+return prev;
+
+
+return [
+...newClosedTrades,
+...prev
+].slice(0,100);
+
+});
+
+
+/*
+Allow processing lock to be removed after
+the state transition has been scheduled.
+*/
+
+setTimeout(()=>{
+
+tradesToClose.forEach(trade=>{
+
+processingTradesRef.current.delete(
+trade.tradeId ||
+trade.id
+);
+
+});
+
+},100);
+
+}
+
+}
+catch(error) {
+
+console.error(
+'Trade monitoring error:',
+error
+);
+
+}
+finally {
+
+monitorBusyRef.current=false;
+
+}
+
+},[
+activeSignals,
+marketTickers
+]);
 
 
 /* ============================================================
@@ -1327,7 +2262,8 @@ useEffect(()=>{
 monitorActiveSignals();
 
 },[
-marketTickers
+marketTickers,
+monitorActiveSignals
 ]);
 
 
@@ -1342,6 +2278,119 @@ s=>s.status==='ACTIVE'
 ),
 [activeSignals]
 );
+
+
+/* ============================================================
+   STATS
+============================================================ */
+
+useEffect(()=>{
+
+try {
+
+const trades=
+closedSignals
+.filter(
+signal=>
+signal.status==='CLOSED'
+);
+
+const total=
+trades.length;
+
+const winning=
+trades.filter(
+signal=>
+Number(signal.pnlPct)>0
+).length;
+
+const losing=
+trades.filter(
+signal=>
+Number(signal.pnlPct)<=0
+).length;
+
+const winRate=
+total>0
+?(winning/total)*100
+:0;
+
+const grossProfit=
+trades
+.filter(
+signal=>Number(signal.pnlPct)>0
+)
+.reduce(
+(sum,signal)=>
+sum+Number(signal.pnlPct),
+0
+);
+
+const grossLoss=
+Math.abs(
+trades
+.filter(
+signal=>Number(signal.pnlPct)<=0
+)
+.reduce(
+(sum,signal)=>
+sum+Number(signal.pnlPct),
+0
+)
+);
+
+const profitFactor=
+grossLoss>0
+?grossProfit/grossLoss
+:(
+grossProfit>0
+?grossProfit
+:0
+);
+
+const avgWin=
+winning>0
+?trades
+.filter(
+signal=>Number(signal.pnlPct)>0
+)
+.reduce(
+(sum,signal)=>
+sum+Number(signal.pnlPct),
+0
+)/winning
+:0;
+
+setStats({
+
+winRate:Number(winRate.toFixed(2)),
+
+profitFactor:Number(
+profitFactor.toFixed(2)
+),
+
+totalTradeCount:total,
+
+winningTrades:winning,
+
+avgWinPct:
+`${avgWin>=0?'+':''}${avgWin.toFixed(2)}%`
+
+});
+
+}
+catch(error) {
+
+console.error(
+'Stats calculation error:',
+error
+);
+
+}
+
+},[
+closedSignals
+]);
 
 
 /* ============================================================
@@ -1725,10 +2774,40 @@ ticker?.price||sig.entryPrice;
 const precision=
 sig.precision||2;
 
+const fixedEntry=
+Number(
+sig.entryPriceFixed ??
+sig.entryPrice
+);
+
+const fixedSL=
+Number(
+sig.slFixed ??
+sig.sl
+);
+
+const fixedTP1=
+Number(
+sig.tp1Fixed ??
+sig.tp1
+);
+
+const fixedTP2=
+Number(
+sig.tp2Fixed ??
+sig.tp2
+);
+
+const fixedTP3=
+Number(
+sig.tp3Fixed ??
+sig.tp3
+);
+
 return (
 
 <div
-key={sig.id}
+key={sig.tradeId || sig.id}
 className="glass-card glass-card-hover rounded-2xl p-5 space-y-4"
 >
 
@@ -1769,6 +2848,40 @@ isBuy
 </div>
 
 
+<div className="flex items-center justify-between gap-2 text-[10px]">
+
+<span className="text-gray-500 font-mono">
+
+Trade ID
+
+</span>
+
+<span className="text-purple-400 font-mono truncate max-w-[180px]">
+
+{sig.tradeId || sig.id}
+
+</span>
+
+</div>
+
+
+<div className="flex items-center justify-between">
+
+<span className="text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-1 rounded-lg font-bold">
+
+🔒 مستويات الصفقة ثابتة
+
+</span>
+
+<span className="text-[10px] text-gray-500">
+
+لا تتحرك بعد الدخول
+
+</span>
+
+</div>
+
+
 <div className="grid grid-cols-2 gap-2 text-xs bg-gray-900/90 p-3 rounded-xl">
 
 <div>
@@ -1781,7 +2894,7 @@ isBuy
 
 <span className="font-mono font-bold text-white text-sm">
 
-{sig.entryPrice.toFixed(precision)}
+{fixedEntry.toFixed(precision)}
 
 </span>
 
@@ -1809,34 +2922,62 @@ isBuy
 
 <div className="space-y-1.5 text-xs">
 
-<div className="flex justify-between p-2.5 rounded-xl bg-emerald-950/30">
+<div className={
+`flex justify-between p-2.5 rounded-xl ${
+sig.tp1Hit
+?'bg-emerald-500/20 border border-emerald-500/30'
+:'bg-emerald-950/30'
+}`
+}>
 
 <span className="text-emerald-400 font-bold">
 
 🎯 TP1
 
+{sig.tp1Hit&&(
+<span className="mr-2 text-[10px]">
+
+✓ تم الوصول
+
+</span>
+)}
+
 </span>
 
 <span className="font-mono font-bold text-emerald-300">
 
-{sig.tp1.toFixed(precision)}
+{fixedTP1.toFixed(precision)}
 
 </span>
 
 </div>
 
 
-<div className="flex justify-between p-2.5 rounded-xl bg-emerald-950/20">
+<div className={
+`flex justify-between p-2.5 rounded-xl ${
+sig.tp2Hit
+?'bg-emerald-500/20 border border-emerald-500/30'
+:'bg-emerald-950/20'
+}`
+}>
 
 <span className="text-emerald-400 font-bold">
 
 🎯 TP2
 
+{sig.tp2Hit&&(
+<span className="mr-2 text-[10px]">
+
+✓ تم الوصول
+
+</span>
+)}
+
 </span>
 
 <span className="font-mono font-bold text-emerald-300">
 
-{sig.tp2.toFixed(precision)}
+{fixedTP2.toFixed(precision)}
 
 </span>
 
@@ -1849,11 +2990,17 @@ isBuy
 
 🎯 TP3
 
+<span className="mr-2 text-[10px] text-gray-500">
+
+الهدف النهائي
+
+</span>
+
 </span>
 
 <span className="font-mono font-bold text-emerald-300">
 
-{sig.tp3.toFixed(precision)}
+{fixedTP3.toFixed(precision)}
 
 </span>
 
@@ -1870,7 +3017,7 @@ isBuy
 
 <span className="font-mono font-bold text-red-300">
 
-{sig.sl.toFixed(precision)}
+{fixedSL.toFixed(precision)}
 
 </span>
 
@@ -2116,12 +3263,22 @@ positive
 
 <div className="space-y-3">
 
-{closedSignals.map((sig,index)=>(
+{closedSignals.map((sig,index)=>{
+
+const precision=
+sig.precision||2;
+
+const pnl=
+Number(sig.pnlPct||0);
+
+return (
 
 <div
-key={index}
+key={sig.tradeId || sig.id || index}
 className="flex flex-wrap items-center justify-between p-4 bg-gray-900/80 rounded-xl border border-gray-800 text-xs gap-3"
 >
+
+<div>
 
 <span className={
 sig.action==='BUY'
@@ -2133,11 +3290,53 @@ sig.action==='BUY'
 
 </span>
 
-<span className="text-gray-300">
+<div className="text-[9px] text-gray-600 font-mono mt-1">
+
+{sig.tradeId || sig.id}
+
+</div>
+
+</div>
+
+
+<span className={
+sig.closeReason==='Stop Loss'
+?'text-red-400'
+:'text-emerald-400'
+}>
 
 {sig.closeReason}
 
 </span>
+
+
+<div className="text-gray-300">
+
+خروج:
+
+<span className="font-mono font-bold mr-1">
+
+{Number(
+sig.exitPrice||0
+).toFixed(precision)}
+
+</span>
+
+</div>
+
+
+<div className={
+pnl>=0
+?'text-emerald-400'
+:'text-red-400'
+}>
+
+{pnl>=0?'+':''}
+
+{pnl.toFixed(2)}%
+
+</div>
+
 
 <span className="text-gray-500">
 
@@ -2147,7 +3346,9 @@ sig.action==='BUY'
 
 </div>
 
-))}
+);
+
+})}
 
 </div>
 
@@ -2253,6 +3454,45 @@ className="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-w
 <br/>
 
 ADX &gt; 20 = قوة الاتجاه
+
+</div>
+
+
+<div className="bg-purple-950/30 border border-purple-500/20 rounded-xl p-4 text-xs text-gray-300">
+
+<strong className="text-purple-400">
+
+نظام إدارة الصفقة:
+
+</strong>
+
+<br/>
+
+🔒 Entry ثابت بعد إنشاء الصفقة
+
+<br/>
+
+🔒 Stop Loss ثابت
+
+<br/>
+
+🔒 TP1 ثابت
+
+<br/>
+
+🔒 TP2 ثابت
+
+<br/>
+
+🔒 TP3 ثابت
+
+<br/>
+
+✅ TP3 = إغلاق نهائي
+
+<br/>
+
+🛑 SL = إغلاق فوري
 
 </div>
 
@@ -2431,6 +3671,7 @@ error
 );
 
 }
+
 );
 
 }
@@ -2451,4 +3692,4 @@ document.getElementById('root')
 </script>
 
 </body>
-     </html>
+   </html>
