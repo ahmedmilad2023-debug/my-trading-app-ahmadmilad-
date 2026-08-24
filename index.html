@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>SmartTrend Mobile App</title>
+  <title>SmartTrade PWA - 20 Coins Edition</title>
   
-  <!-- PWA Manifest embedded via Data URI -->
+  <!-- PWA Manifest -->
   <link rel="manifest" href='data:application/json,{"name":"تطبيق التداول الذكي","short_name":"SmartTrade","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#0f172a","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1232/1232581.png","sizes":"512x512","type":"image/png"}]}'>
   <meta name="theme-color" content="#0f172a">
   
@@ -27,9 +27,13 @@
     .stat-label { font-size: 10px; color: #94a3b8; }
     .stat-val { font-size: 14px; font-weight: bold; margin-top: 2px; }
 
-    /* Chart Container */
+    /* Chart Box & Selector */
     .chart-box { background: #1e293b; margin: 0 15px 15px 15px; padding: 15px; border-radius: 16px; border: 1px solid #334155; }
-    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    
+    /* Coin Selector Dropdown */
+    .coin-select { background: #0f172a; color: #38bdf8; border: 1px solid #334155; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 13px; outline: none; cursor: pointer; }
+
     canvas { width: 100%; height: 180px; display: block; }
 
     /* Control Panel */
@@ -57,7 +61,7 @@
 
   <!-- App Header -->
   <div class="app-bar">
-    <div class="app-title">⚡ SmartTrade AI</div>
+    <div class="app-title">⚡ SmartTrade AI (20 العملات)</div>
     <div class="status-badge" id="botStatus">التداول الآلي: نشط</div>
   </div>
 
@@ -67,16 +71,19 @@
     <div class="balance-amount" id="balanceText">$10,000.00</div>
     <div class="stats-row">
       <div class="stat-item"><div class="stat-label">نسبة النجاح</div><div class="stat-val" id="winRateText" style="color:#4ade80">0%</div></div>
-      <div class="stat-item"><div class="stat-label">الصفحات الناجحة</div><div class="stat-val" id="winCountText">0</div></div>
+      <div class="stat-item"><div class="stat-label">المغلقة بنجاح</div><div class="stat-val" id="winCountText">0</div></div>
       <div class="stat-item"><div class="stat-label">إجمالي الأرباح</div><div class="stat-val" id="profitText" style="color:#38bdf8">$0.00</div></div>
     </div>
   </div>
 
-  <!-- Live Candlestick Chart -->
+  <!-- Live Candlestick Chart Box -->
   <div class="chart-box">
     <div class="chart-header">
-      <span style="font-size:14px; font-weight:bold;">BTC/USDT (حجم حقيقي)</span>
-      <span id="livePrice" style="font-size:16px; font-weight:bold; color:#4ade80;">$65,000.00</span>
+      <!-- 20 Coin Selector Dropdown -->
+      <select class="coin-select" id="coinSelector" onchange="changeSelectedCoin(this.value)">
+        <!-- Options populated dynamically -->
+      </select>
+      <span id="livePrice" style="font-size:16px; font-weight:bold; color:#4ade80;">$0.00</span>
     </div>
     <canvas id="tradeChart"></canvas>
   </div>
@@ -84,8 +91,8 @@
   <!-- Auto Trade Controls -->
   <div class="controls-card">
     <div>
-      <div style="font-size:13px; font-weight:bold;">المحرك الذكي (SmartTrend Engine)</div>
-      <div style="font-size:11px; color:#94a3b8;">إدارة المخاطر تلقائياً: 2% لكل صفقة</div>
+      <div style="font-size:13px; font-weight:bold;">المحرك الذكي (شرط: صفقة واحدة لكل عملة)</div>
+      <div style="font-size:11px; color:#94a3b8;">إدارة الحساب: لا تفتح صفقة ثانية حتى تقفل الأولى</div>
     </div>
     <button class="toggle-btn" id="toggleBtn" onclick="toggleAutoTrade()">إيقاف</button>
   </div>
@@ -93,38 +100,89 @@
   <!-- Active Positions -->
   <div class="section-title">المراكز المفتوحة حالياً (<span id="openCount">0</span>)</div>
   <div id="positionsContainer">
-    <div style="text-align:center; padding: 20px; color:#64748b; font-size:12px;">جاري تحليل الاتجاهات بانتظار إشارة جديدة...</div>
+    <div style="text-align:center; padding: 20px; color:#64748b; font-size:12px;">جاري تحليل الاتجاهات لـ 20 عملة...</div>
   </div>
 
   <!-- Navigation -->
   <div class="nav-bar">
     <div class="nav-item active">📈 التداول</div>
-    <div class="nav-item">📊 التحليل</div>
+    <div class="nav-item">📊 العملات (20)</div>
     <div class="nav-item">⚙️ إعدادات</div>
   </div>
 
   <script>
     // ============================================================
-    // 1. محرك التداول الذكي المدمج (SmartTrendEngine)
+    // 1. قائمة الـ 20 عملة رقمية
+    // ============================================================
+    const COIN_LIST = [
+      { symbol: 'BTC/USDT', price: 65000, step: 35 },
+      { symbol: 'ETH/USDT', price: 3500, step: 4 },
+      { symbol: 'BNB/USDT', price: 580, step: 0.8 },
+      { symbol: 'SOL/USDT', price: 145, step: 0.4 },
+      { symbol: 'XRP/USDT', price: 0.55, step: 0.002 },
+      { symbol: 'ADA/USDT', price: 0.38, step: 0.001 },
+      { symbol: 'DOGE/USDT', price: 0.12, step: 0.0005 },
+      { symbol: 'AVAX/USDT', price: 24, step: 0.1 },
+      { symbol: 'DOT/USDT', price: 4.8, step: 0.02 },
+      { symbol: 'LINK/USDT', price: 11.5, step: 0.05 },
+      { symbol: 'MATIC/USDT', price: 0.42, step: 0.002 },
+      { symbol: 'NEAR/USDT', price: 4.2, step: 0.02 },
+      { symbol: 'LTC/USDT', price: 65, step: 0.2 },
+      { symbol: 'ATOM/USDT', price: 4.5, step: 0.02 },
+      { symbol: 'UNI/USDT', price: 6.2, step: 0.03 },
+      { symbol: 'APT/USDT', price: 6.8, step: 0.03 },
+      { symbol: 'ARB/USDT', price: 0.52, step: 0.002 },
+      { symbol: 'OP/USDT', price: 1.4, step: 0.008 },
+      { symbol: 'SUI/USDT', price: 0.92, step: 0.005 },
+      { symbol: 'FTM/USDT', price: 0.40, step: 0.002 }
+    ];
+
+    // تهيئة مصفوفات الشموع لكل عملة
+    let coinsData = {};
+    COIN_LIST.forEach(c => {
+      coinsData[c.symbol] = {
+        symbol: c.symbol,
+        price: c.price,
+        step: c.step,
+        candles: Array.from({length: 30}, () => ({ close: c.price + (Math.random() - 0.5) * c.step * 10 }))
+      };
+    });
+
+    let selectedCoin = 'BTC/USDT';
+
+    // تعبئة قائمة خيارات العملات في الواجهة
+    const selector = document.getElementById('coinSelector');
+    COIN_LIST.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.symbol;
+      opt.innerText = c.symbol;
+      selector.appendChild(opt);
+    });
+
+    function changeSelectedCoin(symbol) {
+      selectedCoin = symbol;
+      drawChart();
+    }
+
+    // ============================================================
+    // 2. محرك التداول المطور
     // ============================================================
     class SmartTrendEngine {
       analyze(candles) {
-        if (candles.length < 20) return { signal: 'NEUTRAL', confidence: 0 };
+        if (candles.length < 15) return { signal: 'NEUTRAL', confidence: 0 };
         
-        const recent = candles.slice(-20);
-        const closes = recent.map(c => c.close);
+        const closes = candles.slice(-15).map(c => c.close);
         const lastPrice = closes[closes.length - 1];
         const prevPrice = closes[closes.length - 2];
         const minPrice = Math.min(...closes);
         const maxPrice = Math.max(...closes);
 
         let signal = 'NEUTRAL';
-        let confidence = 50 + Math.random() * 45;
+        let confidence = 55 + Math.random() * 40;
 
-        // كشف الانعكاسات عند القمم والقيعان
-        if (lastPrice <= minPrice * 1.0005 && lastPrice > prevPrice) {
+        if (lastPrice <= minPrice * 1.0008 && lastPrice > prevPrice) {
           signal = 'STRONG_BUY';
-        } else if (lastPrice >= maxPrice * 0.9995 && lastPrice < prevPrice) {
+        } else if (lastPrice >= maxPrice * 0.9992 && lastPrice < prevPrice) {
           signal = 'STRONG_SELL';
         }
 
@@ -132,15 +190,12 @@
           signal,
           confidence,
           entryPrice: lastPrice,
-          stopLoss: signal === 'STRONG_BUY' ? lastPrice * 0.995 : lastPrice * 1.005,
+          stopLoss: signal === 'STRONG_BUY' ? lastPrice * 0.994 : lastPrice * 1.006,
           takeProfit: signal === 'STRONG_BUY' ? lastPrice * 1.012 : lastPrice * 0.988
         };
       }
     }
 
-    // ============================================================
-    // 2. تطبيق إدارة التداول والمحاكاة
-    // ============================================================
     const engine = new SmartTrendEngine();
     let balance = 10000;
     let totalProfit = 0;
@@ -148,11 +203,6 @@
     let totalClosed = 0;
     let activePositions = [];
     let isAutoTrade = true;
-
-    // محاكاة الشموع والأسعار
-    let candles = Array.from({length: 40}, (_, i) => ({
-      close: 65000 + (Math.random() - 0.5) * 400
-    }));
 
     function toggleAutoTrade() {
       isAutoTrade = !isAutoTrade;
@@ -171,54 +221,75 @@
       }
     }
 
+    // ============================================================
+    // 3. الحلقة الأساسية لتحديث الـ 20 عملة مع إغلاق الصفحات
+    // ============================================================
     function updateApp() {
-      // توليد سعر جديد
-      const lastClose = candles[candles.length - 1].close;
-      const change = (Math.random() - 0.49) * 45;
-      const newPrice = lastClose + change;
-      candles.push({ close: newPrice });
-      candles.shift();
+      // 1. تحديث الأسعار لجميع الـ 20 عملة
+      COIN_LIST.forEach(c => {
+        const coin = coinsData[c.symbol];
+        const change = (Math.random() - 0.49) * coin.step;
+        const newPrice = coin.price + change;
+        coin.price = newPrice;
+        coin.candles.push({ close: newPrice });
+        coin.candles.shift();
+      });
 
-      document.getElementById('livePrice').innerText = '$' + newPrice.toFixed(2);
-      document.getElementById('livePrice').style.color = change >= 0 ? '#4ade80' : '#f87171';
+      // تحديث السعر الظاهر على الشاشة للعملة المختارة حالياً
+      const currentCoinData = coinsData[selectedCoin];
+      document.getElementById('livePrice').innerText = '$' + currentCoinData.price.toFixed(currentCoinData.price < 1 ? 4 : 2);
 
-      // رسم الشارت
       drawChart();
 
-      // مراقبة الصفحات المفتوحة
+      // 2. فحص الصفقات المفتوحة وإغلاقها عند ضرب الهدف أو الاستوب
       activePositions = activePositions.filter(p => {
-        const isTP = p.type === 'BUY' ? newPrice >= p.takeProfit : newPrice <= p.takeProfit;
-        const isSL = p.type === 'BUY' ? newPrice <= p.stopLoss : newPrice >= p.stopLoss;
+        const currentCoinPrice = coinsData[p.symbol].price;
+        const isTP = p.type === 'BUY' ? currentCoinPrice >= p.takeProfit : currentCoinPrice <= p.takeProfit;
+        const isSL = p.type === 'BUY' ? currentCoinPrice <= p.stopLoss : currentCoinPrice >= p.stopLoss;
 
         if (isTP || isSL) {
-          const profit = p.type === 'BUY' ? (newPrice - p.entryPrice) * p.size : (p.entryPrice - newPrice) * p.size;
+          const profit = p.type === 'BUY' 
+            ? ((currentCoinPrice - p.entryPrice) / p.entryPrice) * 100 * 5
+            : ((p.entryPrice - currentCoinPrice) / p.entryPrice) * 100 * 5;
+
           balance += profit;
           totalProfit += profit;
           totalClosed++;
           if (profit > 0) wins++;
 
-          // تحديث الواجهة
           updateStatsUI();
-          return false;
+          return false; // حذف الصفقة من المراكز المفتوحة (تقفل الصفقة)
         }
-        return true;
+        return true; // إبقاء الصفقة مفتوحة
       });
 
-      // التحليل وتوليد الصفقات الجديدة
-      if (isAutoTrade && activePositions.length < 2) {
-        const analysis = engine.analyze(candles);
-        if (analysis.confidence > 70 && (analysis.signal === 'STRONG_BUY' || analysis.signal === 'STRONG_SELL')) {
-          const type = analysis.signal === 'STRONG_BUY' ? 'BUY' : 'SELL';
-          activePositions.push({
-            id: Date.now(),
-            type,
-            entryPrice: newPrice,
-            stopLoss: analysis.stopLoss,
-            takeProfit: analysis.takeProfit,
-            size: 0.15,
-            confidence: analysis.confidence
-          });
-        }
+      // 3. تحليل الـ 20 عملة وفتح صفقات جديدة بشرط مهم:
+      // 🔥 الشرط الحاسمي: التأكد التام أن هذه العملة ليس لها أي صفقة مفتوحة إطلاقاً 🔥
+      if (isAutoTrade) {
+        COIN_LIST.forEach(c => {
+          const coin = coinsData[c.symbol];
+
+          // الفحص: هل يوجد صفقة حالية لهذه العملة تحديداً؟
+          const hasExistingPositionForThisSymbol = activePositions.some(p => p.symbol === c.symbol);
+
+          // إذا كانت توجد صفقة مفتوحة لهذه العملة، يتجاوزها فوراً ولا يفتح صفقة ثانية
+          if (!hasExistingPositionForThisSymbol) {
+            const analysis = engine.analyze(coin.candles);
+
+            if (analysis.confidence > 75 && (analysis.signal === 'STRONG_BUY' || analysis.signal === 'STRONG_SELL')) {
+              const type = analysis.signal === 'STRONG_BUY' ? 'BUY' : 'SELL';
+              activePositions.push({
+                id: Date.now() + Math.random(),
+                symbol: c.symbol,
+                type,
+                entryPrice: coin.price,
+                stopLoss: analysis.stopLoss,
+                takeProfit: analysis.takeProfit,
+                confidence: analysis.confidence
+              });
+            }
+          }
+        });
       }
 
       renderPositionsUI();
@@ -238,7 +309,7 @@
       document.getElementById('openCount').innerText = activePositions.length;
 
       if (activePositions.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 20px; color:#64748b; font-size:12px;">جاري تحليل الاتجاهات بانتظار إشارة جديدة...</div>`;
+        container.innerHTML = `<div style="text-align:center; padding: 20px; color:#64748b; font-size:12px;">جاري تحليل 20 عملة بانتظار إشارة جديدة...</div>`;
         return;
       }
 
@@ -246,25 +317,26 @@
         <div class="position-card ${p.type}">
           <div>
             <span class="tag ${p.type === 'BUY' ? 'tag-buy' : 'tag-sell'}">${p.type}</span>
-            <span style="font-weight:bold; font-size:13px; margin-right:5px;">BTC/USDT</span>
-            <div style="font-size:11px; color:#94a3b8; margin-top:3px;">دخول: $${p.entryPrice.toFixed(2)}</div>
+            <span style="font-weight:bold; font-size:13px; margin-right:5px;">${p.symbol}</span>
+            <div style="font-size:11px; color:#94a3b8; margin-top:3px;">الدخول: $${p.entryPrice.toFixed(p.entryPrice < 1 ? 4 : 2)}</div>
           </div>
           <div style="text-align:left;">
-            <div style="font-size:11px; color:#4ade80;">هدف: $${p.takeProfit.toFixed(1)}</div>
-            <div style="font-size:11px; color:#f87171;">استوب: $${p.stopLoss.toFixed(1)}</div>
+            <div style="font-size:11px; color:#4ade80;">الهدف: $${p.takeProfit.toFixed(p.takeProfit < 1 ? 4 : 2)}</div>
+            <div style="font-size:11px; color:#f87171;">الاستوب: $${p.stopLoss.toFixed(p.stopLoss < 1 ? 4 : 2)}</div>
           </div>
         </div>
       `).join('');
     }
 
-    // رسم الرسم البياني المباشر
+    // رسم الرسم البياني للعملة المحددة
     function drawChart() {
       const canvas = document.getElementById('tradeChart');
       const ctx = canvas.getContext('2d');
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
 
-      const closes = candles.map(c => c.close);
+      const currentCandles = coinsData[selectedCoin].candles;
+      const closes = currentCandles.map(c => c.close);
       const min = Math.min(...closes);
       const max = Math.max(...closes);
       const range = max - min || 1;
@@ -283,10 +355,10 @@
       ctx.stroke();
     }
 
-    // تشغيل التحديث المستمر كل ثانيتين
-    setInterval(updateApp, 1500);
+    // تشغيل تحديث الأسعار والمحرك كل 1.2 ثانية
+    setInterval(updateApp, 1200);
 
-    // تسجيل ServiceWorker تلقائياً للعمل بدون إنترنت (PWA Feature)
+    // تسجيل ServiceWorker تلقائياً للعمل PWA
     if ('serviceWorker' in navigator) {
       const swCode = `self.addEventListener('fetch', function(e) {});`;
       const blob = new Blob([swCode], { type: 'application/javascript' });
