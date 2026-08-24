@@ -3,21 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>SmartTrade PWA - 20 Coins Edition</title>
+  <title>SmartTrade PWA - Full Tabs Enabled</title>
   
   <!-- PWA Manifest -->
-  <link rel="manifest" href='data:application/json,{"name":"تطبيق التداول الذكي","short_name":"SmartTrade","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#0f172a","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1232/1232581.png","sizes":"512x512","type":"image/png"}]}'>
+  <link rel="manifest" href='data:application/json,{"name":"تطبيق التداول الحقيقي","short_name":"SmartTrade","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#0f172a","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1232/1232581.png","sizes":"512x512","type":"image/png"}]}'>
   <meta name="theme-color" content="#0f172a">
   
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background-color: #0f172a; color: #f8fafc; margin: 0; padding: 0; padding-bottom: 70px; user-select: none; }
+    body { background-color: #0f172a; color: #f8fafc; margin: 0; padding: 0; padding-bottom: 75px; user-select: none; }
     
     /* App Header */
     .app-bar { background: #1e293b; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 100; }
-    .app-title { font-size: 18px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
-    .status-badge { background: #166534; color: #4ade80; font-size: 11px; padding: 4px 8px; border-radius: 12px; font-weight: bold; }
+    .app-title { font-size: 17px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+    .status-badge { background: #166534; color: #4ade80; font-size: 11px; padding: 4px 8px; border-radius: 12px; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+    .live-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     
+    /* Tab Views Logic */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
     /* Balance Summary Grid */
     .balance-card { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #334155; margin: 15px; padding: 18px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
     .balance-title { color: #94a3b8; font-size: 12px; margin-bottom: 5px; }
@@ -30,10 +36,7 @@
     /* Chart Box & Selector */
     .chart-box { background: #1e293b; margin: 0 15px 15px 15px; padding: 15px; border-radius: 16px; border: 1px solid #334155; }
     .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    
-    /* Coin Selector Dropdown */
     .coin-select { background: #0f172a; color: #38bdf8; border: 1px solid #334155; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 13px; outline: none; cursor: pointer; }
-
     canvas { width: 100%; height: 180px; display: block; }
 
     /* Control Panel */
@@ -46,131 +49,235 @@
     .position-card { background: #1e293b; margin: 0 15px 10px 15px; padding: 12px 15px; border-radius: 12px; border-right: 4px solid #38bdf8; display: flex; justify-content: space-between; align-items: center; }
     .position-card.BUY { border-right-color: #4ade80; }
     .position-card.SELL { border-right-color: #f87171; }
-    
+
+    /* 20 Coins List Table */
+    .coin-item-card { background: #1e293b; margin: 0 15px 10px 15px; padding: 12px 15px; border-radius: 12px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+    .trade-now-btn { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
+
+    /* Settings UI */
+    .settings-group { background: #1e293b; margin: 0 15px 15px 15px; padding: 15px; border-radius: 12px; border: 1px solid #334155; }
+    .settings-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .settings-row:last-child { margin-bottom: 0; }
+    .settings-input { background: #0f172a; color: #38bdf8; border: 1px solid #334155; padding: 6px 10px; border-radius: 6px; width: 80px; text-align: center; font-weight: bold; }
+    .danger-btn { background: #991b1b; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+
     /* Navigation Bar */
     .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; border-top: 1px solid #334155; display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
-    .nav-item { text-align: center; color: #94a3b8; font-size: 11px; text-decoration: none; cursor: pointer; }
+    .nav-item { text-align: center; color: #94a3b8; font-size: 11px; text-decoration: none; cursor: pointer; flex: 1; }
     .nav-item.active { color: #38bdf8; font-weight: bold; }
 
     .tag { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
     .tag-buy { background: #166534; color: #4ade80; }
     .tag-sell { background: #991b1b; color: #f87171; }
+    .tag-neutral { background: #334155; color: #94a3b8; }
   </style>
 </head>
 <body>
 
   <!-- App Header -->
   <div class="app-bar">
-    <div class="app-title">⚡ SmartTrade AI (20 العملات)</div>
-    <div class="status-badge" id="botStatus">التداول الآلي: نشط</div>
-  </div>
-
-  <!-- Balance Card -->
-  <div class="balance-card">
-    <div class="balance-title">المحفظة الافتراضية</div>
-    <div class="balance-amount" id="balanceText">$10,000.00</div>
-    <div class="stats-row">
-      <div class="stat-item"><div class="stat-label">نسبة النجاح</div><div class="stat-val" id="winRateText" style="color:#4ade80">0%</div></div>
-      <div class="stat-item"><div class="stat-label">المغلقة بنجاح</div><div class="stat-val" id="winCountText">0</div></div>
-      <div class="stat-item"><div class="stat-label">إجمالي الأرباح</div><div class="stat-val" id="profitText" style="color:#38bdf8">$0.00</div></div>
+    <div class="app-title">⚡ SmartTrade AI</div>
+    <div class="status-badge" id="botStatus">
+      <span class="live-dot"></span> متصل بـ Binance
     </div>
   </div>
 
-  <!-- Live Candlestick Chart Box -->
-  <div class="chart-box">
-    <div class="chart-header">
-      <!-- 20 Coin Selector Dropdown -->
-      <select class="coin-select" id="coinSelector" onchange="changeSelectedCoin(this.value)">
-        <!-- Options populated dynamically -->
-      </select>
-      <span id="livePrice" style="font-size:16px; font-weight:bold; color:#4ade80;">$0.00</span>
+  <!-- ==================== Tab 1: التداول الرئيسي ==================== -->
+  <div id="tab-trade" class="tab-content active">
+    <!-- Balance Card -->
+    <div class="balance-card">
+      <div class="balance-title">المحفظة الافتراضية</div>
+      <div class="balance-amount" id="balanceText">$10,000.00</div>
+      <div class="stats-row">
+        <div class="stat-item"><div class="stat-label">نسبة النجاح</div><div class="stat-val" id="winRateText" style="color:#4ade80">0%</div></div>
+        <div class="stat-item"><div class="stat-label">الصفحات المغلقة</div><div class="stat-val" id="winCountText">0</div></div>
+        <div class="stat-item"><div class="stat-label">إجمالي الأرباح</div><div class="stat-val" id="profitText" style="color:#38bdf8">$0.00</div></div>
+      </div>
     </div>
-    <canvas id="tradeChart"></canvas>
-  </div>
 
-  <!-- Auto Trade Controls -->
-  <div class="controls-card">
-    <div>
-      <div style="font-size:13px; font-weight:bold;">المحرك الذكي (شرط: صفقة واحدة لكل عملة)</div>
-      <div style="font-size:11px; color:#94a3b8;">إدارة الحساب: لا تفتح صفقة ثانية حتى تقفل الأولى</div>
+    <!-- Live Candlestick Chart Box -->
+    <div class="chart-box">
+      <div class="chart-header">
+        <select class="coin-select" id="coinSelector" onchange="changeSelectedCoin(this.value)">
+          <!-- Dynamic Options -->
+        </select>
+        <span id="livePrice" style="font-size:16px; font-weight:bold; color:#4ade80;">جاري التحميل...</span>
+      </div>
+      <canvas id="tradeChart"></canvas>
     </div>
-    <button class="toggle-btn" id="toggleBtn" onclick="toggleAutoTrade()">إيقاف</button>
+
+    <!-- Auto Trade Controls -->
+    <div class="controls-card">
+      <div>
+        <div style="font-size:13px; font-weight:bold;">التداول الآلي (صفقة واحدة لكل عملة)</div>
+        <div style="font-size:11px; color:#94a3b8;">إدارة المخاطر تلقائياً</div>
+      </div>
+      <button class="toggle-btn" id="toggleBtn" onclick="toggleAutoTrade()">إيقاف</button>
+    </div>
+
+    <!-- Active Positions -->
+    <div class="section-title">المراكز المفتوحة حالياً (<span id="openCount">0</span>)</div>
+    <div id="positionsContainer">
+      <div style="text-align:center; padding: 20px; color:#64748b; font-size:12px;">مراقبة الأسعار الحية بانتظار إشارة جديدة...</div>
+    </div>
   </div>
 
-  <!-- Active Positions -->
-  <div class="section-title">المراكز المفتوحة حالياً (<span id="openCount">0</span>)</div>
-  <div id="positionsContainer">
-    <div style="text-align:center; padding: 20px; color:#64748b; font-size:12px;">جاري تحليل الاتجاهات لـ 20 عملة...</div>
+  <!-- ==================== Tab 2: شاشة التحليل و الـ 20 عملة ==================== -->
+  <div id="tab-coins" class="tab-content">
+    <div class="section-title" style="margin-top: 15px;">تحليل وتقييم الـ 20 عملة (بيانات حية)</div>
+    <div id="coinsListContainer">
+      <!-- Dynamic Coin Rows -->
+    </div>
   </div>
 
-  <!-- Navigation -->
+  <!-- ==================== Tab 3: شاشة الإعدادات ==================== -->
+  <div id="tab-settings" class="tab-content">
+    <div class="section-title" style="margin-top: 15px;">إعدادات التداول وإدارة المخاطر</div>
+    
+    <div class="settings-group">
+      <div class="settings-row">
+        <span style="font-size: 13px;">المخاطرة لكل صفقة (%)</span>
+        <input type="number" id="settingRisk" class="settings-input" value="2" min="1" max="10">
+      </div>
+      <div class="settings-row">
+        <span style="font-size: 13px;">هدف الربح Take Profit (%)</span>
+        <input type="number" id="settingTP" class="settings-input" value="1.2" step="0.1">
+      </div>
+      <div class="settings-row">
+        <span style="font-size: 13px;">وقف الخسارة Stop Loss (%)</span>
+        <input type="number" id="settingSL" class="settings-input" value="0.6" step="0.1">
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">إعادة ضبط الحساب</div>
+      <div style="font-size: 11px; color: #94a3b8;">إعادة الرصيد الافتراضي إلى $10,000 وإغلاق الصفقات الحالية.</div>
+      <button class="danger-btn" onclick="resetAccountBalance()">إعادة ضبط الرصيد ($10,000)</button>
+    </div>
+  </div>
+
+  <!-- Navigation Bar -->
   <div class="nav-bar">
-    <div class="nav-item active">📈 التداول</div>
-    <div class="nav-item">📊 العملات (20)</div>
-    <div class="nav-item">⚙️ إعدادات</div>
+    <div class="nav-item active" id="nav-trade" onclick="switchTab('trade')">📈 أسعار حية</div>
+    <div class="nav-item" id="nav-coins" onclick="switchTab('coins')">📊 20 عملة</div>
+    <div class="nav-item" id="nav-settings" onclick="switchTab('settings')">⚙️ إعدادات</div>
   </div>
 
   <script>
     // ============================================================
-    // 1. قائمة الـ 20 عملة رقمية
+    // 1. التنقل بين الشاشات (Tab Switching)
+    // ============================================================
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+      document.getElementById('tab-' + tabId).classList.add('active');
+      document.getElementById('nav-' + tabId).classList.add('active');
+
+      if (tabId === 'coins') {
+        renderCoinsListUI();
+      }
+    }
+
+    // ============================================================
+    // 2. قائمة الـ 20 عملة الرقمية
     // ============================================================
     const COIN_LIST = [
-      { symbol: 'BTC/USDT', price: 65000, step: 35 },
-      { symbol: 'ETH/USDT', price: 3500, step: 4 },
-      { symbol: 'BNB/USDT', price: 580, step: 0.8 },
-      { symbol: 'SOL/USDT', price: 145, step: 0.4 },
-      { symbol: 'XRP/USDT', price: 0.55, step: 0.002 },
-      { symbol: 'ADA/USDT', price: 0.38, step: 0.001 },
-      { symbol: 'DOGE/USDT', price: 0.12, step: 0.0005 },
-      { symbol: 'AVAX/USDT', price: 24, step: 0.1 },
-      { symbol: 'DOT/USDT', price: 4.8, step: 0.02 },
-      { symbol: 'LINK/USDT', price: 11.5, step: 0.05 },
-      { symbol: 'MATIC/USDT', price: 0.42, step: 0.002 },
-      { symbol: 'NEAR/USDT', price: 4.2, step: 0.02 },
-      { symbol: 'LTC/USDT', price: 65, step: 0.2 },
-      { symbol: 'ATOM/USDT', price: 4.5, step: 0.02 },
-      { symbol: 'UNI/USDT', price: 6.2, step: 0.03 },
-      { symbol: 'APT/USDT', price: 6.8, step: 0.03 },
-      { symbol: 'ARB/USDT', price: 0.52, step: 0.002 },
-      { symbol: 'OP/USDT', price: 1.4, step: 0.008 },
-      { symbol: 'SUI/USDT', price: 0.92, step: 0.005 },
-      { symbol: 'FTM/USDT', price: 0.40, step: 0.002 }
+      { symbol: 'BTCUSDT', name: 'BTC/USDT' },
+      { symbol: 'ETHUSDT', name: 'ETH/USDT' },
+      { symbol: 'BNBUSDT', name: 'BNB/USDT' },
+      { symbol: 'SOLUSDT', name: 'SOL/USDT' },
+      { symbol: 'XRPUSDT', name: 'XRP/USDT' },
+      { symbol: 'ADAUSDT', name: 'ADA/USDT' },
+      { symbol: 'DOGEUSDT', name: 'DOGE/USDT' },
+      { symbol: 'AVAXUSDT', name: 'AVAX/USDT' },
+      { symbol: 'DOTUSDT', name: 'DOT/USDT' },
+      { symbol: 'LINKUSDT', name: 'LINK/USDT' },
+      { symbol: 'NEARUSDT', name: 'NEAR/USDT' },
+      { symbol: 'LTCUSDT', name: 'LTC/USDT' },
+      { symbol: 'ATOMUSDT', name: 'ATOM/USDT' },
+      { symbol: 'UNIUSDT', name: 'UNI/USDT' },
+      { symbol: 'APTUSDT', name: 'APT/USDT' },
+      { symbol: 'ARBUSDT', name: 'ARB/USDT' },
+      { symbol: 'OPUSDT', name: 'OP/USDT' },
+      { symbol: 'SUIUSDT', name: 'SUI/USDT' },
+      { symbol: 'FTMUSDT', name: 'FTM/USDT' },
+      { symbol: 'PEPEUSDT', name: 'PEPE/USDT' }
     ];
 
-    // تهيئة مصفوفات الشموع لكل عملة
     let coinsData = {};
     COIN_LIST.forEach(c => {
       coinsData[c.symbol] = {
         symbol: c.symbol,
-        price: c.price,
-        step: c.step,
-        candles: Array.from({length: 30}, () => ({ close: c.price + (Math.random() - 0.5) * c.step * 10 }))
+        name: c.name,
+        price: 0,
+        candles: []
       };
     });
 
-    let selectedCoin = 'BTC/USDT';
+    let selectedSymbol = 'BTCUSDT';
 
-    // تعبئة قائمة خيارات العملات في الواجهة
     const selector = document.getElementById('coinSelector');
     COIN_LIST.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.symbol;
-      opt.innerText = c.symbol;
+      opt.innerText = c.name;
       selector.appendChild(opt);
     });
 
     function changeSelectedCoin(symbol) {
-      selectedCoin = symbol;
-      drawChart();
+      selectedSymbol = symbol;
+      document.getElementById('coinSelector').value = symbol;
+      fetchRealHistoricalCandles(symbol);
     }
 
+    async function fetchRealHistoricalCandles(symbol) {
+      try {
+        const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1m&limit=30`);
+        const data = await res.json();
+        coinsData[symbol].candles = data.map(k => ({ close: parseFloat(k[4]) }));
+        if (coinsData[symbol].candles.length > 0) {
+          coinsData[symbol].price = coinsData[symbol].candles[coinsData[symbol].candles.length - 1].close;
+        }
+        drawChart();
+      } catch (err) {}
+    }
+
+    COIN_LIST.forEach(c => fetchRealHistoricalCandles(c.symbol));
+
     // ============================================================
-    // 2. محرك التداول المطور
+    // 3. الاتصال بسيرفر Binance WebSocket
+    // ============================================================
+    function connectBinanceWebSocket() {
+      const ws = new WebSocket('wss://stream.binance.com:9443/ws/!miniTicker@arr');
+
+      ws.onmessage = (event) => {
+        const tickers = JSON.parse(event.data);
+        tickers.forEach(t => {
+          if (coinsData[t.s]) {
+            const newPrice = parseFloat(t.c);
+            coinsData[t.s].price = newPrice;
+            if (coinsData[t.s].candles.length > 0) {
+              coinsData[t.s].candles.push({ close: newPrice });
+              if (coinsData[t.s].candles.length > 35) coinsData[t.s].candles.shift();
+            }
+          }
+        });
+        processTradingLogic();
+      };
+
+      ws.onerror = () => setTimeout(connectBinanceWebSocket, 3000);
+      ws.onclose = () => setTimeout(connectBinanceWebSocket, 3000);
+    }
+
+    connectBinanceWebSocket();
+
+    // ============================================================
+    // 4. المحرك الذكي وإدارة الصفقات
     // ============================================================
     class SmartTrendEngine {
       analyze(candles) {
         if (candles.length < 15) return { signal: 'NEUTRAL', confidence: 0 };
-        
         const closes = candles.slice(-15).map(c => c.close);
         const lastPrice = closes[closes.length - 1];
         const prevPrice = closes[closes.length - 2];
@@ -178,20 +285,20 @@
         const maxPrice = Math.max(...closes);
 
         let signal = 'NEUTRAL';
-        let confidence = 55 + Math.random() * 40;
+        let confidence = 60 + Math.random() * 35;
 
-        if (lastPrice <= minPrice * 1.0008 && lastPrice > prevPrice) {
-          signal = 'STRONG_BUY';
-        } else if (lastPrice >= maxPrice * 0.9992 && lastPrice < prevPrice) {
-          signal = 'STRONG_SELL';
-        }
+        if (lastPrice <= minPrice * 1.0003 && lastPrice > prevPrice) signal = 'STRONG_BUY';
+        else if (lastPrice >= maxPrice * 0.9997 && lastPrice < prevPrice) signal = 'STRONG_SELL';
+
+        const tpPercent = parseFloat(document.getElementById('settingTP').value) / 100 || 0.012;
+        const slPercent = parseFloat(document.getElementById('settingSL').value) / 100 || 0.006;
 
         return {
           signal,
           confidence,
           entryPrice: lastPrice,
-          stopLoss: signal === 'STRONG_BUY' ? lastPrice * 0.994 : lastPrice * 1.006,
-          takeProfit: signal === 'STRONG_BUY' ? lastPrice * 1.012 : lastPrice * 0.988
+          stopLoss: signal === 'STRONG_BUY' ? lastPrice * (1 - slPercent) : lastPrice * (1 + slPercent),
+          takeProfit: signal === 'STRONG_BUY' ? lastPrice * (1 + tpPercent) : lastPrice * (1 - tpPercent)
         };
       }
     }
@@ -211,77 +318,73 @@
       if (isAutoTrade) {
         btn.innerText = 'إيقاف';
         btn.classList.remove('off');
-        badge.innerText = 'التداول الآلي: نشط';
-        badge.style.background = '#166534';
+        badge.innerHTML = `<span class="live-dot"></span> متصل بـ Binance`;
       } else {
         btn.innerText = 'تشغيل';
         btn.classList.add('off');
-        badge.innerText = 'التداول الآلي: متوقف';
-        badge.style.background = '#991b1b';
+        badge.innerHTML = `التداول الآلي: متوقف`;
       }
     }
 
-    // ============================================================
-    // 3. الحلقة الأساسية لتحديث الـ 20 عملة مع إغلاق الصفحات
-    // ============================================================
-    function updateApp() {
-      // 1. تحديث الأسعار لجميع الـ 20 عملة
-      COIN_LIST.forEach(c => {
-        const coin = coinsData[c.symbol];
-        const change = (Math.random() - 0.49) * coin.step;
-        const newPrice = coin.price + change;
-        coin.price = newPrice;
-        coin.candles.push({ close: newPrice });
-        coin.candles.shift();
-      });
+    function resetAccountBalance() {
+      balance = 10000;
+      totalProfit = 0;
+      wins = 0;
+      totalClosed = 0;
+      activePositions = [];
+      updateStatsUI();
+      renderPositionsUI();
+      alert('تم إعادة ضبط الرصيد بنجاح إلى $10,000!');
+    }
 
-      // تحديث السعر الظاهر على الشاشة للعملة المختارة حالياً
-      const currentCoinData = coinsData[selectedCoin];
-      document.getElementById('livePrice').innerText = '$' + currentCoinData.price.toFixed(currentCoinData.price < 1 ? 4 : 2);
+    function processTradingLogic() {
+      const currentCoin = coinsData[selectedSymbol];
+      if (currentCoin && currentCoin.price > 0) {
+        document.getElementById('livePrice').innerText = '$' + currentCoin.price.toFixed(currentCoin.price < 1 ? 5 : 2);
+        drawChart();
+      }
 
-      drawChart();
-
-      // 2. فحص الصفقات المفتوحة وإغلاقها عند ضرب الهدف أو الاستوب
+      // إغلاق الصفقات عند ضرب TP أو SL
       activePositions = activePositions.filter(p => {
-        const currentCoinPrice = coinsData[p.symbol].price;
-        const isTP = p.type === 'BUY' ? currentCoinPrice >= p.takeProfit : currentCoinPrice <= p.takeProfit;
-        const isSL = p.type === 'BUY' ? currentCoinPrice <= p.stopLoss : currentCoinPrice >= p.stopLoss;
+        const livePrice = coinsData[p.symbol].price;
+        if (!livePrice) return true;
+
+        const isTP = p.type === 'BUY' ? livePrice >= p.takeProfit : livePrice <= p.takeProfit;
+        const isSL = p.type === 'BUY' ? livePrice <= p.stopLoss : livePrice >= p.stopLoss;
 
         if (isTP || isSL) {
-          const profit = p.type === 'BUY' 
-            ? ((currentCoinPrice - p.entryPrice) / p.entryPrice) * 100 * 5
-            : ((p.entryPrice - currentCoinPrice) / p.entryPrice) * 100 * 5;
+          const profitPercent = p.type === 'BUY' 
+            ? ((livePrice - p.entryPrice) / p.entryPrice) * 100
+            : ((p.entryPrice - livePrice) / p.entryPrice) * 100;
 
+          const profit = (profitPercent / 100) * 1000;
           balance += profit;
           totalProfit += profit;
           totalClosed++;
           if (profit > 0) wins++;
 
           updateStatsUI();
-          return false; // حذف الصفقة من المراكز المفتوحة (تقفل الصفقة)
+          return false;
         }
-        return true; // إبقاء الصفقة مفتوحة
+        return true;
       });
 
-      // 3. تحليل الـ 20 عملة وفتح صفقات جديدة بشرط مهم:
-      // 🔥 الشرط الحاسمي: التأكد التام أن هذه العملة ليس لها أي صفقة مفتوحة إطلاقاً 🔥
+      // فتح صفقات (صفقة واحدة حصرية لكل عملة)
       if (isAutoTrade) {
         COIN_LIST.forEach(c => {
           const coin = coinsData[c.symbol];
+          if (!coin || coin.candles.length < 15) return;
 
-          // الفحص: هل يوجد صفقة حالية لهذه العملة تحديداً؟
-          const hasExistingPositionForThisSymbol = activePositions.some(p => p.symbol === c.symbol);
+          const hasTrade = activePositions.some(p => p.symbol === c.symbol);
 
-          // إذا كانت توجد صفقة مفتوحة لهذه العملة، يتجاوزها فوراً ولا يفتح صفقة ثانية
-          if (!hasExistingPositionForThisSymbol) {
+          if (!hasTrade) {
             const analysis = engine.analyze(coin.candles);
-
-            if (analysis.confidence > 75 && (analysis.signal === 'STRONG_BUY' || analysis.signal === 'STRONG_SELL')) {
-              const type = analysis.signal === 'STRONG_BUY' ? 'BUY' : 'SELL';
+            if (analysis.confidence > 80 && (analysis.signal === 'STRONG_BUY' || analysis.signal === 'STRONG_SELL')) {
               activePositions.push({
                 id: Date.now() + Math.random(),
                 symbol: c.symbol,
-                type,
+                name: c.name,
+                type: analysis.signal === 'STRONG_BUY' ? 'BUY' : 'SELL',
                 entryPrice: coin.price,
                 stopLoss: analysis.stopLoss,
                 takeProfit: analysis.takeProfit,
@@ -293,6 +396,9 @@
       }
 
       renderPositionsUI();
+      if (document.getElementById('tab-coins').classList.contains('active')) {
+        renderCoinsListUI();
+      }
     }
 
     function updateStatsUI() {
@@ -309,7 +415,7 @@
       document.getElementById('openCount').innerText = activePositions.length;
 
       if (activePositions.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 20px; color:#64748b; font-size:12px;">جاري تحليل 20 عملة بانتظار إشارة جديدة...</div>`;
+        container.innerHTML = `<div style="text-align:center; padding: 20px; color:#64748b; font-size:12px;">مراقبة أسعار 20 عملة حية بانتظار إشارة جديدة...</div>`;
         return;
       }
 
@@ -317,25 +423,55 @@
         <div class="position-card ${p.type}">
           <div>
             <span class="tag ${p.type === 'BUY' ? 'tag-buy' : 'tag-sell'}">${p.type}</span>
-            <span style="font-weight:bold; font-size:13px; margin-right:5px;">${p.symbol}</span>
-            <div style="font-size:11px; color:#94a3b8; margin-top:3px;">الدخول: $${p.entryPrice.toFixed(p.entryPrice < 1 ? 4 : 2)}</div>
+            <span style="font-weight:bold; font-size:13px; margin-right:5px;">${p.name}</span>
+            <div style="font-size:11px; color:#94a3b8; margin-top:3px;">الدخول: $${p.entryPrice.toFixed(p.entryPrice < 1 ? 5 : 2)}</div>
           </div>
           <div style="text-align:left;">
-            <div style="font-size:11px; color:#4ade80;">الهدف: $${p.takeProfit.toFixed(p.takeProfit < 1 ? 4 : 2)}</div>
-            <div style="font-size:11px; color:#f87171;">الاستوب: $${p.stopLoss.toFixed(p.stopLoss < 1 ? 4 : 2)}</div>
+            <div style="font-size:11px; color:#4ade80;">الهدف: $${p.takeProfit.toFixed(p.takeProfit < 1 ? 5 : 2)}</div>
+            <div style="font-size:11px; color:#f87171;">الاستوب: $${p.stopLoss.toFixed(p.stopLoss < 1 ? 5 : 2)}</div>
           </div>
         </div>
       `).join('');
     }
 
-    // رسم الرسم البياني للعملة المحددة
+    // عرض شاشة الـ 20 عملة ببيانات مباشرة
+    function renderCoinsListUI() {
+      const container = document.getElementById('coinsListContainer');
+      container.innerHTML = COIN_LIST.map(c => {
+        const coin = coinsData[c.symbol];
+        const analysis = engine.analyze(coin.candles);
+        const price = coin.price ? '$' + coin.price.toFixed(coin.price < 1 ? 5 : 2) : 'جاري التحميل...';
+        
+        let tagClass = 'tag-neutral';
+        let signalText = 'محايد';
+        if (analysis.signal === 'STRONG_BUY') { tagClass = 'tag-buy'; signalText = 'شراء قائل'; }
+        else if (analysis.signal === 'STRONG_SELL') { tagClass = 'tag-sell'; signalText = 'بيع قوي'; }
+
+        return `
+          <div class="coin-item-card">
+            <div>
+              <div style="font-weight:bold; font-size:14px;">${c.name}</div>
+              <div style="font-size:12px; color:#38bdf8; margin-top:2px;">${price}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="tag ${tagClass}">${signalText}</span>
+              <button class="trade-now-btn" onclick="changeSelectedCoin('${c.symbol}'); switchTab('trade');">الشارت</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // رسم الرسم البياني
     function drawChart() {
       const canvas = document.getElementById('tradeChart');
       const ctx = canvas.getContext('2d');
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
 
-      const currentCandles = coinsData[selectedCoin].candles;
+      const currentCandles = coinsData[selectedSymbol]?.candles || [];
+      if (currentCandles.length === 0) return;
+
       const closes = currentCandles.map(c => c.close);
       const min = Math.min(...closes);
       const max = Math.max(...closes);
@@ -355,10 +491,6 @@
       ctx.stroke();
     }
 
-    // تشغيل تحديث الأسعار والمحرك كل 1.2 ثانية
-    setInterval(updateApp, 1200);
-
-    // تسجيل ServiceWorker تلقائياً للعمل PWA
     if ('serviceWorker' in navigator) {
       const swCode = `self.addEventListener('fetch', function(e) {});`;
       const blob = new Blob([swCode], { type: 'application/javascript' });
@@ -366,4 +498,4 @@
     }
   </script>
 </body>
-</html>
+  </html>
