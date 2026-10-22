@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080d18">
-<title>Adaptive Futures PRO</title>
+
+<title>Adaptive Futures PRO v3</title>
 
 <style>
 :root{
@@ -19,13 +20,16 @@
 --blue:#398cff;
 --yellow:#ffc857;
 }
+
 *{box-sizing:border-box}
+
 body{
 margin:0;
 background:var(--bg);
 color:var(--text);
 font-family:Tahoma,Arial,sans-serif;
 }
+
 header{
 padding:17px;
 background:var(--panel);
@@ -36,13 +40,24 @@ align-items:center;
 flex-wrap:wrap;
 gap:10px;
 }
+
 .logo{
 font-size:21px;
 font-weight:bold;
 color:var(--blue);
 }
-.small{font-size:12px;color:var(--muted)}
-.container{max-width:1500px;margin:auto;padding:15px}
+
+.small{
+font-size:12px;
+color:var(--muted);
+}
+
+.container{
+max-width:1550px;
+margin:auto;
+padding:15px;
+}
+
 .panel{
 background:var(--panel);
 border:1px solid var(--border);
@@ -50,12 +65,14 @@ border-radius:13px;
 padding:16px;
 margin-bottom:15px;
 }
+
 .controls{
 display:flex;
 gap:10px;
 flex-wrap:wrap;
 align-items:center;
 }
+
 select,button,input{
 background:var(--panel2);
 color:white;
@@ -64,52 +81,69 @@ border-radius:8px;
 padding:11px;
 font-size:14px;
 }
-button{cursor:pointer}
-button:hover{border-color:var(--blue)}
-.primary{background:var(--blue);border:0}
+
+input{
+width:115px;
+}
+
+button{
+cursor:pointer;
+}
+
+button:hover{
+border-color:var(--blue);
+}
+
+.primary{
+background:var(--blue);
+border:0;
+}
+
+.danger{
+background:#92283b;
+border:0;
+}
+
+.success{
+background:#087e61;
+border:0;
+}
+
 .grid{
 display:grid;
 grid-template-columns:repeat(4,1fr);
 gap:12px;
 margin-bottom:15px;
 }
+
 .card{
 background:var(--panel);
 border:1px solid var(--border);
 border-radius:12px;
 padding:17px;
 }
-.card .value{font-size:23px;font-weight:bold;margin-top:10px}
+
+.card .value{
+font-size:23px;
+font-weight:bold;
+margin-top:10px;
+}
+
 .green{color:var(--green)}
 .red{color:var(--red)}
 .yellow{color:var(--yellow)}
 .blue{color:var(--blue)}
-h3{margin:0 0 15px}
-.chartwrap{
-position:relative;
-height:440px;
-width:100%;
+
+h3{
+margin:0 0 15px;
 }
-canvas{width:100%;height:100%;display:block}
-.legend{
-display:flex;
-gap:16px;
-flex-wrap:wrap;
-font-size:12px;
-margin-top:10px;
-}
-.dot{
-display:inline-block;
-width:9px;
-height:9px;
-border-radius:50%;
-margin-left:5px;
-}
+
 .two{
 display:grid;
 grid-template-columns:1fr 1fr;
 gap:15px;
 }
+
 .row{
 display:flex;
 justify-content:space-between;
@@ -117,7 +151,11 @@ padding:11px 0;
 border-bottom:1px solid var(--border);
 gap:10px;
 }
-.row:last-child{border:0}
+
+.row:last-child{
+border:0;
+}
+
 .badge{
 display:inline-block;
 padding:7px 13px;
@@ -125,6 +163,7 @@ border-radius:8px;
 background:var(--panel2);
 font-weight:bold;
 }
+
 .bar{
 height:9px;
 background:#26344b;
@@ -132,47 +171,139 @@ border-radius:20px;
 overflow:hidden;
 margin-top:10px;
 }
+
 .fill{
 height:100%;
 background:var(--blue);
 width:0%;
-transition:width .3s;
 }
+
 table{
 width:100%;
 border-collapse:collapse;
 font-size:13px;
 }
+
 th,td{
 padding:12px 8px;
 border-bottom:1px solid var(--border);
 text-align:right;
+white-space:nowrap;
 }
-.tablewrap{overflow-x:auto}
+
+.tablewrap{
+overflow-x:auto;
+}
+
 .status{
 padding:10px 15px;
 border-radius:8px;
 background:#172238;
 font-size:12px;
 }
+
+.chartwrap{
+height:380px;
+position:relative;
+}
+
+canvas{
+width:100%;
+height:100%;
+display:block;
+}
+
+.coin-grid{
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:8px;
+}
+
+.coin{
+background:var(--panel2);
+border:1px solid var(--border);
+padding:12px;
+border-radius:9px;
+cursor:pointer;
+}
+
+.coin:hover{
+border-color:var(--blue);
+}
+
+.coin-name{
+font-weight:bold;
+font-size:13px;
+}
+
+.coin-price{
+font-size:12px;
+color:var(--muted);
+margin-top:6px;
+}
+
+.log{
+height:230px;
+overflow-y:auto;
+background:#090f1c;
+border:1px solid var(--border);
+border-radius:8px;
+padding:12px;
+font-family:monospace;
+font-size:12px;
+direction:ltr;
+text-align:left;
+}
+
+.log div{
+padding:4px 0;
+border-bottom:1px solid #1b2739;
+}
+
 footer{
 text-align:center;
 padding:25px;
 color:var(--muted);
 font-size:12px;
 }
-@media(max-width:850px){
-.grid{grid-template-columns:repeat(2,1fr)}
-.two{grid-template-columns:1fr}
-.chartwrap{height:330px}
-.card .value{font-size:19px}
+
+@media(max-width:1000px){
+.coin-grid{
+grid-template-columns:repeat(4,1fr);
 }
-@media(max-width:420px){
-.container{padding:9px}
-.panel,.card{padding:12px}
-.grid{gap:8px}
-select,button{font-size:12px;padding:10px}
-.logo{font-size:18px}
+}
+
+@media(max-width:850px){
+.grid{
+grid-template-columns:repeat(2,1fr);
+}
+.two{
+grid-template-columns:1fr;
+}
+.coin-grid{
+grid-template-columns:repeat(3,1fr);
+}
+}
+
+@media(max-width:480px){
+.container{
+padding:9px;
+}
+.panel,.card{
+padding:12px;
+}
+.coin-grid{
+grid-template-columns:repeat(2,1fr);
+}
+.card .value{
+font-size:18px;
+}
+.logo{
+font-size:17px;
+}
+.chartwrap{
+height:300px;
+}
 }
 </style>
 </head>
@@ -181,30 +312,90 @@ select,button{font-size:12px;padding:10px}
 
 <header>
 <div>
-<div class="logo">⚡ ADAPTIVE FUTURES PRO</div>
-<div class="small">Adaptive Crypto Trading Intelligence</div>
+<div class="logo">⚡ ADAPTIVE FUTURES PRO v3</div>
+<div class="small">40 Coins — Automated Paper Trading</div>
 </div>
-<div id="connection" class="status">جاري الاتصال بالسوق...</div>
+
+<div id="connection" class="status">
+جاري الاتصال بالسوق...
+</div>
 </header>
 
 <div class="container">
 
 <div class="panel">
+
+<h3>🤖 التحكم في التداول الآلي</h3>
+
 <div class="controls">
 
-<select id="symbol">
-<option value="BTCUSDT">BTC / USDT</option>
-<option value="ETHUSDT">ETH / USDT</option>
-<option value="SOLUSDT">SOL / USDT</option>
-<option value="BNBUSDT">BNB / USDT</option>
-<option value="XRPUSDT">XRP / USDT</option>
-<option value="DOGEUSDT">DOGE / USDT</option>
-<option value="ADAUSDT">ADA / USDT</option>
-<option value="AVAXUSDT">AVAX / USDT</option>
-<option value="LINKUSDT">LINK / USDT</option>
-<option value="LTCUSDT">LTC / USDT</option>
-</select>
+<button id="startBtn" class="success" onclick="startBot()">
+▶ تشغيل التداول الآلي
+</button>
 
+<button id="stopBtn" class="danger" onclick="stopBot()">
+■ إيقاف التداول الآلي
+</button>
+
+<button onclick="scanMarket()" class="primary">
+🔍 فحص السوق الآن
+</button>
+
+<button onclick="resetAccount()">
+♻ إعادة ضبط الحساب
+</button>
+
+</div>
+
+<div class="row">
+<span>حالة المحرك</span>
+<strong id="botStatus" class="red">متوقف</strong>
+</div>
+
+<div class="row">
+<span>آخر فحص</span>
+<strong id="lastScan">--</strong>
+</div>
+
+<div class="row">
+<span>عدد العملات</span>
+<strong>40 عملة</strong>
+</div>
+
+</div>
+
+<div class="grid">
+
+<div class="card">
+<div class="small">الرصيد التجريبي</div>
+<div class="value blue" id="balance">10,000.00 USDT</div>
+</div>
+
+<div class="card">
+<div class="small">صافي الأرباح والخسائر</div>
+<div class="value" id="totalPnL">0.00 USDT</div>
+</div>
+
+<div class="card">
+<div class="small">الصفقات المفتوحة</div>
+<div class="value yellow" id="openCount">0</div>
+</div>
+
+<div class="card">
+<div class="small">نسبة النجاح</div>
+<div class="value green" id="winRate">0%</div>
+</div>
+
+</div>
+
+<div class="panel">
+
+<h3>⚙️ إعدادات المحرك</h3>
+
+<div class="controls">
+
+<label>
+<div class="small">الفريم الزمني</div>
 <select id="timeframe">
 <option value="1m">1 دقيقة</option>
 <option value="3m">3 دقائق</option>
@@ -213,145 +404,127 @@ select,button{font-size:12px;padding:10px}
 <option value="30m">30 دقيقة</option>
 <option value="1h">1 ساعة</option>
 <option value="4h">4 ساعات</option>
-<option value="1d">يومي</option>
 </select>
+</label>
 
+<label>
+<div class="small">نمط التداول</div>
 <select id="mode">
 <option value="Conservative">محافظ A</option>
 <option value="Balanced" selected>متوازن B</option>
 <option value="Aggressive">هجومي C</option>
 </select>
+</label>
 
-<button class="primary" onclick="loadData()">🔄 تحديث السوق</button>
+<label>
+<div class="small">المخاطرة لكل صفقة %</div>
+<input id="riskPercent" type="number" value="1" min="0.1" max="5" step="0.1">
+</label>
+
+<label>
+<div class="small">أقصى صفقات مفتوحة</div>
+<input id="maxPositions" type="number" value="3" min="1" max="10">
+</label>
+
+<label>
+<div class="small">مضاعف ATR للوقف</div>
+<input id="stopMult" type="number" value="1.8" min="0.5" max="10" step="0.1">
+</label>
+
+<label>
+<div class="small">نسبة الهدف RR</div>
+<input id="takeProfitRR" type="number" value="2" min="0.5" max="10" step="0.1">
+</label>
+
+<label>
+<div class="small">الرافعة الافتراضية</div>
+<select id="leverage">
+<option value="1">1x</option>
+<option value="2">2x</option>
+<option value="3">3x</option>
+<option value="5" selected>5x</option>
+<option value="10">10x</option>
+</select>
+</label>
+
+<button class="primary" onclick="saveSettings()">
+💾 حفظ الإعدادات
+</button>
 
 </div>
-</div>
 
-<div class="grid">
-
-<div class="card">
-<div class="small">السعر الحالي</div>
-<div class="value blue" id="price">--</div>
-<div class="small" id="symbolLabel">BTCUSDT</div>
-</div>
-
-<div class="card">
-<div class="small">اتجاه السوق</div>
-<div class="value" id="trend">--</div>
-<div class="small" id="regime">تحليل السوق</div>
-</div>
-
-<div class="card">
-<div class="small">إشارة التداول</div>
-<div class="value" id="signal">--</div>
-<div class="small" id="signalTime">بانتظار البيانات</div>
-</div>
-
-<div class="card">
-<div class="small">قوة الإشارة</div>
-<div class="value yellow" id="confidence">--</div>
-<div class="bar"><div class="fill" id="confidenceBar"></div></div>
-</div>
+<p class="small">
+المخاطرة تحسب من المسافة بين الدخول ووقف الخسارة.
+الرافعة الافتراضية تحدد الحد الأقصى للتعرض، ولا تضاعف الربح تلقائياً.
+</p>
 
 </div>
 
 <div class="panel">
-<h3>📊 الشارت والتحليل الفني</h3>
 
-<div class="chartwrap">
-<canvas id="chart"></canvas>
-</div>
+<h3>🌍 مراقبة 40 عملة رقمية</h3>
 
-<div class="legend">
-<span><i class="dot" style="background:#ffb347"></i>KAMA</span>
-<span><i class="dot" style="background:#00d5ff"></i>VIDYA</span>
-<span><i class="dot" style="background:#b87cff"></i>SuperTrend</span>
-<span><i class="dot" style="background:#00d49a"></i>BUY</span>
-<span><i class="dot" style="background:#ff536b"></i>SELL</span>
-</div>
+<div class="coin-grid" id="coinGrid"></div>
+
 </div>
 
 <div class="two">
 
 <div class="panel">
-<h3>🎯 مستويات الصفقة المقترحة</h3>
 
-<div class="row">
-<span>نوع الصفقة</span>
-<strong id="tradeType">--</strong>
+<h3>📊 الشارت المباشر</h3>
+
+<div class="controls" style="margin-bottom:12px">
+<select id="chartSymbol"></select>
+<button onclick="loadChart()">تحديث الشارت</button>
+</div>
+
+<div class="chartwrap">
+<canvas id="chart"></canvas>
 </div>
 
 <div class="row">
-<span>سعر الدخول</span>
-<strong id="entry">--</strong>
+<span>السعر</span>
+<strong id="chartPrice">--</strong>
 </div>
 
 <div class="row">
-<span>وقف الخسارة SL</span>
-<strong class="red" id="sl">--</strong>
+<span>الاتجاه</span>
+<strong id="chartTrend">--</strong>
 </div>
 
 <div class="row">
-<span>الهدف الأول TP1</span>
-<strong class="yellow" id="tp1">--</strong>
+<span>قوة LONG</span>
+<strong class="green" id="longScore">--</strong>
 </div>
 
 <div class="row">
-<span>الهدف الثاني TP2</span>
-<strong class="green" id="tp2">--</strong>
+<span>قوة SHORT</span>
+<strong class="red" id="shortScore">--</strong>
 </div>
 
-<div class="row">
-<span>الهدف الثالث TP3</span>
-<strong class="green" id="tp3">--</strong>
-</div>
-
-<div class="small" style="margin-top:12px">
-المستويات المعروضة تحليلية وليست أوامر منفذة.
-</div>
 </div>
 
 <div class="panel">
-<h3>🧠 محرك المؤشرات التكيفية</h3>
 
-<div class="row">
-<span>Efficiency Ratio</span>
-<strong id="er">--</strong>
-</div>
+<h3>🎯 أفضل فرص السوق</h3>
 
-<div class="row">
-<span>ATR</span>
-<strong id="atr">--</strong>
-</div>
-
-<div class="row">
-<span>ATR Percentile</span>
-<strong id="atrRank">--</strong>
-</div>
-
-<div class="row">
-<span>KAMA</span>
-<strong id="kama">--</strong>
-</div>
-
-<div class="row">
-<span>VIDYA</span>
-<strong id="vidya">--</strong>
-</div>
-
-<div class="row">
-<span>SuperTrend</span>
-<strong id="st">--</strong>
-</div>
-
-<div class="row">
-<span>حالة التذبذب</span>
-<strong id="volatility">--</strong>
-</div>
-
-<div class="row">
-<span>الفريم الأعلى</span>
-<strong id="htf">--</strong>
+<div class="tablewrap">
+<table>
+<thead>
+<tr>
+<th>العملة</th>
+<th>الإشارة</th>
+<th>القوة</th>
+<th>الدخول</th>
+<th>الهدف</th>
+<th>الوقف</th>
+</tr>
+</thead>
+<tbody id="opportunities">
+<tr><td colspan="6">بانتظار فحص السوق...</td></tr>
+</tbody>
+</table>
 </div>
 
 </div>
@@ -360,28 +533,55 @@ select,button{font-size:12px;padding:10px}
 
 <div class="panel">
 
-<h3>📈 الاختبار التاريخي المبسط</h3>
+<h3>🟢 الصفقات المفتوحة</h3>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr>
+<th>العملة</th>
+<th>النوع</th>
+<th>الدخول</th>
+<th>السعر الحالي</th>
+<th>الهدف TP</th>
+<th>الوقف SL</th>
+<th>الحجم USDT</th>
+<th>الربح/الخسارة</th>
+<th>إجراء</th>
+</tr>
+</thead>
+<tbody id="openTrades">
+<tr><td colspan="9">لا توجد صفقات مفتوحة.</td></tr>
+</tbody>
+</table>
+</div>
+
+</div>
+
+<div class="panel">
+
+<h3>📜 سجل الصفقات المغلقة</h3>
 
 <div class="grid">
 
 <div class="card">
-<div class="small">عدد الصفقات المغلقة</div>
+<div class="small">إجمالي الصفقات</div>
 <div class="value" id="totalTrades">0</div>
 </div>
 
 <div class="card">
-<div class="small">نسبة الصفقات الرابحة</div>
-<div class="value green" id="winRate">0%</div>
+<div class="small">الصفقات الرابحة</div>
+<div class="value green" id="wins">0</div>
 </div>
 
 <div class="card">
-<div class="small">صافي النتائج بوحدة R</div>
-<div class="value" id="netR">0</div>
+<div class="small">الصفقات الخاسرة</div>
+<div class="value red" id="losses">0</div>
 </div>
 
 <div class="card">
-<div class="small">أكبر تراجع بوحدة R</div>
-<div class="value red" id="drawdown">0</div>
+<div class="small">أكبر تراجع</div>
+<div class="value red" id="maxDrawdown">0%</div>
 </div>
 
 </div>
@@ -391,178 +591,371 @@ select,button{font-size:12px;padding:10px}
 <thead>
 <tr>
 <th>التاريخ</th>
+<th>العملة</th>
 <th>النوع</th>
 <th>الدخول</th>
 <th>الخروج</th>
+<th>السبب</th>
 <th>النتيجة</th>
 </tr>
 </thead>
-<tbody id="history">
-<tr><td colspan="5">بانتظار تحليل البيانات...</td></tr>
+<tbody id="closedTrades">
+<tr><td colspan="7">لا توجد صفقات مغلقة.</td></tr>
 </tbody>
 </table>
 </div>
-
-<p class="small">
-الاختبار يستخدم شموعاً تاريخية محدودة ويفترض تنفيذ الدخول عند إغلاق شمعة الإشارة.
-تُحسب الرسوم تقديرياً، ولا يشمل التمويل أو الانزلاق السعري.
-إذا لامس السعر الوقف والهدف داخل الشمعة نفسها، يفترض الاختبار حدوث الوقف أولاً.
-النتائج بوحدة المخاطرة R وليست أرباحاً بالدولار.
-</p>
 
 </div>
 
 <div class="panel">
 
-<h3>⚙️ إعدادات المخاطر</h3>
+<h3>🖥️ سجل نشاط المحرك</h3>
 
-<div class="controls">
-
-<label>
-<div class="small">مضاعف ATR للوقف</div>
-<input id="stopMult" type="number" value="1.8" min="0.5" max="10" step="0.1">
-</label>
-
-<label>
-<div class="small">هدف TP1</div>
-<input id="rr1" type="number" value="1.5" min="0.1" max="20" step="0.1">
-</label>
-
-<label>
-<div class="small">هدف TP2</div>
-<input id="rr2" type="number" value="2.5" min="0.1" max="20" step="0.1">
-</label>
-
-<label>
-<div class="small">هدف TP3</div>
-<input id="rr3" type="number" value="4" min="0.1" max="20" step="0.1">
-</label>
-
-<button onclick="saveSettings()" class="primary">
-💾 حفظ الإعدادات
-</button>
-
-</div>
+<div class="log" id="botLog"></div>
 
 </div>
 
 </div>
 
 <footer>
-ADAPTIVE FUTURES PRO<br><br>
-تطبيق تحليلي وتجريبي — لا ينفذ صفقات حقيقية.<br>
-تداول العقود الآجلة عالي المخاطر وقد يؤدي إلى خسارة رأس المال.
+ADAPTIVE FUTURES PRO v3<br><br>
+Automated Paper Trading Engine<br><br>
+لا ينفذ التطبيق أي أوامر بأموال حقيقية.<br>
+لا تضمن نتائج التداول التجريبي تحقيق النتائج نفسها في السوق الحقيقي.
 </footer>
 
 <script>
 
-const $ = id => document.getElementById(id);
+// ==========================================
+// CONFIGURATION
+// ==========================================
 
-let candles = [];
-let analysis = [];
-let trades = [];
-let lastSignal = null;
-let loading = false;
-let requestVersion = 0;
+const SYMBOLS = [
+"BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT",
+"XRPUSDT","DOGEUSDT","ADAUSDT","AVAXUSDT",
+"LINKUSDT","LTCUSDT","DOTUSDT","TRXUSDT",
+"ATOMUSDT","NEARUSDT","UNIUSDT","ETCUSDT",
+"FILUSDT","APTUSDT","ARBUSDT","OPUSDT",
+"INJUSDT","SUIUSDT","SEIUSDT","AAVEUSDT",
+"ALGOUSDT","XLMUSDT","BCHUSDT","ICPUSDT",
+"HBARUSDT","VETUSDT","GRTUSDT","SANDUSDT",
+"MANAUSDT","CRVUSDT","MKRUSDT","RUNEUSDT",
+"FTMUSDT","EGLDUSDT","AXSUSDT","THETAUSDT"
+];
 
-const API = "https://api.binance.com/api/v3/klines";
+const API="https://api.binance.com/api/v3/klines";
 
-const TF = {
+const $=id=>document.getElementById(id);
+
+const TF_HIGHER={
 "1m":"5m",
 "3m":"15m",
 "5m":"15m",
 "15m":"1h",
 "30m":"4h",
 "1h":"4h",
-"4h":"1d",
-"1d":"1w"
+"4h":"1d"
 };
 
-const TF_MIN = {
+const TF_MIN={
 "1m":1,
 "3m":3,
 "5m":5,
 "15m":15,
 "30m":30,
 "1h":60,
-"4h":240,
-"1d":1440
+"4h":240
 };
 
+const INITIAL_BALANCE=10000;
+const ENTRY_FEE=0.0005;
+const EXIT_FEE=0.0005;
+const SCAN_INTERVAL=60000;
+
+let account={
+balance:INITIAL_BALANCE,
+open:[],
+closed:[],
+running:false,
+peakEquity:INITIAL_BALANCE,
+maxDrawdown:0
+};
+
+let market={};
+let chartData=[];
+let opportunities=[];
+let scanning=false;
+let scanTimer=null;
+
+// ==========================================
+// UTILITIES
+// ==========================================
+
 function fmt(n){
-if(!Number.isFinite(n)) return "--";
-if(n>=1000) return n.toLocaleString("en-US",{
+
+if(!Number.isFinite(n))return "--";
+
+if(Math.abs(n)>=1000){
+return n.toLocaleString("en-US",{
 minimumFractionDigits:2,
 maximumFractionDigits:2
 });
-if(n>=1) return n.toFixed(4);
+}
+
+if(Math.abs(n)>=1)return n.toFixed(4);
+
 return n.toFixed(6);
 }
 
-function clamp(v,a,b){
-return Math.max(a,Math.min(b,v));
+function money(n){
+return Number(n).toFixed(2);
 }
 
-function sum(arr){
-return arr.reduce((a,b)=>a+b,0);
+function clamp(x,a,b){
+return Math.max(a,Math.min(b,x));
 }
 
-function average(arr){
-return arr.length ? sum(arr)/arr.length : 0;
+function log(message){
+
+let el=$("botLog");
+
+let time=new Date().toLocaleTimeString("en-US");
+
+let div=document.createElement("div");
+div.textContent="["+time+"] "+message;
+
+el.prepend(div);
+
+while(el.children.length>150){
+el.removeChild(el.lastChild);
 }
+
+}
+
+function notify(message){
+
+if("Notification" in window &&
+Notification.permission==="granted"){
+new Notification("Adaptive Futures PRO",{
+body:message
+});
+}
+
+}
+
+function getSettings(){
+
+let risk=Number($("riskPercent").value);
+let maxPositions=Number($("maxPositions").value);
+let stopMult=Number($("stopMult").value);
+let rr=Number($("takeProfitRR").value);
+let leverage=Number($("leverage").value);
+
+if(
+!Number.isFinite(risk) ||
+!Number.isInteger(maxPositions) ||
+!Number.isFinite(stopMult) ||
+!Number.isFinite(rr) ||
+!Number.isFinite(leverage) ||
+risk<=0 || risk>5 ||
+maxPositions<1 || maxPositions>10 ||
+stopMult<=0 ||
+rr<=0 ||
+leverage<1
+){
+throw new Error("إعدادات المخاطرة غير صالحة.");
+}
+
+return {
+risk,
+maxPositions,
+stopMult,
+rr,
+leverage,
+timeframe:$("timeframe").value,
+mode:$("mode").value
+};
+
+}
+
+// ==========================================
+// STORAGE
+// ==========================================
+
+function saveAccount(){
+
+localStorage.setItem(
+"adaptivePaperAccountV3",
+JSON.stringify(account)
+);
+
+}
+
+function loadAccount(){
+
+try{
+
+let saved=JSON.parse(
+localStorage.getItem("adaptivePaperAccountV3")||"null"
+);
+
+if(saved&&Array.isArray(saved.open)&&Array.isArray(saved.closed)){
+
+account={
+...account,
+...saved,
+running:false
+};
+
+}
+
+}catch(e){
+console.error(e);
+}
+
+}
+
+function saveSettings(){
+
+try{
+
+let settings=getSettings();
+
+localStorage.setItem(
+"adaptiveBotSettingsV3",
+JSON.stringify(settings)
+);
+
+log("Settings saved");
+
+}catch(e){
+alert(e.message);
+}
+
+}
+
+function restoreSettings(){
+
+try{
+
+let settings=JSON.parse(
+localStorage.getItem("adaptiveBotSettingsV3")||"null"
+);
+
+if(!settings)return;
+
+$("riskPercent").value=settings.risk;
+$("maxPositions").value=settings.maxPositions;
+$("stopMult").value=settings.stopMult;
+$("takeProfitRR").value=settings.rr;
+$("leverage").value=settings.leverage;
+$("timeframe").value=settings.timeframe;
+$("mode").value=settings.mode;
+
+}catch(e){
+console.error(e);
+}
+
+}
+
+// ==========================================
+// MARKET DATA
+// ==========================================
+
+async function fetchCandles(symbol,interval,limit=250){
+
+let url=API+
+"?symbol="+encodeURIComponent(symbol)+
+"&interval="+encodeURIComponent(interval)+
+"&limit="+limit;
+
+let controller=new AbortController();
+
+let timeout=setTimeout(()=>{
+controller.abort();
+},12000);
+
+try{
+
+let response=await fetch(url,{
+signal:controller.signal
+});
+
+if(!response.ok){
+throw new Error("HTTP "+response.status);
+}
+
+let data=await response.json();
+
+if(!Array.isArray(data)){
+throw new Error("Invalid market data");
+}
+
+let now=Date.now();
+
+return data.map(x=>({
+time:Number(x[0]),
+open:Number(x[1]),
+high:Number(x[2]),
+low:Number(x[3]),
+close:Number(x[4]),
+volume:Number(x[5]),
+closeTime:Number(x[6])
+})).filter(x=>x.closeTime<now);
+
+}finally{
+clearTimeout(timeout);
+}
+
+}
+
+// ==========================================
+// INDICATORS
+// ==========================================
 
 function ema(values,length){
-let out=[];
+
 let alpha=2/(length+1);
 let previous=values[0];
 
-for(let v of values){
+return values.map(v=>{
 previous=previous+alpha*(v-previous);
-out.push(previous);
-}
-return out;
-}
+return previous;
+});
 
-function efficiency(values,i,length){
-if(i<length) return 0;
-
-let movement=Math.abs(values[i]-values[i-length]);
-let noise=0;
-
-for(let j=i-length+1;j<=i;j++){
-noise+=Math.abs(values[j]-values[j-1]);
 }
 
-return noise>0?movement/noise:0;
-}
+function calculateIndicators(data,tf){
 
-function calculate(data,tf){
+if(data.length<100)return [];
 
-const closes=data.map(x=>x.close);
-const length=TF_MIN[tf]<=3?12:
-TF_MIN[tf]<=15?18:
-TF_MIN[tf]<=60?24:34;
+let closes=data.map(x=>x.close);
 
-const erLength=TF_MIN[tf]<=3?10:
-TF_MIN[tf]<=15?14:
-TF_MIN[tf]<=60?20:28;
+let minutes=TF_MIN[tf];
 
-const atrLength=TF_MIN[tf]<=3?10:
-TF_MIN[tf]<=15?14:
-TF_MIN[tf]<=60?18:21;
+let baseLength=minutes<=3?12:
+minutes<=15?18:
+minutes<=60?24:34;
 
-let result=[];
+let erLength=minutes<=3?10:
+minutes<=15?14:
+minutes<=60?20:28;
+
+let atrLength=minutes<=3?10:
+minutes<=15?14:
+minutes<=60?18:21;
+
 let kama=closes[0];
 let vidya=closes[0];
 let atr=0;
 
 let upper=0;
 let lower=0;
-let st=closes[0];
 let direction=1;
+let st=closes[0];
 
-let trHistory=[];
 let atrHistory=[];
+let result=[];
 
 for(let i=0;i<data.length;i++){
 
@@ -575,48 +968,69 @@ Math.abs(c.high-prev.close),
 Math.abs(c.low-prev.close)
 );
 
-trHistory.push(tr);
-
-if(i===0) atr=tr;
-else atr=(atr*(atrLength-1)+tr)/atrLength;
+atr=i===0?tr:
+(atr*(atrLength-1)+tr)/atrLength;
 
 atrHistory.push(atr);
 
-let er=efficiency(closes,i,erLength);
+let movement=0;
+let noise=0;
 
-let fast=2/3;
-let slow=2/31;
-let sc=Math.pow(er*(fast-slow)+slow,2);
+if(i>=erLength){
+
+movement=Math.abs(
+closes[i]-closes[i-erLength]
+);
+
+for(let j=i-erLength+1;j<=i;j++){
+noise+=Math.abs(closes[j]-closes[j-1]);
+}
+
+}
+
+let er=noise>0?movement/noise:0;
+
+let sc=Math.pow(
+er*(2/3-2/31)+2/31,
+2
+);
 
 kama+=sc*(c.close-kama);
 
 let positive=0;
 let negative=0;
 
-for(let j=Math.max(1,i-length+1);j<=i;j++){
+for(let j=Math.max(1,i-baseLength+1);j<=i;j++){
+
 let change=closes[j]-closes[j-1];
+
 positive+=Math.max(change,0);
 negative+=Math.max(-change,0);
+
 }
 
 let total=positive+negative;
+
 let cmo=total>0?
 Math.abs((positive-negative)/total):0;
 
-let alpha=2/(length+1);
+let alpha=2/(baseLength+1);
+
 vidya+=alpha*cmo*(c.close-vidya);
 
 let factor=clamp(3.5-er*1.5,1.5,3.5);
+
 let mid=(c.high+c.low)/2;
 
 let basicUpper=mid+factor*atr;
 let basicLower=mid-factor*atr;
 
 if(i===0){
+
 upper=basicUpper;
 lower=basicLower;
-direction=1;
 st=upper;
+
 }else{
 
 let previousUpper=upper;
@@ -631,16 +1045,27 @@ prev.close<previousLower
 ?basicLower:previousLower;
 
 if(direction===1){
-if(c.close>upper) direction=-1;
+
+if(c.close>upper)direction=-1;
+
 }else{
-if(c.close<lower) direction=1;
+
+if(c.close<lower)direction=1;
+
 }
 
 st=direction===-1?lower:upper;
+
 }
 
-let atrWindow=atrHistory.slice(Math.max(0,i-99),i+1);
-let rank=100*atrWindow.filter(x=>x<=atr).length/atrWindow.length;
+let window=atrHistory.slice(
+Math.max(0,i-99),
+i+1
+);
+
+let rank=100*
+window.filter(x=>x<=atr).length/
+window.length;
 
 result.push({
 ...c,
@@ -648,50 +1073,71 @@ kama,
 vidya,
 atr,
 er,
+rank,
 st,
 direction,
-rank,
-ready:i>Math.max(100,erLength+length)
+ready:i>=100
 });
 
 }
 
 return result;
+
 }
 
-function score(a,mtfBull,mtfBear){
+// ==========================================
+// HIGHER TIMEFRAME
+// ==========================================
 
-let long=0;
-let short=0;
+function getHigherBias(data){
 
-if(a.close>a.kama) long+=20;
-if(a.close<a.kama) short+=20;
+if(data.length<60){
+return {bull:false,bear:false};
+}
 
-if(a.vidya>a.kama) long+=20;
-if(a.vidya<a.kama) short+=20;
+let closes=data.map(x=>x.close);
 
-if(a.direction===-1) long+=20;
-if(a.direction===1) short+=20;
+let values=ema(closes,50);
+
+let i=closes.length-1;
+
+return {
+bull:closes[i]>values[i],
+bear:closes[i]<values[i]
+};
+
+}
+
+// ==========================================
+// ADAPTIVE SIGNAL ENGINE
+// ==========================================
+
+function calculateSignal(a,bias,mode){
+
+let longScore=0;
+let shortScore=0;
+
+if(a.close>a.kama)longScore+=20;
+if(a.close<a.kama)shortScore+=20;
+
+if(a.vidya>a.kama)longScore+=20;
+if(a.vidya<a.kama)shortScore+=20;
+
+if(a.direction===-1)longScore+=20;
+if(a.direction===1)shortScore+=20;
 
 if(a.er>0.25){
-long+=15;
-short+=15;
+longScore+=15;
+shortScore+=15;
 }
 
 if(a.rank<=85){
-long+=10;
-short+=10;
+longScore+=10;
+shortScore+=10;
 }
 
-if(mtfBull) long+=15;
-if(mtfBear) short+=15;
-
-return {long,short};
-}
-
-function setup(a,mtfBull,mtfBear,mode){
-
-let scores=score(a,mtfBull,mtfBear);
+if(bias.bull)longScore+=15;
+if(bias.bear)shortScore+=15;
 
 let threshold=mode==="Conservative"?85:
 mode==="Balanced"?70:55;
@@ -699,636 +1145,445 @@ mode==="Balanced"?70:55;
 let minER=mode==="Conservative"?0.35:
 mode==="Balanced"?0.25:0.15;
 
-let bull=a.close>a.kama &&
+let bull=
+a.close>a.kama &&
 a.vidya>a.kama &&
 a.direction===-1;
 
-let bear=a.close<a.kama &&
+let bear=
+a.close<a.kama &&
 a.vidya<a.kama &&
 a.direction===1;
 
-let long=bull &&
-mtfBull &&
+let long=
+bull &&
+bias.bull &&
 a.er>=minER &&
-scores.long>=threshold;
+longScore>=threshold;
 
-let short=bear &&
-mtfBear &&
+let short=
+bear &&
+bias.bear &&
 a.er>=minER &&
-scores.short>=threshold;
+shortScore>=threshold;
 
 return {
-long,
-short,
-scores,
-direction:long?"LONG":short?"SHORT":null
+type:long?"LONG":short?"SHORT":null,
+longScore,
+shortScore,
+confidence:long?longScore:short?shortScore:0
 };
+
 }
 
-function getSettings(){
+// ==========================================
+// OPPORTUNITY DETECTION
+// ==========================================
 
-let stop=Number($("stopMult").value);
-let r1=Number($("rr1").value);
-let r2=Number($("rr2").value);
-let r3=Number($("rr3").value);
+function buildOpportunity(symbol,a,signal,settings){
 
-if(
-!Number.isFinite(stop) ||
-!Number.isFinite(r1) ||
-!Number.isFinite(r2) ||
-!Number.isFinite(r3) ||
-stop<=0 ||
-r1<=0 ||
-r2<=r1 ||
-r3<=r2
-){
-throw new Error("تحقق من إعدادات المخاطر: يجب أن تكون الأهداف تصاعدية وموجبة.");
+if(!signal.type)return null;
+
+let riskDistance=a.atr*settings.stopMult;
+
+if(riskDistance<=0)return null;
+
+let sign=signal.type==="LONG"?1:-1;
+
+return {
+symbol,
+type:signal.type,
+confidence:signal.confidence,
+entry:a.close,
+sl:a.close-sign*riskDistance,
+tp:a.close+sign*riskDistance*settings.rr,
+atr:a.atr,
+signalTime:a.time,
+riskDistance
+};
+
 }
 
-return {stop,r1,r2,r3};
-}
+// ==========================================
+// PAPER TRADING ENGINE
+// ==========================================
 
-function levels(a,type){
+function openTrade(opportunity){
 
 let settings=getSettings();
-let risk=a.atr*settings.stop;
-let sign=type==="LONG"?1:-1;
 
-return {
-type,
-entry:a.close,
-risk,
-sl:a.close-sign*risk,
-tp1:a.close+sign*risk*settings.r1,
-tp2:a.close+sign*risk*settings.r2,
-tp3:a.close+sign*risk*settings.r3
+if(account.open.length>=settings.maxPositions)return;
+
+if(account.open.some(x=>x.symbol===opportunity.symbol))return;
+
+let riskBudget=account.balance*settings.risk/100;
+
+let quantity=riskBudget/opportunity.riskDistance;
+
+let notional=quantity*opportunity.entry;
+
+let freeMargin=account.balance-
+account.open.reduce((s,p)=>s+p.margin,0);
+
+let maxNotional=Math.max(
+0,
+freeMargin*settings.leverage
+);
+
+notional=Math.min(notional,maxNotional);
+
+if(notional<=0)return;
+
+quantity=notional/opportunity.entry;
+
+let margin=notional/settings.leverage;
+let entryFee=notional*ENTRY_FEE;
+
+if(entryFee>=account.balance)return;
+
+let trade={
+id:Date.now()+"_"+opportunity.symbol,
+symbol:opportunity.symbol,
+type:opportunity.type,
+entry:opportunity.entry,
+current:opportunity.entry,
+sl:opportunity.sl,
+tp:opportunity.tp,
+quantity,
+notional,
+margin,
+entryFee,
+openedAt:Date.now(),
+signalTime:opportunity.signalTime,
+confidence:opportunity.confidence
 };
+
+// Entry fee is charged immediately.
+account.balance-=entryFee;
+
+account.open.push(trade);
+
+saveAccount();
+
+log(
+"OPEN "+trade.type+" "+trade.symbol+
+" @ "+fmt(trade.entry)
+);
+
+notify(
+"صفقة تجريبية جديدة: "+
+trade.type+" "+trade.symbol
+);
+
+renderAccount();
+
 }
 
-async function fetchKlines(symbol,interval,limit=500){
+function floatingPnL(trade){
 
-let url=API+"?symbol="+encodeURIComponent(symbol)+
-"&interval="+encodeURIComponent(interval)+
-"&limit="+limit;
+let sign=trade.type==="LONG"?1:-1;
 
-let controller=new AbortController();
-let timeout=setTimeout(()=>controller.abort(),12000);
+return sign*
+(trade.current-trade.entry)*
+trade.quantity;
 
-try{
-
-let response=await fetch(url,{signal:controller.signal});
-
-if(!response.ok){
-throw new Error("تعذر تحميل البيانات: HTTP "+response.status);
 }
 
-let raw=await response.json();
+function closeTrade(id,exitPrice,reason){
 
-if(!Array.isArray(raw)){
-throw new Error("استجابة غير متوقعة من Binance");
-}
+let index=account.open.findIndex(x=>x.id===id);
 
-let now=Date.now();
+if(index<0)return;
 
-return raw.map(x=>({
-time:Number(x[0]),
-open:Number(x[1]),
-high:Number(x[2]),
-low:Number(x[3]),
-close:Number(x[4]),
-volume:Number(x[5]),
-closeTime:Number(x[6])
-})).filter(x=>x.closeTime<now);
+let trade=account.open[index];
 
-}finally{
-clearTimeout(timeout);
-}
-}
+let sign=trade.type==="LONG"?1:-1;
 
-function higherBias(data){
+let grossPnL=
+sign*(exitPrice-trade.entry)*trade.quantity;
 
-if(data.length<60) return {bull:false,bear:false};
+let exitFee=
+exitPrice*trade.quantity*EXIT_FEE;
 
-let closes=data.map(x=>x.close);
-let e=ema(closes,50);
+let netAfterExit=grossPnL-exitFee;
 
-let i=closes.length-1;
+let totalNet=netAfterExit-trade.entryFee;
 
-return {
-bull:closes[i]>e[i],
-bear:closes[i]<e[i]
+account.balance+=netAfterExit;
+
+let closed={
+...trade,
+exit:exitPrice,
+reason,
+closedAt:Date.now(),
+pnl:totalNet
 };
+
+account.closed.push(closed);
+account.open.splice(index,1);
+
+saveAccount();
+
+log(
+"CLOSE "+trade.symbol+
+" "+reason+
+" PNL "+money(totalNet)
+);
+
+notify(
+"إغلاق "+trade.symbol+
+" | "+reason+
+" | "+money(totalNet)+" USDT"
+);
+
+renderAccount();
+
 }
 
-function historicalSignals(data,bias,mode){
+function checkTradeExit(trade,candle){
 
-let signals=[];
-let previousLong=false;
-let previousShort=false;
+let long=trade.type==="LONG";
 
-for(let i=0;i<data.length;i++){
+let stopHit=long?
+candle.low<=trade.sl:
+candle.high>=trade.sl;
 
-let a=data[i];
+let targetHit=long?
+candle.high>=trade.tp:
+candle.low<=trade.tp;
 
-if(!a.ready) continue;
-
-let s=setup(a,bias.bull,bias.bear,mode);
-
-if(s.long&&!previousLong){
-signals.push({index:i,type:"LONG",scores:s.scores});
-}
-
-if(s.short&&!previousShort){
-signals.push({index:i,type:"SHORT",scores:s.scores});
-}
-
-previousLong=s.long;
-previousShort=s.short;
-}
-
-return signals;
-}
-
-function backtest(data,bias,mode){
-
-let signals=historicalSignals(data,bias,mode);
-let results=[];
-let nextAvailable=0;
-
-for(let sig of signals){
-
-if(sig.index<nextAvailable) continue;
-
-let entryBar=data[sig.index];
-let lv=levels(entryBar,sig.type);
-
-let result=null;
-let exitIndex=data.length;
-
-let sign=sig.type==="LONG"?1:-1;
-let remaining=1;
-let realized=0;
-let firstHit=false;
-let secondHit=false;
-let currentStop=lv.sl;
-
-let portions=[0.33,0.33,0.34];
-let targets=[lv.tp1,lv.tp2,lv.tp3];
-
-for(let j=sig.index+1;j<data.length;j++){
-
-let c=data[j];
-
-let stopHit=sign===1?
-c.low<=currentStop:
-c.high>=currentStop;
-
+// Conservative assumption:
+// SL executes first if both are touched.
 if(stopHit){
 
-let stopR=sign*(currentStop-lv.entry)/lv.risk;
-realized+=remaining*stopR;
-remaining=0;
-exitIndex=j;
-result={
-time:c.time,
-type:sig.type,
-entry:lv.entry,
-exit:currentStop,
-r:realized
-};
-break;
+closeTrade(trade.id,trade.sl,"STOP LOSS");
+return;
+
 }
 
-for(let k=0;k<3;k++){
+if(targetHit){
 
-if(portions[k]===0) continue;
+closeTrade(trade.id,trade.tp,"TAKE PROFIT");
+return;
 
-let hit=sign===1?
-c.high>=targets[k]:
-c.low<=targets[k];
-
-if(hit){
-
-let part=portions[k];
-realized+=part*sign*(targets[k]-lv.entry)/lv.risk;
-remaining-=part;
-portions[k]=0;
-
-if(k===0) firstHit=true;
-if(k===1) secondHit=true;
 }
 
 }
 
-if(remaining<0.001){
+// ==========================================
+// MARKET SCANNER
+// ==========================================
 
-exitIndex=j;
-result={
-time:c.time,
-type:sig.type,
-entry:lv.entry,
-exit:lv.tp3,
-r:realized
-};
-break;
-}
-
-// Changes to stop take effect on the next candle.
-if(firstHit){
-currentStop=sign===1?
-Math.max(currentStop,lv.entry):
-Math.min(currentStop,lv.entry);
-}
-
-if(secondHit){
-let trail=sign===1?
-c.close-c.atr*1.5:
-c.close+c.atr*1.5;
-
-currentStop=sign===1?
-Math.max(currentStop,trail):
-Math.min(currentStop,trail);
-}
-
-}
-
-if(result){
-
-// Approximate round-trip fee: 0.10% of notional,
-// expressed in units of initial price risk.
-let feesR=(lv.entry*0.001)/lv.risk;
-result.r-=feesR;
-
-results.push(result);
-nextAvailable=exitIndex+1;
-}
-
-}
-
-return results;
-}
-
-function updateBacktest(results){
-
-$("totalTrades").textContent=results.length;
-
-let wins=results.filter(x=>x.r>0).length;
-
-$("winRate").textContent=results.length?
-(wins/results.length*100).toFixed(1)+"%":"0%";
-
-let net=sum(results.map(x=>x.r));
-
-$("netR").textContent=net.toFixed(2)+" R";
-$("netR").className="value "+(net>=0?"green":"red");
-
-let equity=0;
-let peak=0;
-let maxDD=0;
-
-for(let t of results){
-equity+=t.r;
-peak=Math.max(peak,equity);
-maxDD=Math.max(maxDD,peak-equity);
-}
-
-$("drawdown").textContent=maxDD.toFixed(2)+" R";
-
-let rows=results.slice(-15).reverse().map(t=>{
-
-let date=new Date(t.time).toLocaleString("ar");
-
-return `
-<tr>
-<td>${date}</td>
-<td class="${t.type==="LONG"?"green":"red"}">${t.type}</td>
-<td>${fmt(t.entry)}</td>
-<td>${fmt(t.exit)}</td>
-<td class="${t.r>=0?"green":"red"}">${t.r.toFixed(2)} R</td>
-</tr>
-`;
-
-}).join("");
-
-$("history").innerHTML=rows||
-'<tr><td colspan="5">لا توجد صفقات مغلقة في العينة.</td></tr>';
-}
-
-function updateLevels(lv){
-
-$("tradeType").textContent=lv?lv.type:"لا توجد إشارة جديدة";
-
-$("tradeType").className=lv?
-(lv.type==="LONG"?"green":"red"):"";
-
-$("entry").textContent=lv?fmt(lv.entry):"--";
-$("sl").textContent=lv?fmt(lv.sl):"--";
-$("tp1").textContent=lv?fmt(lv.tp1):"--";
-$("tp2").textContent=lv?fmt(lv.tp2):"--";
-$("tp3").textContent=lv?fmt(lv.tp3):"--";
-}
-
-function updateDashboard(a,bias,sig,tf){
-
-$("price").textContent=fmt(a.close);
-$("symbolLabel").textContent=$("symbol").value;
-
-let bull=a.close>a.kama&&a.direction===-1;
-let bear=a.close<a.kama&&a.direction===1;
-
-$("trend").textContent=bull?"صاعد":bear?"هابط":"عرضي / مختلط";
-
-$("trend").className="value "+(bull?"green":bear?"red":"yellow");
-
-$("regime").textContent=
-a.er<0.20?"سوق ضعيف الاتجاه":
-a.er>0.35?"اتجاه أكثر انتظاماً":"اتجاه متوسط";
-
-$("er").textContent=a.er.toFixed(3);
-$("atr").textContent=fmt(a.atr);
-$("atrRank").textContent=a.rank.toFixed(1)+"%";
-$("kama").textContent=fmt(a.kama);
-$("vidya").textContent=fmt(a.vidya);
-$("st").textContent=fmt(a.st);
-
-$("volatility").textContent=
-a.rank>85?"مرتفع":
-a.rank<15?"منخفض":"طبيعي";
-
-$("htf").textContent=TF[tf]+" — "+
-(bias.bull?"صاعد":bias.bear?"هابط":"محايد");
-
-let direction=sig.direction;
-let confidence=direction==="LONG"?
-sig.scores.long:
-direction==="SHORT"?
-sig.scores.short:
-Math.max(sig.scores.long,sig.scores.short);
-
-$("confidence").textContent=confidence+"/100";
-$("confidenceBar").style.width=confidence+"%";
-
-$("signal").textContent=direction||"انتظار";
-
-$("signal").className="value "+
-(direction==="LONG"?"green":direction==="SHORT"?"red":"yellow");
-
-$("signalTime").textContent=
-direction?"شروط الدخول متحققة في آخر شمعة مغلقة":
-"لا توجد فرصة مستوفية للشروط حالياً";
-
-updateLevels(direction?levels(a,direction):null);
-}
-
-async function loadData(){
-
-if(loading) return;
-
-loading=true;
-let version=++requestVersion;
-
-$("connection").textContent="⏳ جاري تحميل البيانات...";
+async function scanOne(symbol,settings){
 
 try{
 
-let symbol=$("symbol").value;
-let tf=$("timeframe").value;
-let mode=$("mode").value;
-
-getSettings();
-
-let [raw,rawHTF]=await Promise.all([
-fetchKlines(symbol,tf,750),
-fetchKlines(symbol,TF[tf],150)
+let [data,higher]=await Promise.all([
+fetchCandles(symbol,settings.timeframe,250),
+fetchCandles(
+symbol,
+TF_HIGHER[settings.timeframe],
+100
+)
 ]);
 
-if(version!==requestVersion) return;
+if(data.length<120)return null;
 
-if(raw.length<150){
-throw new Error("البيانات التاريخية غير كافية للتحليل.");
+let indicators=calculateIndicators(
+data,
+settings.timeframe
+);
+
+if(!indicators.length)return null;
+
+let a=indicators[indicators.length-1];
+
+let bias=getHigherBias(higher);
+
+let signal=calculateSignal(
+a,
+bias,
+settings.mode
+);
+
+market[symbol]={
+price:a.close,
+signal,
+indicators,
+time:Date.now()
+};
+
+// Update open trade from the latest completed candle.
+let existing=account.open.find(x=>x.symbol===symbol);
+
+if(existing){
+
+existing.current=a.close;
+
+// Only evaluate candles completed after position entry.
+let newer=data.filter(
+c=>c.closeTime>existing.openedAt
+);
+
+for(let candle of newer){
+
+if(!account.open.some(x=>x.id===existing.id)){
+break;
 }
 
-candles=raw;
-analysis=calculate(candles,tf);
+checkTradeExit(existing,candle);
 
-let bias=higherBias(rawHTF);
-let a=analysis[analysis.length-1];
+}
 
-let sig=setup(a,bias.bull,bias.bear,mode);
+}
 
-updateDashboard(a,bias,sig,tf);
+if(!signal.type)return null;
 
-trades=backtest(analysis,bias,mode);
-updateBacktest(trades);
-
-lastSignal=sig.direction;
-
-drawChart();
-
-$("connection").textContent=
-"🟢 متصل — "+new Date().toLocaleTimeString("ar");
+return buildOpportunity(
+symbol,
+a,
+signal,
+settings
+);
 
 }catch(error){
 
-console.error(error);
+log(symbol+" ERROR: "+error.message);
 
-$("connection").textContent="🔴 "+error.message;
-
-}finally{
-loading=false;
-}
+return null;
 
 }
 
-function drawChart(){
-
-const canvas=$("chart");
-const rect=canvas.getBoundingClientRect();
-
-if(rect.width===0||rect.height===0) return;
-
-const dpr=window.devicePixelRatio||1;
-
-canvas.width=Math.round(rect.width*dpr);
-canvas.height=Math.round(rect.height*dpr);
-
-let ctx=canvas.getContext("2d");
-ctx.setTransform(dpr,0,0,dpr,0,0);
-
-let width=rect.width;
-let height=rect.height;
-
-ctx.clearRect(0,0,width,height);
-
-ctx.fillStyle="#0b1322";
-ctx.fillRect(0,0,width,height);
-
-if(!analysis.length) return;
-
-let visible=analysis.slice(-Math.min(90,analysis.length));
-
-let padLeft=12;
-let padRight=76;
-let padTop=20;
-let padBottom=32;
-
-let plotWidth=width-padLeft-padRight;
-let plotHeight=height-padTop-padBottom;
-
-let all=[];
-
-for(let x of visible){
-all.push(x.high,x.low,x.kama,x.vidya,x.st);
 }
 
-let min=Math.min(...all);
-let max=Math.max(...all);
+async function scanMarket(){
 
-let padding=(max-min)*0.08||1;
+if(scanning)return;
 
-min-=padding;
-max+=padding;
+scanning=true;
 
-function y(price){
-return padTop+(max-price)/(max-min)*plotHeight;
-}
+$("connection").textContent="🔍 فحص السوق...";
 
-function x(index){
-return padLeft+(index+0.5)*plotWidth/visible.length;
-}
-
-ctx.strokeStyle="#25334a";
-ctx.lineWidth=1;
-ctx.font="11px Arial";
-ctx.fillStyle="#91a4bf";
-
-for(let i=0;i<=5;i++){
-
-let yy=padTop+i*plotHeight/5;
-
-ctx.beginPath();
-ctx.moveTo(padLeft,yy);
-ctx.lineTo(width-padRight,yy);
-ctx.stroke();
-
-let price=max-i*(max-min)/5;
-
-ctx.fillText(fmt(price),width-padRight+5,yy+4);
-}
-
-let candleWidth=Math.max(2,plotWidth/visible.length*0.60);
-
-visible.forEach((c,i)=>{
-
-let xx=x(i);
-
-let green=c.close>=c.open;
-let color=green?"#00d49a":"#ff536b";
-
-ctx.strokeStyle=color;
-ctx.fillStyle=color;
-
-ctx.beginPath();
-ctx.moveTo(xx,y(c.high));
-ctx.lineTo(xx,y(c.low));
-ctx.stroke();
-
-let top=y(Math.max(c.open,c.close));
-let bottom=y(Math.min(c.open,c.close));
-
-ctx.fillRect(
-xx-candleWidth/2,
-top,
-candleWidth,
-Math.max(1,bottom-top)
-);
-
-});
-
-function line(key,color){
-
-ctx.beginPath();
-ctx.strokeStyle=color;
-ctx.lineWidth=1.6;
-
-visible.forEach((c,i)=>{
-
-let xx=x(i);
-let yy=y(c[key]);
-
-if(i===0) ctx.moveTo(xx,yy);
-else ctx.lineTo(xx,yy);
-
-});
-
-ctx.stroke();
-}
-
-line("kama","#ffb347");
-line("vidya","#00d5ff");
-line("st","#b87cff");
-
-let a=visible[visible.length-1];
-
-ctx.setLineDash([5,5]);
-ctx.strokeStyle="#ffffff80";
-
-ctx.beginPath();
-ctx.moveTo(padLeft,y(a.close));
-ctx.lineTo(width-padRight,y(a.close));
-ctx.stroke();
-
-ctx.setLineDash([]);
-
-ctx.fillStyle="#edf3ff";
-ctx.fillText(fmt(a.close),width-padRight+5,y(a.close)-5);
-
-ctx.fillStyle="#91a4bf";
-
-let first=visible[0];
-let middle=visible[Math.floor(visible.length/2)];
-let last=visible[visible.length-1];
-
-ctx.fillText(
-new Date(first.time).toLocaleDateString("en-US"),
-padLeft,
-height-9
-);
-
-ctx.fillText(
-new Date(middle.time).toLocaleDateString("en-US"),
-width/2-35,
-height-9
-);
-
-ctx.fillText(
-new Date(last.time).toLocaleDateString("en-US"),
-width-padRight-70,
-height-9
-);
-
-}
-
-function saveSettings(){
+let results=[];
+let success=0;
 
 try{
+
+let settings=getSettings();
+
+// Scan in small batches to reduce API pressure.
+for(let i=0;i<SYMBOLS.length;i+=5){
+
+let batch=SYMBOLS.slice(i,i+5);
+
+let data=await Promise.all(
+batch.map(symbol=>scanOne(symbol,settings))
+);
+
+data.forEach((op,j)=>{
+
+if(market[batch[j]])success++;
+
+if(op)results.push(op);
+
+});
+
+renderCoins();
+
+}
+
+results.sort((a,b)=>b.confidence-a.confidence);
+
+opportunities=results;
+
+renderOpportunities();
+
+if(account.running){
+
+for(let op of results){
+
+if(account.open.length>=settings.maxPositions)break;
+
+// Do not re-enter a signal already used for this symbol.
+let key=op.symbol+"_"+op.signalTime;
+
+let used=account.closed.some(x=>
+x.symbol===op.symbol &&
+x.signalTime===op.signalTime
+);
+
+if(used)continue;
+
+if(account.open.some(x=>x.symbol===op.symbol)){
+continue;
+}
+
+openTrade(op);
+
+}
+
+}
+
+$("lastScan").textContent=
+new Date().toLocaleTimeString("ar");
+
+$("connection").textContent=
+"🟢 فُحصت "+success+"/"+SYMBOLS.length+" عملة";
+
+log(
+"SCAN COMPLETE | "+success+
+" symbols | "+results.length+" opportunities"
+);
+
+renderAccount();
+
+}catch(error){
+
+log("SCAN ERROR: "+error.message);
+
+$("connection").textContent="🔴 خطأ في الفحص";
+
+}finally{
+
+scanning=false;
+
+}
+
+}
+
+// ==========================================
+// BOT CONTROLS
+// ==========================================
+
+function startBot(){
+
+try{
+
 getSettings();
 
-let settings={
-symbol:$("symbol").value,
-timeframe:$("timeframe").value,
-mode:$("mode").value,
-stopMult:$("stopMult").value,
-rr1:$("rr1").value,
-rr2:$("rr2").value,
-rr3:$("rr3").value
-};
+account.running=true;
 
-localStorage.setItem("adaptiveSettings",JSON.stringify(settings));
+saveAccount();
 
-$("connection").textContent="✅ تم حفظ الإعدادات";
+$("botStatus").textContent="يعمل";
+$("botStatus").className="green";
 
-loadData();
+log("PAPER TRADING BOT STARTED");
+
+if("Notification" in window &&
+Notification.permission==="default"){
+
+Notification.requestPermission();
+
+}
+
+scanMarket();
+
+if(scanTimer)clearInterval(scanTimer);
+
+scanTimer=setInterval(()=>{
+if(!document.hidden)scanMarket();
+},SCAN_INTERVAL);
 
 }catch(e){
 alert(e.message);
@@ -1336,42 +1591,454 @@ alert(e.message);
 
 }
 
-function restoreSettings(){
+function stopBot(){
+
+account.running=false;
+
+saveAccount();
+
+if(scanTimer){
+clearInterval(scanTimer);
+scanTimer=null;
+}
+
+$("botStatus").textContent="متوقف";
+$("botStatus").className="red";
+
+log("PAPER TRADING BOT STOPPED");
+
+// Existing positions remain open for later management.
+renderAccount();
+
+}
+
+function resetAccount(){
+
+if(!confirm(
+"هل تريد حذف جميع الصفقات وإعادة الرصيد إلى 10000 USDT؟"
+))return;
+
+stopBot();
+
+account={
+balance:INITIAL_BALANCE,
+open:[],
+closed:[],
+running:false,
+peakEquity:INITIAL_BALANCE,
+maxDrawdown:0
+};
+
+saveAccount();
+renderAccount();
+
+log("PAPER ACCOUNT RESET");
+
+}
+
+// ==========================================
+// ACCOUNT DASHBOARD
+// ==========================================
+
+function renderAccount(){
+
+let floating=account.open.reduce(
+(s,t)=>s+floatingPnL(t),
+0
+);
+
+let equity=account.balance+floating;
+
+let realized=account.closed.reduce(
+(s,t)=>s+t.pnl,
+0
+);
+
+let totalPnL=equity-INITIAL_BALANCE;
+
+$("balance").textContent=
+money(account.balance)+" USDT";
+
+$("totalPnL").textContent=
+money(totalPnL)+" USDT";
+
+$("totalPnL").className=
+"value "+(totalPnL>=0?"green":"red");
+
+$("openCount").textContent=account.open.length;
+
+let wins=account.closed.filter(x=>x.pnl>0).length;
+let losses=account.closed.filter(x=>x.pnl<=0).length;
+
+let total=account.closed.length;
+
+$("totalTrades").textContent=total;
+$("wins").textContent=wins;
+$("losses").textContent=losses;
+
+$("winRate").textContent=total?
+(wins/total*100).toFixed(1)+"%":"0%";
+
+account.peakEquity=Math.max(
+account.peakEquity,
+equity
+);
+
+let dd=account.peakEquity>0?
+(account.peakEquity-equity)/
+account.peakEquity*100:0;
+
+account.maxDrawdown=Math.max(
+account.maxDrawdown,
+dd
+);
+
+$("maxDrawdown").textContent=
+account.maxDrawdown.toFixed(2)+"%";
+
+renderOpenTrades();
+renderClosedTrades();
+
+}
+
+function renderOpenTrades(){
+
+let rows=account.open.map(t=>{
+
+let pnl=floatingPnL(t);
+
+return `
+<tr>
+<td>${t.symbol}</td>
+<td class="${t.type==="LONG"?"green":"red"}">${t.type}</td>
+<td>${fmt(t.entry)}</td>
+<td>${fmt(t.current)}</td>
+<td class="green">${fmt(t.tp)}</td>
+<td class="red">${fmt(t.sl)}</td>
+<td>${money(t.notional)}</td>
+<td class="${pnl>=0?"green":"red"}">${money(pnl)}</td>
+<td>
+<button onclick="manualClose('${t.id}')">إغلاق</button>
+</td>
+</tr>
+`;
+
+}).join("");
+
+$("openTrades").innerHTML=rows||
+'<tr><td colspan="9">لا توجد صفقات مفتوحة.</td></tr>';
+
+}
+
+function renderClosedTrades(){
+
+let rows=account.closed.slice(-50).reverse().map(t=>{
+
+return `
+<tr>
+<td>${new Date(t.closedAt).toLocaleString("ar")}</td>
+<td>${t.symbol}</td>
+<td class="${t.type==="LONG"?"green":"red"}">${t.type}</td>
+<td>${fmt(t.entry)}</td>
+<td>${fmt(t.exit)}</td>
+<td>${t.reason}</td>
+<td class="${t.pnl>=0?"green":"red"}">${money(t.pnl)} USDT</td>
+</tr>
+`;
+
+}).join("");
+
+$("closedTrades").innerHTML=rows||
+'<tr><td colspan="7">لا توجد صفقات مغلقة.</td></tr>';
+
+}
+
+function manualClose(id){
+
+let t=account.open.find(x=>x.id===id);
+
+if(!t)return;
+
+if(!confirm("إغلاق الصفقة التجريبية؟"))return;
+
+closeTrade(id,t.current,"MANUAL");
+
+}
+
+// ==========================================
+// COIN GRID
+// ==========================================
+
+function renderCoins(){
+
+$("coinGrid").innerHTML=SYMBOLS.map(symbol=>{
+
+let m=market[symbol];
+
+let price=m?fmt(m.price):"--";
+
+let signal=m&&m.signal.type?
+m.signal.type:"WAIT";
+
+let color=signal==="LONG"?"green":
+signal==="SHORT"?"red":"yellow";
+
+return `
+<div class="coin" onclick="selectCoin('${symbol}')">
+<div class="coin-name">${symbol}</div>
+<div class="coin-price">${price}</div>
+<div class="${color}" style="margin-top:7px;font-size:12px">
+${signal}
+</div>
+</div>
+`;
+
+}).join("");
+
+}
+
+function selectCoin(symbol){
+
+$("chartSymbol").value=symbol;
+
+loadChart();
+
+}
+
+// ==========================================
+// OPPORTUNITIES
+// ==========================================
+
+function renderOpportunities(){
+
+let rows=opportunities.slice(0,30).map(op=>`
+
+<tr>
+<td>${op.symbol}</td>
+<td class="${op.type==="LONG"?"green":"red"}">${op.type}</td>
+<td>${op.confidence}/100</td>
+<td>${fmt(op.entry)}</td>
+<td class="green">${fmt(op.tp)}</td>
+<td class="red">${fmt(op.sl)}</td>
+</tr>
+
+`).join("");
+
+$("opportunities").innerHTML=rows||
+'<tr><td colspan="6">لا توجد فرص تستوفي الشروط حالياً.</td></tr>';
+
+}
+
+// ==========================================
+// CHART
+// ==========================================
+
+async function loadChart(){
 
 try{
 
-let saved=JSON.parse(
-localStorage.getItem("adaptiveSettings")||"null"
+let symbol=$("chartSymbol").value;
+let tf=$("timeframe").value;
+
+let data=await fetchCandles(symbol,tf,180);
+
+chartData=calculateIndicators(data,tf);
+
+if(!chartData.length)return;
+
+let a=chartData[chartData.length-1];
+
+$("chartPrice").textContent=fmt(a.close);
+
+$("chartTrend").textContent=
+a.direction===-1?"صاعد":"هابط";
+
+let m=market[symbol];
+
+if(m){
+
+$("longScore").textContent=
+m.signal.longScore+"/100";
+
+$("shortScore").textContent=
+m.signal.shortScore+"/100";
+
+}
+
+drawChart();
+
+}catch(error){
+
+log("CHART ERROR: "+error.message);
+
+}
+
+}
+
+function drawChart(){
+
+let canvas=$("chart");
+
+let rect=canvas.getBoundingClientRect();
+
+if(!rect.width||!rect.height||!chartData.length)return;
+
+let dpr=window.devicePixelRatio||1;
+
+canvas.width=Math.round(rect.width*dpr);
+canvas.height=Math.round(rect.height*dpr);
+
+let ctx=canvas.getContext("2d");
+
+ctx.setTransform(dpr,0,0,dpr,0,0);
+
+let w=rect.width;
+let h=rect.height;
+
+ctx.fillStyle="#0b1322";
+ctx.fillRect(0,0,w,h);
+
+let data=chartData.slice(-80);
+
+let left=10;
+let right=75;
+let top=20;
+let bottom=25;
+
+let pw=w-left-right;
+let ph=h-top-bottom;
+
+let values=[];
+
+data.forEach(c=>{
+values.push(
+c.high,c.low,c.kama,c.vidya,c.st
+);
+});
+
+let min=Math.min(...values);
+let max=Math.max(...values);
+
+let padding=(max-min)*0.07||1;
+
+min-=padding;
+max+=padding;
+
+let y=p=>top+(max-p)/(max-min)*ph;
+
+let x=i=>left+(i+0.5)*pw/data.length;
+
+ctx.strokeStyle="#26344b";
+ctx.fillStyle="#93a5bf";
+ctx.font="11px Arial";
+
+for(let i=0;i<=5;i++){
+
+let yy=top+i*ph/5;
+
+ctx.beginPath();
+ctx.moveTo(left,yy);
+ctx.lineTo(w-right,yy);
+ctx.stroke();
+
+ctx.fillText(
+fmt(max-i*(max-min)/5),
+w-right+5,
+yy
 );
 
-if(!saved) return;
-
-for(let key of Object.keys(saved)){
-if($(key)) $(key).value=saved[key];
 }
 
-}catch(e){
-console.warn("تعذر استعادة الإعدادات",e);
-}
+let cw=Math.max(2,pw/data.length*0.6);
 
-}
+data.forEach((c,i)=>{
 
-["symbol","timeframe","mode"].forEach(id=>{
-$(id).addEventListener("change",()=>{
-if(!loading) loadData();
+let color=c.close>=c.open?
+"#00d49a":"#ff536b";
+
+ctx.strokeStyle=color;
+ctx.fillStyle=color;
+
+ctx.beginPath();
+ctx.moveTo(x(i),y(c.high));
+ctx.lineTo(x(i),y(c.low));
+ctx.stroke();
+
+let t=y(Math.max(c.open,c.close));
+let b=y(Math.min(c.open,c.close));
+
+ctx.fillRect(
+x(i)-cw/2,
+t,
+cw,
+Math.max(1,b-t)
+);
+
 });
+
+function line(key,color){
+
+ctx.strokeStyle=color;
+ctx.lineWidth=1.5;
+ctx.beginPath();
+
+data.forEach((c,i)=>{
+
+if(i===0)ctx.moveTo(x(i),y(c[key]));
+else ctx.lineTo(x(i),y(c[key]));
+
 });
+
+ctx.stroke();
+
+}
+
+line("kama","#ffb347");
+line("vidya","#00d5ff");
+line("st","#b87cff");
+
+}
 
 window.addEventListener("resize",drawChart);
 
-restoreSettings();
-loadData();
+// ==========================================
+// INITIALIZATION
+// ==========================================
 
+function init(){
+
+loadAccount();
+restoreSettings();
+
+$("chartSymbol").innerHTML=SYMBOLS.map(s=>
+`<option value="${s}">${s}</option>`
+).join("");
+
+renderCoins();
+renderAccount();
+
+$("botStatus").textContent="متوقف";
+
+log("ADAPTIVE FUTURES PRO v3 READY");
+log("Paper trading only");
+log("40 symbols configured");
+
+scanMarket();
+loadChart();
+
+// Refresh prices even when automatic entries are disabled,
+// provided the page remains open.
 setInterval(()=>{
-if(!document.hidden&&!loading) loadData();
-},30000);
+if(!document.hidden&&!scanning&&!account.running){
+scanMarket();
+}
+},120000);
+
+}
+
+init();
 
 </script>
 
 </body>
-                  </html>
+  </html>
